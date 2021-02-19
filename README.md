@@ -1,10 +1,10 @@
-# ef-migration-diff
-
-**Compare Entity Framework migrations between branches - detect conflicts, preview schema changes**
-
 [![Build](https://github.com/sarmkadan/ef-migration-diff/actions/workflows/build.yml/badge.svg)](https://github.com/sarmkadan/ef-migration-diff/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
+
+# ef-migration-diff
+
+**Compare Entity Framework migrations between branches - detect conflicts, preview schema changes**
 
 ## Table of Contents
 
@@ -162,7 +162,7 @@ dotnet tool install --global --add-source ./publish ef-migration-diff
 
 ```bash
 ef-migration-diff --version
-# Output: ef-migration-diff version 1.2.0
+# Output: ef-migration-diff version 1.0.0
 ```
 
 ## Quick Start

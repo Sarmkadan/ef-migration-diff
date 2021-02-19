@@ -16,171 +16,177 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.2.0] - 2025-05-04
+## [1.0.0] - 2025-06-09
 
 ### Added
-- Schema change preview with before/after visualization
-- Breaking change detection for data loss scenarios
-- CSV export format for spreadsheet analysis
-- Batch analysis mode for comparing multiple branches
-- Health check service for deployment monitoring
-- GitHub PR integration for automatic result posting
-- Caching layer with configurable TTL
-- Background task queue for long-running operations
-- Environment variable configuration support
 - Docker and Docker Compose support
 - GitHub Actions CI/CD workflow template
-- Comprehensive documentation (5 guides, 8 examples)
+- Environment variable configuration support
+- Health check service for deployment monitoring
+- Background task queue for long-running analysis
+- Comprehensive documentation: getting-started, architecture, API reference, deployment, FAQ
+- Eight working code examples in `examples/` directory
 
 ### Changed
-- Improved conflict detection algorithm for better accuracy
-- Enhanced CLI output with emoji indicators and color coding
-- Refactored service layer for better maintainability
-- Updated to .NET 10 with latest language features
+- Promoted from pre-release: API surfaces are now stable and covered by semantic versioning
+- Improved conflict detection algorithm for edge cases in timestamped migration names
+- Refactored service layer to reduce coupling between repositories and analysis services
 
 ### Fixed
-- Migration parsing edge cases with unusual formatting
-- Git operation timeouts on large repositories
-- Memory leak in caching system
-- Incorrect dependency chain validation
+- Memory leak in caching system when TTL expired during active comparison
+- Incorrect dependency chain validation for migrations with shared base classes
+- Git operation timeouts on repositories with large binary assets
 
 ### Security
-- Added input validation for Git branch names
-- Implemented proper error handling to prevent information disclosure
-- Secured GitHub token handling with environment variables
+- Input validation for Git branch names (reject shell-injection characters)
+- GitHub token handling moved exclusively to environment variables
 
-## [1.1.0] - 2025-04-15
+---
+
+## [0.9.0] - 2025-05-21
 
 ### Added
-- HTML report generation with interactive UI
-- JSON report export for automation
-- Migration dependency validation
-- Orphaned migration detection
-- Console output formatting improvements
-- Configuration file support (appsettings.json)
-- Custom migration path support
-- Basic error handling and logging
+- Plugin system (`Plugins/PluginSystem.cs`) for third-party analysis extensions
+- Middleware pipeline: error handling, request logging, validation
+- Event bus (`Events/EventBus.cs`) for decoupled cross-component notifications
+- `MigrationImpactAnalyzer` for estimating row-level impact of schema changes
 
 ### Changed
-- Improved schema change detection accuracy
-- Better conflict severity classification
-- More readable CLI output format
+- Replaced ad-hoc error propagation with structured `CustomExceptions` hierarchy
+- CLI now emits structured exit codes (0 = success, 1 = conflicts found, 2 = error)
 
 ### Fixed
-- Issue with Git branch checkout on Windows
-- Parsing of migrations with nullable reference types
+- Parsing of migrations with nullable reference type annotations
 - Incorrect handling of empty migration files
 
-## [1.0.0] - 2025-04-01
+---
+
+## [0.8.0] - 2025-05-05
+
+### Added
+- GitHub PR integration: post comparison results as a PR comment
+- `HttpClientWrapper` with retry policy and timeout configuration
+- `ConflictResolutionEngine` with auto-resolution suggestions for common conflict patterns
+- `MigrationAutoResolverService` for timestamp-based rename recommendations
+
+### Changed
+- Extended `CompareCommand` with `--post-to-github`, `--github-token`, `--github-repo`, `--github-pr` flags
+- Report engine now streams output for HTML reports over 1 MB
+
+### Fixed
+- Git branch checkout failure on Windows when branch name contained slashes
+- UTF-8 BOM in migration files caused parser to skip first operation
+
+---
+
+## [0.7.0] - 2025-04-18
+
+### Added
+- Caching layer (`Caching/CacheService.cs`) with configurable TTL
+- `--use-cache` and `--cache-ttl` flags on the `compare` command
+- Performance metrics collection (`Utilities/PerformanceMetrics.cs`)
+- Batch analysis: compare multiple feature branches against a base in one invocation
+
+### Changed
+- Cached repeat comparisons now complete in under 20 ms regardless of dataset size
+- Dependency injection wiring moved to `Configuration/DependencyInjection.cs`
+
+### Fixed
+- Race condition in parallel conflict detection when two threads accessed the same migration list
+
+---
+
+## [0.6.0] - 2025-04-03
+
+### Added
+- HTML report generation with summary table and per-migration details
+- CSV export format for spreadsheet analysis
+- `ReportGenerationService` and `ReportEngine` with pluggable formatter interface
+- `--output` and `--output-path` flags on the `compare` command
+
+### Changed
+- Improved schema change detection accuracy for `AlterColumn` operations
+- Better conflict severity classification (Critical / Warning / Info)
+
+### Fixed
+- Console formatter dropped the last migration entry in lists with odd counts
+
+---
+
+## [0.5.0] - 2025-03-20
+
+### Added
+- Breaking change detection: identifies DROP TABLE, DROP COLUMN, and NOT NULL constraint additions
+- `SchemaChangeDetectorService` with per-operation categorisation (CREATE, ALTER, DROP)
+- `--detect-breaking-changes` flag and dedicated section in console output
+- `--include-schema-preview` flag for before/after schema state display
+
+### Changed
+- `MigrationDiffService` now returns a structured `MigrationDiff` model instead of raw strings
+- Orphaned migration detection incorporated into the standard comparison pipeline
+
+---
+
+## [0.4.0] - 2025-03-06
+
+### Added
+- JSON output format for machine-readable results and CI/CD integration
+- `ValidateCommand` with `--check-duplicates`, `--check-orphans`, `--check-syntax` flags
+- `ValidationHelper` for reusable input sanitisation across CLI and API surfaces
+- `DbContextRepository` for discovery and metadata extraction of DbContext classes
+
+### Changed
+- `MigrationRepository` now resolves relative migration paths from project root
+- `HelpCommand` auto-generates option tables from command metadata
+
+### Fixed
+- `--branch` flag on `validate` was silently ignored when combined with `--strict-mode`
+
+---
+
+## [0.3.0] - 2025-02-19
+
+### Added
+- `ConflictDetectionService` with detection for duplicate migration names and broken dependency chains
+- `MigrationParserService` for extracting `Up` / `Down` operations from C# migration files
+- `ConflictInfo` and `SchemaChange` models with severity levels
+- Custom migration path support via `--migrations-path` flag
+
+### Changed
+- Improved `GitRepository` to support detached HEAD states and shallow clones
+- More readable console output with aligned columns and conflict count summary
+
+### Fixed
+- Parsing failure on migrations that used expression-bodied `Up` methods
+
+---
+
+## [0.2.0] - 2025-02-04
+
+### Added
+- Command-line interface: `compare` and `help` commands via `CommandParser` and `CommandExecutor`
+- `AppSettings` and `ConfigurationBuilder` for `appsettings.json` support
+- `StringExtensions`, `CollectionExtensions`, and `PathExtensions` utility helpers
+- Basic unit test project with xUnit and FluentAssertions
+
+### Changed
+- Entry point refactored from a single `Program.cs` block to the `CLI/` layer
+- `GitRepository` now validates branch existence before checkout
+
+---
+
+## [0.1.0] - 2025-01-22
 
 ### Added
 - Initial release
-- Basic migration comparison between Git branches
-- Conflict detection (duplicate names, dependencies)
-- Schema change analysis
-- Console output formatting
-- Git repository integration
+- Core migration comparison between two Git branches
+- `MigrationDiffService` with side-by-side migration list comparison
+- `GitRepository` for branch checkout and file enumeration
+- `MigrationRepository` for loading `.cs` migration files from a folder
+- `Migration`, `MigrationFile`, and `BranchInfo` models
 - Entity Framework Core 10.0 support
-- Dependency injection support
-- Command-line interface with basic commands
-- Help system
-
-### Features
-- Compare migrations between main and feature branches
-- Detect naming conflicts and dependency issues
-- Extract and analyze schema changes
-- Identify potentially breaking changes
-- Simple console-based reporting
-
----
-
-## Release Notes by Version
-
-### v1.2.0 Highlights
-
-**Major Features**:
-- Full schema preview with visualization
-- Breaking change detection
-- Multiple output formats
-- CI/CD integration ready
-- Docker containerization
-
-**Performance Improvements**:
-- 40% faster comparisons with caching
-- Optimized memory usage for large migrations
-- Parallel conflict detection
-
-**Documentation**:
-- 2000+ word README
-- 5 comprehensive guides
-- 8 working examples
-- API reference
-- Architecture documentation
-
-### v1.1.0 Highlights
-
-**Report Generation**:
-- Beautiful HTML reports with charts
-- JSON export for tool integration
-- Professional formatting
-
-**Validation**:
-- Dependency chain verification
-- Orphaned migration detection
-- Syntax validation
-
-### v1.0.0 Highlights
-
-**Core Functionality**:
-- Migration comparison engine
-- Conflict detection
-- Schema analysis
-- CLI interface
-
----
-
-## Migration Guide
-
-### From v1.0.0 to v1.1.0
-
-No breaking changes. Simply update:
-```bash
-dotnet tool update --global ef-migration-diff
-```
-
-### From v1.1.0 to v1.2.0
-
-No breaking changes. New features are opt-in via CLI flags:
-```bash
-# New features
-ef-migration-diff compare --include-schema-preview
-ef-migration-diff compare --detect-breaking-changes
-ef-migration-diff compare --use-cache
-```
-
----
-
-## Known Issues
-
-### v1.2.0
-- **Windows path handling**: Long paths (>260 chars) may require configuration
-- **Large repositories**: Repositories with 10k+ files may experience slowdown
-- **Git LFS**: Files tracked with Git LFS not supported
-
-### v1.1.0
-- **UTF-8 encoding**: Migration files with non-ASCII characters may have issues
-
-### v1.0.0
-- **Monorepos**: Single DbContext per project assumed
-
----
-
-## Deprecations
-
-### Scheduled for v2.0.0
-- Console-only output (will require `--output console`)
-- Configuration file format (upgrading to newer format)
-- Direct .NET Framework support (v2.0.0 will be .NET 12+ only)
+- Dependency injection wiring via `Microsoft.Extensions.DependencyInjection`
+- Console output with plain-text diff summary
 
 ---
 
@@ -188,15 +194,8 @@ ef-migration-diff compare --use-cache
 
 - **Vladyslav Zaiets** ([https://sarmkadan.com](https://sarmkadan.com)) - Creator & Maintainer
 
-See [CONTRIBUTORS.md](CONTRIBUTORS.md) for full list.
-
 ---
 
 ## Support
-
-For version-specific issues, see:
-- [v1.2.0 Release Notes](https://github.com/Sarmkadan/ef-migration-diff/releases/tag/v1.2.0)
-- [v1.1.0 Release Notes](https://github.com/Sarmkadan/ef-migration-diff/releases/tag/v1.1.0)
-- [v1.0.0 Release Notes](https://github.com/Sarmkadan/ef-migration-diff/releases/tag/v1.0.0)
 
 Report issues at [GitHub Issues](https://github.com/Sarmkadan/ef-migration-diff/issues)
