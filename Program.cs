@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -121,10 +122,10 @@ internal class MigrationDiffApplication
         var source = gitRepo.GetBranch(sourceBranch);
         var target = gitRepo.GetBranch(targetBranch);
 
-        if (source == null)
+        if (source is null)
             throw new BranchNotFoundException(sourceBranch);
 
-        if (target == null)
+        if (target is null)
             throw new BranchNotFoundException(targetBranch);
 
         var diffService = _serviceProvider.GetService<MigrationDiffService>() ?? throw new InvalidOperationException("Failed to get MigrationDiffService");

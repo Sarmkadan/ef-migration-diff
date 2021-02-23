@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -48,7 +49,7 @@ public static class StringExtensions
     /// </summary>
     public static string EnsureEndsWith(this string value, string suffix)
     {
-        if (value == null) throw new ArgumentNullException(nameof(value));
+        if (value is null) throw new ArgumentNullException(nameof(value));
         return value.EndsWith(suffix, StringComparison.Ordinal) ? value : value + suffix;
     }
 
@@ -57,7 +58,7 @@ public static class StringExtensions
     /// </summary>
     public static string EnsureStartsWith(this string value, string prefix)
     {
-        if (value == null) throw new ArgumentNullException(nameof(value));
+        if (value is null) throw new ArgumentNullException(nameof(value));
         return value.StartsWith(prefix, StringComparison.Ordinal) ? value : prefix + value;
     }
 
@@ -66,7 +67,7 @@ public static class StringExtensions
     /// </summary>
     public static string RemovePrefix(this string value, string prefix)
     {
-        if (value == null) throw new ArgumentNullException(nameof(value));
+        if (value is null) throw new ArgumentNullException(nameof(value));
         return value.StartsWith(prefix, StringComparison.Ordinal)
             ? value.Substring(prefix.Length)
             : value;
@@ -77,7 +78,7 @@ public static class StringExtensions
     /// </summary>
     public static string RemoveSuffix(this string value, string suffix)
     {
-        if (value == null) throw new ArgumentNullException(nameof(value));
+        if (value is null) throw new ArgumentNullException(nameof(value));
         return value.EndsWith(suffix, StringComparison.Ordinal)
             ? value.Substring(0, value.Length - suffix.Length)
             : value;
@@ -136,7 +137,7 @@ public static class StringExtensions
     /// </summary>
     public static string Truncate(this string value, int maxLength, string suffix = "...")
     {
-        if (value == null) throw new ArgumentNullException(nameof(value));
+        if (value is null) throw new ArgumentNullException(nameof(value));
         if (value.Length <= maxLength) return value;
         return value.Substring(0, Math.Max(0, maxLength - suffix.Length)) + suffix;
     }
@@ -146,7 +147,7 @@ public static class StringExtensions
     /// </summary>
     public static string Repeat(this string value, int count)
     {
-        if (value == null) throw new ArgumentNullException(nameof(value));
+        if (value is null) throw new ArgumentNullException(nameof(value));
         return string.Concat(Enumerable.Repeat(value, count));
     }
 

@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -102,7 +103,7 @@ public class CsvFormatter
         try
         {
             var value = property.GetValue(item);
-            if (value == null)
+            if (value is null)
                 return string.Empty;
 
             // Format special types

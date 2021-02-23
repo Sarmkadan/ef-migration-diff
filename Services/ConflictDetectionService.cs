@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -170,7 +171,7 @@ public class ConflictDetectionService
             var sourceChange = sourceChanges.FirstOrDefault(c => c.TableName == sourceName && c.ChangeType == SqlChangeType.CreateTable);
             var targetChange = targetChanges.FirstOrDefault(c => c.TableName == sourceName && c.ChangeType == SqlChangeType.CreateTable);
 
-            if (sourceChange != null && targetChange != null && sourceChange.Sql != targetChange.Sql)
+            if (sourceChange is not null && targetChange is not null && sourceChange.Sql != targetChange.Sql)
             {
                 var conflict = new ConflictInfo(sourceChange.MigrationId, targetChange.MigrationId, ConflictType.NameConflict)
                 {

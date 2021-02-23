@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -79,7 +80,7 @@ public class HttpClientWrapper : IDisposable
     /// </summary>
     public async Task<T?> PostAsync<T>(string url, object? data)
     {
-        var content = data != null
+        var content = data is not null
             ? new StringContent(
                 JsonSerializer.Serialize(data, _jsonOptions),
                 Encoding.UTF8,
@@ -116,7 +117,7 @@ public class HttpClientWrapper : IDisposable
     /// </summary>
     public async Task<T?> PutAsync<T>(string url, object? data)
     {
-        var content = data != null
+        var content = data is not null
             ? new StringContent(
                 JsonSerializer.Serialize(data, _jsonOptions),
                 Encoding.UTF8,

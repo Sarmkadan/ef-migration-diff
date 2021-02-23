@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -108,7 +109,7 @@ public class CommandParser
         {
             context.ParsedOptions[optionName] = "true";
         }
-        else if (optionValue != null)
+        else if (optionValue is not null)
         {
             context.ParsedOptions[optionName] = optionValue;
         }

@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -125,7 +126,7 @@ public class MigrationParserService
         foreach (var file in migrationFiles)
         {
             var migration = ParseMigrationFile(file);
-            if (migration != null)
+            if (migration is not null)
             {
                 migrations.Add(migration);
             }
@@ -154,7 +155,7 @@ public class MigrationParserService
             await migrationFile.LoadContentAsync();
 
             var migration = ParseMigrationFile(migrationFile);
-            if (migration != null)
+            if (migration is not null)
             {
                 migrations.Add(migration);
             }

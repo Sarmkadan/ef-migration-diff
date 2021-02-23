@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,7 +17,7 @@ public static class TypeConverter
     /// </summary>
     public static T? ConvertTo<T>(object? value)
     {
-        if (value == null)
+        if (value is null)
             return default;
 
         if (value is T typedValue)
@@ -116,7 +117,7 @@ public static class TypeConverter
     {
         var dict = new Dictionary<string, object?>();
 
-        if (obj == null)
+        if (obj is null)
             return dict;
 
         var properties = obj.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
@@ -167,7 +168,7 @@ public static class TypeConverter
     /// </summary>
     public static object? ConvertTo(object? value, Type targetType)
     {
-        if (value == null || targetType == null)
+        if (value is null || targetType is null)
             return null;
 
         if (targetType.IsAssignableFrom(value.GetType()))

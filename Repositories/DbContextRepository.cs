@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -84,7 +85,7 @@ public class DbContextRepository
         lock (_syncLock)
         {
             var existing = _contexts.FirstOrDefault(c => c.Id == context.Id);
-            if (existing == null)
+            if (existing is null)
                 throw new KeyNotFoundException($"DbContext with ID {context.Id} not found");
 
             _contexts.Remove(existing);
@@ -100,7 +101,7 @@ public class DbContextRepository
         lock (_syncLock)
         {
             var context = _contexts.FirstOrDefault(c => c.Id == id);
-            if (context == null)
+            if (context is null)
                 return false;
 
             return _contexts.Remove(context);

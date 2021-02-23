@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -222,7 +223,7 @@ public static class ValidationHelper
     /// </summary>
     public static bool IsValidLength(string text, int minLength = 1, int maxLength = int.MaxValue)
     {
-        if (text == null)
+        if (text is null)
             return minLength == 0;
 
         return text.Length >= minLength && text.Length <= maxLength;
