@@ -162,7 +162,7 @@ dotnet tool install --global --add-source ./publish ef-migration-diff
 
 ```bash
 ef-migration-diff --version
-# Output: ef-migration-diff version 1.0.0
+# Output: ef-migration-diff version 2.0.0
 ```
 
 ## Quick Start
