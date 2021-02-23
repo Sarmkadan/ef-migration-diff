@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # ef-migration-diff CLI tool for development
+  ef-migration-diff:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ef-migration-diff-dev
+    volumes:
+      - .:/workspace:cached
+      - ~/.nuget/packages:/root/.nuget/packages:ro
+      - /workspace/.cache
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - EFMIGDIFF_CACHE_ENABLED=false
+      - EFMIGDIFF_LOG_LEVEL=Debug
+      - DOTNET_USE_POLLING_FILE_WATCHER=true
+      - DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER=0
+    working_dir: /workspace
+    command: ["dotnet", "watch", "run", "--project", "ef-migration-diff.csproj", "--no-launch-profile"]
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+
+  # SQL Server for testing migrations
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver-test-dev
+    environment:
+      SA_PASSWORD: "TestPassword123!"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data-dev:/var/opt/mssql
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "SA", "-P", "TestPassword123!", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # PostgreSQL for testing migrations
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-test-dev
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # MySQL for testing migrations
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-test-dev
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: testdb
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data-dev:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  sqlserver-data-dev:
+  postgres-data-dev:
+  mysql-data-dev:
+
+networks:
+  default:
+    name: ef-migration-diff-dev-network
