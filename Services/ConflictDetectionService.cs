@@ -94,7 +94,11 @@ public class ConflictDetectionService
             var conflictingOps = targetColumnOps
                 .Where(t => t.TableName == sourceOp.TableName &&
                            t.ColumnName == sourceOp.ColumnName &&
-                           OperationsConflict(sourceOp.ChangeType, t.ChangeType))
+                           (OperationsConflict(sourceOp.ChangeType, t.ChangeType) ||
+                            (sourceOp.ChangeType == SqlChangeType.ModifyColumn &&
+                             t.ChangeType == SqlChangeType.ModifyColumn &&
+                             // Hotfix: describe what was wrong - Previously, column default values were not compared during conflict detection, leading to missed conflicts.
+                             sourceOp.DefaultValue != t.DefaultValue)))
                 .ToList();
 
             foreach (var targetOp in conflictingOps)
