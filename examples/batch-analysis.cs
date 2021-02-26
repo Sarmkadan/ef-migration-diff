@@ -38,7 +38,7 @@ class BatchAnalysisExample
             Console.WriteLine("🔄 Starting batch migration analysis...\n");
 
             // Get all feature branches
-            var branches = await GetFeatureBranches(gitRepo);
+            var branches = await GetFeatureBranches(gitRepo).ConfigureAwait(false);
 
             if (!branches.Any())
             {
@@ -89,7 +89,7 @@ class BatchAnalysisExample
 
             // Generate summary report
             DisplaySummaryReport(results);
-            await SaveBatchResults(results);
+            await SaveBatchResults(results).ConfigureAwait(false);
 
             Environment.Exit(results.Any(r => r.HasConflicts) ? 1 : 0);
         }
@@ -102,7 +102,7 @@ class BatchAnalysisExample
 
     static async Task<List<string>> GetFeatureBranches(GitRepository gitRepo)
     {
-        var allBranches = await gitRepo.GetAllBranchesAsync();
+        var allBranches = await gitRepo.GetAllBranchesAsync().ConfigureAwait(false);
         return allBranches
             .Where(b => b.StartsWith("feature/") || b.StartsWith("bugfix/"))
             .ToList();
@@ -138,7 +138,7 @@ class BatchAnalysisExample
     static async Task SaveBatchResults(List<BatchAnalysisResult> results)
     {
         var json = JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true });
-        await File.WriteAllTextAsync("./batch-reports/summary.json", json);
+        await File.WriteAllTextAsync("./batch-reports/summary.json", json).ConfigureAwait(false);
         Console.WriteLine("\n✓ Batch results saved to ./batch-reports/summary.json");
     }
 }

@@ -43,7 +43,7 @@ public class HealthCheckService
         try
         {
             var startTime = DateTime.UtcNow;
-            var checkResult = await check.CheckHealthAsync();
+            var checkResult = await check.CheckHealthAsync().ConfigureAwait(false);
             checkResult.Duration = DateTime.UtcNow - startTime;
             checkResult.CheckName = checkName;
 
@@ -75,7 +75,7 @@ public class HealthCheckService
 
         foreach (var checkName in _checks.Keys)
         {
-            var result = await RunCheckAsync(checkName);
+            var result = await RunCheckAsync(checkName).ConfigureAwait(false);
             results.Add(result);
         }
 

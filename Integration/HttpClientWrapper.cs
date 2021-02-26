@@ -53,12 +53,12 @@ public class HttpClientWrapper : IDisposable
     /// </summary>
     public async Task<T?> GetAsync<T>(string url)
     {
-        var response = await SendWithRetryAsync(() => _httpClient.GetAsync(url));
+        var response = await SendWithRetryAsync(() => _httpClient.GetAsync(url)).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"GET {url} returned {response.StatusCode}");
 
-        var content = await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         return JsonSerializer.Deserialize<T>(content, _jsonOptions);
     }
 
@@ -67,12 +67,12 @@ public class HttpClientWrapper : IDisposable
     /// </summary>
     public async Task<string> GetStringAsync(string url)
     {
-        var response = await SendWithRetryAsync(() => _httpClient.GetAsync(url));
+        var response = await SendWithRetryAsync(() => _httpClient.GetAsync(url)).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"GET {url} returned {response.StatusCode}");
 
-        return await response.Content.ReadAsStringAsync();
+        return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -87,12 +87,12 @@ public class HttpClientWrapper : IDisposable
                 "application/json")
             : null;
 
-        var response = await SendWithRetryAsync(() => _httpClient.PostAsync(url, content));
+        var response = await SendWithRetryAsync(() => _httpClient.PostAsync(url, content)).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"POST {url} returned {response.StatusCode}");
 
-        var responseContent = await response.Content.ReadAsStringAsync();
+        var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         return string.IsNullOrEmpty(responseContent)
             ? default
             : JsonSerializer.Deserialize<T>(responseContent, _jsonOptions);
@@ -104,12 +104,12 @@ public class HttpClientWrapper : IDisposable
     public async Task<string> PostStringAsync(string url, string data, string contentType = "application/json")
     {
         var content = new StringContent(data, Encoding.UTF8, contentType);
-        var response = await SendWithRetryAsync(() => _httpClient.PostAsync(url, content));
+        var response = await SendWithRetryAsync(() => _httpClient.PostAsync(url, content)).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"POST {url} returned {response.StatusCode}");
 
-        return await response.Content.ReadAsStringAsync();
+        return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -124,12 +124,12 @@ public class HttpClientWrapper : IDisposable
                 "application/json")
             : null;
 
-        var response = await SendWithRetryAsync(() => _httpClient.PutAsync(url, content));
+        var response = await SendWithRetryAsync(() => _httpClient.PutAsync(url, content)).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"PUT {url} returned {response.StatusCode}");
 
-        var responseContent = await response.Content.ReadAsStringAsync();
+        var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         return string.IsNullOrEmpty(responseContent)
             ? default
             : JsonSerializer.Deserialize<T>(responseContent, _jsonOptions);
@@ -140,7 +140,7 @@ public class HttpClientWrapper : IDisposable
     /// </summary>
     public async Task DeleteAsync(string url)
     {
-        var response = await SendWithRetryAsync(() => _httpClient.DeleteAsync(url));
+        var response = await SendWithRetryAsync(() => _httpClient.DeleteAsync(url)).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException($"DELETE {url} returned {response.StatusCode}");
@@ -156,7 +156,7 @@ public class HttpClientWrapper : IDisposable
         {
             try
             {
-                var response = await requestFunc();
+                var response = await requestFunc().ConfigureAwait(false);
 
                 // Retry on transient failures (5xx errors or timeout)
                 if (!response.IsSuccessStatusCode &&
@@ -165,7 +165,7 @@ public class HttpClientWrapper : IDisposable
                     attempts++;
                     if (attempts < _maxRetries)
                     {
-                        await Task.Delay(_retryDelay);
+                        await Task.Delay(_retryDelay).ConfigureAwait(false);
                         continue;
                     }
                 }
@@ -175,11 +175,11 @@ public class HttpClientWrapper : IDisposable
             catch (HttpRequestException) when (attempts < _maxRetries - 1)
             {
                 attempts++;
-                await Task.Delay(_retryDelay);
+                await Task.Delay(_retryDelay).ConfigureAwait(false);
             }
         }
 
-        return await requestFunc();
+        return await requestFunc().ConfigureAwait(false);
     }
 
     /// <summary>

@@ -36,7 +36,7 @@ public class RequestLoggingMiddleware : ICommandMiddleware
         context.SetMetadata("executionId", executionId);
         context.SetMetadata("startTime", startTime);
 
-        _logger.LogInformation($"[{executionId}] Command started: {context.CommandName}");
+        _logger.LogInformation("[{ExecutionId}] Command started: {CommandName}", executionId, context.CommandName);
 
         if (_isVerbose)
         {

@@ -56,7 +56,7 @@ public class MigrationAutoResolverService
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var attempt = await ResolveConflictAsync(conflict, cancellationToken);
+            var attempt = await ResolveConflictAsync(conflict, cancellationToken).ConfigureAwait(false);
             result.Attempts.Add(attempt);
 
             if (attempt.Succeeded)
@@ -143,7 +143,7 @@ public class MigrationAutoResolverService
 
         try
         {
-            attempt.MergedContent = await ApplyStrategyAsync(conflict, strategy, cancellationToken);
+            attempt.MergedContent = await ApplyStrategyAsync(conflict, strategy, cancellationToken).ConfigureAwait(false);
             attempt.Succeeded = true;
         }
         catch (Exception ex)

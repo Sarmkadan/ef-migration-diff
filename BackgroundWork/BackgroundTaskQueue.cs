@@ -39,7 +39,7 @@ public class BackgroundTaskQueue : IDisposable
         if (task is null)
             throw new ArgumentNullException(nameof(task));
 
-        await _queue.Writer.WriteAsync(task, _cancellationTokenSource.Token);
+        await _queue.Writer.WriteAsync(task, _cancellationTokenSource.Token).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -49,7 +49,7 @@ public class BackgroundTaskQueue : IDisposable
     {
         foreach (var task in tasks)
         {
-            await EnqueueAsync(task);
+            await EnqueueAsync(task).ConfigureAwait(false);
         }
     }
 
@@ -63,7 +63,7 @@ public class BackgroundTaskQueue : IDisposable
             await foreach (var task in _queue.Reader.ReadAllAsync(cancellationToken))
             {
                 // Wait for a slot to become available
-                await _taskSemaphore.WaitAsync(cancellationToken);
+                await _taskSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 // Execute task without awaiting to allow concurrent execution
                 var executionTask = ExecuteTaskAsync(task, cancellationToken);
@@ -87,7 +87,7 @@ public class BackgroundTaskQueue : IDisposable
         Interlocked.Increment(ref _activeTasks);
         try
         {
-            await task.ExecuteAsync(cancellationToken);
+            await task.ExecuteAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -118,7 +118,7 @@ public class BackgroundTaskQueue : IDisposable
         _queue.Writer.TryComplete();
 
         if (_runningTasks.Any())
-            await Task.WhenAll(_runningTasks);
+            await Task.WhenAll(_runningTasks).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -152,7 +152,7 @@ public class BackgroundTask
 
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await Execute(cancellationToken);
+        await Execute(cancellationToken).ConfigureAwait(false);
         OnCompleted?.Invoke();
     }
 

@@ -31,8 +31,8 @@ class ConflictDetectionExample
             Console.WriteLine("🔍 Starting conflict detection...\n");
 
             // Load migrations from two branches
-            var branch1Migrations = await migrationRepo.GetMigrationsAsync("main");
-            var branch2Migrations = await migrationRepo.GetMigrationsAsync("feature/new-tables");
+            var branch1Migrations = await migrationRepo.GetMigrationsAsync("main").ConfigureAwait(false);
+            var branch2Migrations = await migrationRepo.GetMigrationsAsync("feature/new-tables").ConfigureAwait(false);
 
             // Detect conflicts
             var conflicts = await conflictService.DetectConflictsAsync(

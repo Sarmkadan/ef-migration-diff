@@ -48,7 +48,7 @@ public class MigrationFile
     {
         if (File.Exists(FilePath))
         {
-            Content = await File.ReadAllTextAsync(FilePath);
+            Content = await File.ReadAllTextAsync(FilePath).ConfigureAwait(false);
             CalculateHash();
         }
     }

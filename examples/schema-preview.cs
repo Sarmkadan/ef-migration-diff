@@ -35,11 +35,11 @@ class SchemaPreviewExample
             Console.WriteLine("📊 Schema Change Preview\n");
 
             // Load migrations
-            var newMigrations = await migrationRepo.GetMigrationsAsync("feature/schema-update");
-            var baseMigrations = await migrationRepo.GetMigrationsAsync("main");
+            var newMigrations = await migrationRepo.GetMigrationsAsync("feature/schema-update").ConfigureAwait(false);
+            var baseMigrations = await migrationRepo.GetMigrationsAsync("main").ConfigureAwait(false);
 
             // Detect schema changes
-            var changes = await schemaDetector.DetectChangesAsync(baseMigrations, newMigrations);
+            var changes = await schemaDetector.DetectChangesAsync(baseMigrations, newMigrations).ConfigureAwait(false);
 
             DisplaySchemaChanges(changes);
             DisplayChangesSummary(changes);

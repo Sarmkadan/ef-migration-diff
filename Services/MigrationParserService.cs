@@ -152,7 +152,7 @@ public class MigrationParserService
         foreach (var filePath in migrationFiles)
         {
             var migrationFile = new MigrationFile(filePath, dbContextName);
-            await migrationFile.LoadContentAsync();
+            await migrationFile.LoadContentAsync().ConfigureAwait(false);
 
             var migration = ParseMigrationFile(migrationFile);
             if (migration is not null)

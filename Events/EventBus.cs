@@ -108,7 +108,7 @@ public class EventBus : IDisposable
         // Run through middleware pipeline
         foreach (var middleware in _middlewares)
         {
-            var continueProcessing = await middleware.OnEventPublishedAsync(@event);
+            var continueProcessing = await middleware.OnEventPublishedAsync(@event).ConfigureAwait(false);
             if (!continueProcessing)
                 return;
         }
@@ -137,13 +137,13 @@ public class EventBus : IDisposable
                     catch (Exception ex)
                     {
                         // Log handler errors but continue processing
-                        await OnHandlerErrorAsync(@event, handler, ex);
+                        await OnHandlerErrorAsync(@event, handler, ex).ConfigureAwait(false);
                     }
                 }
 
                 // Wait for all async handlers
                 if (tasks.Any())
-                    await Task.WhenAll(tasks);
+                    await Task.WhenAll(tasks).ConfigureAwait(false);
             }
         }
         finally

@@ -49,13 +49,13 @@ class LibraryUsageExample
             Console.WriteLine("📚 ef-migration-diff as Library\n");
 
             // Example 1: Simple integration in a web service
-            await SimpleWebServiceIntegration(provider);
+            await SimpleWebServiceIntegration(provider).ConfigureAwait(false);
 
             // Example 2: Scheduled background job
-            await ScheduledBackgroundJob(provider);
+            await ScheduledBackgroundJob(provider).ConfigureAwait(false);
 
             // Example 3: REST API wrapper
-            await RestApiWrapperExample(provider);
+            await RestApiWrapperExample(provider).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -72,7 +72,7 @@ class LibraryUsageExample
         var diffService = provider.GetRequiredService<MigrationDiffService>();
 
         // Simulating a web endpoint that compares migrations
-        var result = await ComparisonEndpoint(diffService, "main", "feature/users");
+        var result = await ComparisonEndpoint(diffService, "main", "feature/users").ConfigureAwait(false);
 
         Console.WriteLine($"✓ Comparison result: {(result.HasDifferences ? "Differences found" : "No differences")}");
         Console.WriteLine($"  Conflicts: {result.Conflicts.Count}");
@@ -95,7 +95,7 @@ class LibraryUsageExample
         {
             try
             {
-                var result = await diffService.CompareBranchesAsync("main", branch);
+                var result = await diffService.CompareBranchesAsync("main", branch).ConfigureAwait(false);
                 var status = result.Conflicts.Any() ? "⚠️  Issues" : "✓ Healthy";
                 Console.WriteLine($"  {branch,-25} {status}");
             }
@@ -141,7 +141,7 @@ class LibraryUsageExample
         string branch1,
         string branch2)
     {
-        return await service.CompareBranchesAsync(branch1, branch2);
+        return await service.CompareBranchesAsync(branch1, branch2).ConfigureAwait(false);
     }
 }
 
@@ -173,7 +173,7 @@ public class MigrationAnalysisService
     /// <summary>Check if a pull request has safe migrations</summary>
     public async Task<bool> IsPullRequestSafeAsync(string baseBranch, string featureBranch)
     {
-        var comparison = await _diffService.CompareBranchesAsync(baseBranch, featureBranch);
+        var comparison = await _diffService.CompareBranchesAsync(baseBranch, featureBranch).ConfigureAwait(false);
 
         // Business logic: determine if safe to merge
         var hasCriticalConflicts = comparison.Conflicts.Any(c => c.Severity == "Critical");

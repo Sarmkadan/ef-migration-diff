@@ -44,7 +44,7 @@ class CicdValidationExample
             Console.WriteLine($"   Head Branch: {headBranch}\n");
 
             // Run validation checks
-            var checks = await RunValidationChecks(diffService, baseBranch, headBranch);
+            var checks = await RunValidationChecks(diffService, baseBranch, headBranch).ConfigureAwait(false);
 
             // Display results
             DisplayValidationResults(checks);

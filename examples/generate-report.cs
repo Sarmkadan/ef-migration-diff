@@ -45,13 +45,13 @@ class GenerateReportExample
             Directory.CreateDirectory("./reports");
 
             // Generate HTML report
-            await GenerateHtmlReport(reportEngine, result);
+            await GenerateHtmlReport(reportEngine, result).ConfigureAwait(false);
 
             // Generate JSON report
-            await GenerateJsonReport(reportEngine, result);
+            await GenerateJsonReport(reportEngine, result).ConfigureAwait(false);
 
             // Generate CSV report
-            await GenerateCsvReport(reportEngine, result);
+            await GenerateCsvReport(reportEngine, result).ConfigureAwait(false);
 
             Console.WriteLine("✅ All reports generated successfully!");
             Console.WriteLine("\n📁 Reports created:");
@@ -78,8 +78,8 @@ class GenerateReportExample
             Theme = "light"
         };
 
-        var htmlContent = await engine.GenerateHtmlReportAsync(result, options);
-        await File.WriteAllTextAsync("./reports/migration-diff.html", htmlContent);
+        var htmlContent = await engine.GenerateHtmlReportAsync(result, options).ConfigureAwait(false);
+        await File.WriteAllTextAsync("./reports/migration-diff.html", htmlContent).ConfigureAwait(false);
 
         Console.WriteLine("   ✓ HTML report saved to ./reports/migration-diff.html");
     }
@@ -88,8 +88,8 @@ class GenerateReportExample
     {
         Console.WriteLine("🔹 Generating JSON report...");
 
-        var jsonContent = await engine.GenerateJsonReportAsync(result);
-        await File.WriteAllTextAsync("./reports/migration-diff.json", jsonContent);
+        var jsonContent = await engine.GenerateJsonReportAsync(result).ConfigureAwait(false);
+        await File.WriteAllTextAsync("./reports/migration-diff.json", jsonContent).ConfigureAwait(false);
 
         Console.WriteLine("   ✓ JSON report saved to ./reports/migration-diff.json");
     }
@@ -98,8 +98,8 @@ class GenerateReportExample
     {
         Console.WriteLine("📋 Generating CSV report...");
 
-        var csvContent = await engine.GenerateCsvReportAsync(result);
-        await File.WriteAllTextAsync("./reports/migration-diff.csv", csvContent);
+        var csvContent = await engine.GenerateCsvReportAsync(result).ConfigureAwait(false);
+        await File.WriteAllTextAsync("./reports/migration-diff.csv", csvContent).ConfigureAwait(false);
 
         Console.WriteLine("   ✓ CSV report saved to ./reports/migration-diff.csv");
     }

@@ -40,7 +40,7 @@ public class GitHubIntegration
     {
         try
         {
-            return await _httpClient.GetAsync<GitHubRepository>($"/repos/{_owner}/{_repo}");
+            return await _httpClient.GetAsync<GitHubRepository>($"/repos/{_owner}/{_repo}").ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -55,7 +55,7 @@ public class GitHubIntegration
     {
         try
         {
-            return await _httpClient.GetAsync<List<GitHubBranch>>($"/repos/{_owner}/{_repo}/branches");
+            return await _httpClient.GetAsync<List<GitHubBranch>>($"/repos/{_owner}/{_repo}/branches").ConfigureAwait(false);
         }
         catch (Exception ex)
         {

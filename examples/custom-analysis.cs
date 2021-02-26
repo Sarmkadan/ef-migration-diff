@@ -36,13 +36,13 @@ class CustomAnalysisExample
             Console.WriteLine("🔬 Custom Migration Analysis\n");
 
             // Example 1: Analyze performance impact
-            await AnalyzePerformanceImpact();
+            await AnalyzePerformanceImpact().ConfigureAwait(false);
 
             // Example 2: Check compliance rules
-            await CheckComplianceRules();
+            await CheckComplianceRules().ConfigureAwait(false);
 
             // Example 3: Estimate migration complexity
-            await EstimateMigrationComplexity();
+            await EstimateMigrationComplexity().ConfigureAwait(false);
 
             Console.WriteLine("\n✅ Custom analysis completed!");
         }

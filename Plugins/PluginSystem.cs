@@ -37,7 +37,7 @@ public class PluginSystem
             {
                 try
                 {
-                    await LoadPluginFromAssemblyAsync(dllFile);
+                    await LoadPluginFromAssemblyAsync(dllFile).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -63,7 +63,7 @@ public class PluginSystem
                 var pluginInstance = Activator.CreateInstance(pluginType) as IPlugin;
                 if (pluginInstance is not null)
                 {
-                    await pluginInstance.InitializeAsync();
+                    await pluginInstance.InitializeAsync().ConfigureAwait(false);
                     _loadedPlugins[pluginInstance.Name] = pluginInstance;
                 }
             }
@@ -130,7 +130,7 @@ public class PluginSystem
         {
             try
             {
-                await plugin.ShutdownAsync();
+                await plugin.ShutdownAsync().ConfigureAwait(false);
                 (plugin as IDisposable)?.Dispose();
             }
             catch (Exception ex)

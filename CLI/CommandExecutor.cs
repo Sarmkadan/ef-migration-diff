@@ -58,7 +58,7 @@ public class CommandExecutor
             // Execute middleware pipeline
             foreach (var middleware in _middlewares)
             {
-                var middlewareResult = await middleware.InvokeAsync(context);
+                var middlewareResult = await middleware.InvokeAsync(context).ConfigureAwait(false);
                 if (middlewareResult.IsShortCircuited)
                 {
                     return middlewareResult.Result ?? new CommandResult
@@ -80,7 +80,7 @@ public class CommandExecutor
                 };
             }
 
-            var result = await command.ExecuteAsync(context);
+            var result = await command.ExecuteAsync(context).ConfigureAwait(false);
             return result;
         }
         catch (Exception ex)
