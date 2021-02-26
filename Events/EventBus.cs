@@ -19,7 +19,11 @@ public class EventBus : IDisposable
 
     /// <summary>
     /// Subscribes to an event type with a synchronous handler.
+    /// The handler will be invoked each time an event of type <typeparamref name="TEvent"/> is published.
     /// </summary>
+    /// <typeparam name="TEvent">The event type to subscribe to. Must implement <see cref="IEvent"/>.</typeparam>
+    /// <param name="handler">The synchronous callback to invoke when the event is published.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <c>null</c>.</exception>
     public void Subscribe<TEvent>(Action<TEvent> handler) where TEvent : IEvent
     {
         if (handler is null)
@@ -64,8 +68,11 @@ public class EventBus : IDisposable
     }
 
     /// <summary>
-    /// Unsubscribes a handler from an event type.
+    /// Unsubscribes a previously registered handler from an event type.
     /// </summary>
+    /// <typeparam name="TEvent">The event type to unsubscribe from.</typeparam>
+    /// <param name="handler">The delegate instance that was originally passed to <see cref="Subscribe{TEvent}(Action{TEvent})"/>.</param>
+    /// <returns><c>true</c> if the handler was found and removed; <c>false</c> if it was not registered.</returns>
     public bool Unsubscribe<TEvent>(Delegate handler) where TEvent : IEvent
     {
         _lock.EnterWriteLock();
@@ -85,8 +92,14 @@ public class EventBus : IDisposable
     }
 
     /// <summary>
-    /// Publishes an event to all subscribed handlers synchronously.
+    /// Publishes an event to all subscribed handlers. Synchronous handlers are invoked inline;
+    /// asynchronous handlers run concurrently and are awaited together via <c>Task.WhenAll</c>.
+    /// Events pass through the middleware pipeline first - any middleware returning <c>false</c>
+    /// stops further processing.
     /// </summary>
+    /// <typeparam name="TEvent">The event type being published.</typeparam>
+    /// <param name="event">The event instance to publish. Must not be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="event"/> is <c>null</c>.</exception>
     public async Task PublishAsync<TEvent>(TEvent @event) where TEvent : IEvent
     {
         if (@event is null)

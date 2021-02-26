@@ -31,8 +31,17 @@ public class CacheService : IDisposable
     }
 
     /// <summary>
-    /// Sets a value in cache with optional expiration.
+    /// Sets a value in cache with optional expiration. If the key already exists,
+    /// the entry is replaced with the new value and expiration time.
     /// </summary>
+    /// <typeparam name="T">The type of value to cache.</typeparam>
+    /// <param name="key">A unique cache key. Must not be null or empty.</param>
+    /// <param name="value">The value to store in cache.</param>
+    /// <param name="expiration">
+    /// Optional time-to-live for the entry. When <c>null</c>, the entry never expires
+    /// and must be removed manually or via <see cref="Clear"/>.
+    /// </param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="key"/> is null or empty.</exception>
     public void Set<T>(string key, T value, TimeSpan? expiration = null)
     {
         if (string.IsNullOrEmpty(key))
@@ -55,8 +64,14 @@ public class CacheService : IDisposable
     }
 
     /// <summary>
-    /// Tries to get a value from cache. Returns false if key not found or expired.
+    /// Tries to get a value from cache. Returns <c>false</c> if the key is not found,
+    /// has expired, or the stored value cannot be cast to <typeparamref name="T"/>.
+    /// Expired entries are automatically evicted on access.
     /// </summary>
+    /// <typeparam name="T">The expected type of the cached value.</typeparam>
+    /// <param name="key">The cache key to look up.</param>
+    /// <param name="value">When this method returns <c>true</c>, contains the cached value; otherwise <c>default</c>.</param>
+    /// <returns><c>true</c> if a valid, non-expired entry was found and successfully cast; otherwise <c>false</c>.</returns>
     public bool TryGet<T>(string key, out T? value)
     {
         value = default;
@@ -102,8 +117,13 @@ public class CacheService : IDisposable
     }
 
     /// <summary>
-    /// Gets a value from cache, throws if not found.
+    /// Gets a value from cache. Throws <see cref="KeyNotFoundException"/> if the key
+    /// is not present or has expired.
     /// </summary>
+    /// <typeparam name="T">The expected type of the cached value.</typeparam>
+    /// <param name="key">The cache key to look up.</param>
+    /// <returns>The cached value.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown when the key does not exist or has expired.</exception>
     public T Get<T>(string key)
     {
         if (TryGet(key, out var value))
