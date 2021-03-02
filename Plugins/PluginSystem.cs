@@ -157,19 +157,107 @@ public class PluginSystem
 /// <summary>
 /// Interface for plugin implementations.
 /// </summary>
+/// <example>
+/// Minimal plugin that writes a log entry on initialization:
+/// <code>
+/// public class MyPlugin : IPlugin
+/// {
+///     public string Name    => "MyPlugin";
+///     public string Version => "1.0.0";
+///     public string Author  => "Your Name";
+///
+///     public Task InitializeAsync()
+///     {
+///         Console.WriteLine($"{Name} initialized.");
+///         return Task.CompletedTask;
+///     }
+///
+///     public Task ShutdownAsync()
+///     {
+///         Console.WriteLine($"{Name} shutting down.");
+///         return Task.CompletedTask;
+///     }
+///
+///     // Hook invoked by PluginSystem.ExecuteHookAsync("OnComparisonCompleted", ...)
+///     public Task OnComparisonCompleted(string source, string target, int conflicts)
+///     {
+///         Console.WriteLine($"Compared {source}..{target}: {conflicts} conflict(s).");
+///         return Task.CompletedTask;
+///     }
+/// }
+/// </code>
+/// </example>
 public interface IPlugin
 {
+    /// <summary>Unique plugin identifier used by <see cref="PluginSystem.GetPlugin"/>.</summary>
     string Name { get; }
+
+    /// <summary>Semantic version string, e.g. <c>"1.0.0"</c>.</summary>
     string Version { get; }
+
+    /// <summary>Plugin author name or contact information.</summary>
     string Author { get; }
 
+    /// <summary>
+    /// Called once after the plugin assembly is loaded. Use for one-time setup such as
+    /// opening connections or reading configuration.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// public async Task InitializeAsync()
+    /// {
+    ///     _writer = new StreamWriter("plugin.log", append: true);
+    ///     await _writer.WriteLineAsync("Plugin ready.");
+    /// }
+    /// </code>
+    /// </example>
     Task InitializeAsync();
+
+    /// <summary>
+    /// Called when the application shuts down. Use to release resources such as
+    /// open file handles, network connections, or background tasks.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// public async Task ShutdownAsync()
+    /// {
+    ///     await _writer.FlushAsync();
+    ///     await _writer.DisposeAsync();
+    /// }
+    /// </code>
+    /// </example>
     Task ShutdownAsync();
 }
 
 /// <summary>
-/// Base class for plugin implementations.
+/// Base class for plugin implementations providing default no-op lifecycle methods.
+/// Extend this class instead of implementing <see cref="IPlugin"/> directly when you only
+/// need to override a subset of the lifecycle.
 /// </summary>
+/// <example>
+/// A plugin that extends <see cref="PluginBase"/> and responds to a comparison hook:
+/// <code>
+/// public class AuditPlugin : PluginBase
+/// {
+///     public override string Name    => "Audit";
+///     public override string Version => "1.0.0";
+///     public override string Author  => "Your Name";
+///
+///     public override async Task InitializeAsync()
+///     {
+///         // One-time setup — base implementation is a no-op, no need to call base.
+///         await File.WriteAllTextAsync("audit.log", string.Empty);
+///     }
+///
+///     // Hook method — invoked via PluginSystem.ExecuteHookAsync("OnComparisonCompleted", ...)
+///     public async Task OnComparisonCompleted(string source, string target, int conflicts)
+///     {
+///         var entry = $"{DateTime.UtcNow:O} | {source} → {target} | conflicts={conflicts}\n";
+///         await File.AppendAllTextAsync("audit.log", entry);
+///     }
+/// }
+/// </code>
+/// </example>
 public abstract class PluginBase : IPlugin
 {
     public abstract string Name { get; }
