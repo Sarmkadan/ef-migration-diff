@@ -95,7 +95,19 @@ public class CompareCommand : ICommand
         };
 
         File.WriteAllText(reportPath, reportContent);
-        context.WriteColoredOutput($"✓ Report saved to: {reportPath}", ConsoleColor.Green);
+
+        // When JSON format is requested, emit the report to stdout so callers can pipe
+        // or capture it directly without locating the output file. Status messages are
+        // sent to stderr to keep stdout clean for machine consumption.
+        if (appSettings.ReportFormat == "json")
+        {
+            context.ErrorOutput.WriteLine($"✓ Report saved to: {reportPath}");
+            context.WriteOutput(reportContent);
+        }
+        else
+        {
+            context.WriteColoredOutput($"✓ Report saved to: {reportPath}", ConsoleColor.Green);
+        }
 
         gitRepo.Dispose();
 
