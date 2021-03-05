@@ -5,7 +5,6 @@
 // =============================================================================
 
 using EfMigrationDiff.CLI;
-using EfMigrationDiff.Logging;
 
 namespace EfMigrationDiff.Middleware;
 

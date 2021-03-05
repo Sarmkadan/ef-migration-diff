@@ -6,6 +6,7 @@
 
 using EfMigrationDiff.Models;
 using LibGit2Sharp;
+using System.Text;
 
 namespace EfMigrationDiff.Repositories;
 
@@ -143,19 +144,26 @@ public class GitRepository
 
         try
         {
-            var filter = new CommitFilter { MaxCount = 100 };
             var sourceCommit = _repository.Branches[sourceBranch]?.Tip;
             var targetCommit = _repository.Branches[targetBranch]?.Tip;
 
             if (sourceCommit is not null && targetCommit is not null)
             {
-                var range = _repository.Commits.QueryBy(filter)
-                                              .Where(c => !_repository.Commits.QueryBy(new CommitFilter
-                                              {
-                                                  IncludeReachableFrom = targetCommit,
-                                                  MaxCount = 100
-                                              }).Any(tc => tc.Sha == c.Sha))
-                                              .ToList();
+                var sourceHistory = _repository.Commits.QueryBy(new CommitFilter
+                {
+                    IncludeReachableFrom = sourceCommit
+                });
+                var targetShas = _repository.Commits.QueryBy(new CommitFilter
+                {
+                    IncludeReachableFrom = targetCommit
+                })
+                .Select(c => c.Sha)
+                .ToHashSet(StringComparer.Ordinal);
+
+                var range = sourceHistory
+                    .Where(c => !targetShas.Contains(c.Sha))
+                    .Take(100)
+                    .ToList();
 
                 commits.AddRange(range.Select(c => c.Sha));
             }
@@ -240,7 +248,7 @@ public class GitRepository
 
         try
         {
-            return _repository.RetrieveStatus(StatusShowOption.IncludeUntracked).IsDirty == false;
+            return _repository.RetrieveStatus().IsDirty == false;
         }
         catch
         {

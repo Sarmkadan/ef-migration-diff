@@ -168,7 +168,6 @@ public class IntegrationTests
         // Act
         var textReport = reportService.GenerateTextReport(diff);
         var jsonReport = reportService.GenerateJsonReport(diff);
-        var csvReport = reportService.GenerateCsvReport(diff);
         var htmlReport = reportService.GenerateHtmlReport(diff);
 
         // Assert
@@ -179,10 +178,6 @@ public class IntegrationTests
         jsonReport.Should().Contain("CreateUsers");
         jsonReport.Should().Contain("CreateProducts");
         jsonReport.Should().Contain("Initial");
-
-        csvReport.Should().Contain("CreateUsers");
-        csvReport.Should().Contain("CreateProducts");
-        csvReport.Should().Contain("Initial");
 
         htmlReport.Should().Contain("CreateUsers");
         htmlReport.Should().Contain("CreateProducts");
@@ -234,7 +229,7 @@ public class IntegrationTests
         changes.Should().Contain(c => c.ChangeType == SqlChangeType.CreateTable);
         changes.Should().Contain(c => c.ChangeType == SqlChangeType.CreateIndex);
         changes.Should().Contain(c => c.ChangeType == SqlChangeType.AddColumn);
-        changes.Should().Contain(c => c.ChangeType == SqlChangeType.AlterColumn);
+        changes.Should().Contain(c => c.ChangeType == SqlChangeType.ModifyColumn);
     }
 
     [Fact]

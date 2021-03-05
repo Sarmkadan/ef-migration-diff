@@ -126,7 +126,7 @@ public class CacheService : IDisposable
     /// <exception cref="KeyNotFoundException">Thrown when the key does not exist or has expired.</exception>
     public T Get<T>(string key)
     {
-        if (TryGet(key, out var value))
+        if (TryGet<T>(key, out var value))
             return value!;
 
         throw new KeyNotFoundException($"Cache key not found: {key}");
@@ -137,7 +137,7 @@ public class CacheService : IDisposable
     /// </summary>
     public T? GetOrDefault<T>(string key, T? defaultValue = default)
     {
-        return TryGet(key, out var value) ? value : defaultValue;
+        return TryGet<T>(key, out var value) ? value : defaultValue;
     }
 
     /// <summary>

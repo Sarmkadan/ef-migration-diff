@@ -57,6 +57,28 @@ When multiple developers work on the same codebase, parallel database migrations
 - Categorize changes by type (CREATE, ALTER, DROP)
 - Detect breaking changes and data loss scenarios
 
+### Visual Diff Output
+- Side-by-side HTML view of schema changes between branches
+- Unified diff format (similar to `git diff`) for quick review
+- Three-way merge editor for resolving conflicts with a common ancestor
+- Colour-coded additions, removals, and modifications
+- Destructive-change warnings highlighted in the report
+- Self-contained HTML documents — no external dependencies required
+
+### Migration Dependency Graph
+- Builds a directed acyclic graph (DAG) of all migrations in topological order
+- Detects circular dependencies that would prevent a clean migration run
+- Infers sequential and shared-table dependency edges automatically
+- Shows rollback impact: which migrations would be rolled back if a given one is reverted
+- Text rendering suitable for console or log output
+
+### Auto-Merge Suggestions
+- Automatically resolves low-risk conflicts (index deduplication, constraint merging, ordering fixes)
+- Refuses to auto-resolve high-severity or data-destructive conflicts — those always surface for manual review
+- Configurable merge strategies per conflict type (`Skip`, `FirstWins`, `LastWins`, `Combine`)
+- Returns structured `MergeResult` with per-conflict outcomes and a plain-text summary
+- Supports cooperative cancellation via `CancellationToken`
+
 ### Multiple Output Formats
 - **JSON**: Machine-readable format for automation
 - **CSV**: Spreadsheet-friendly format for analysis
@@ -428,6 +450,97 @@ ef-migration-diff validate -s
 ef-migration-diff validate -cd -b feature/users
 ```
 
+### visual-diff Command
+
+Render a side-by-side visual diff of schema changes between two branches.
+
+**Usage**:
+```bash
+ef-migration-diff visual-diff [options]
+```
+
+**Options**:
+
+| Option | Short | Type | Default | Description |
+|--------|-------|------|---------|-------------|
+| `--source` | `-s` | string | - | **Required**. Source (base) branch |
+| `--target` | `-t` | string | - | **Required**. Target (compare) branch |
+| `--format` | `-f` | string | `html` | Output format: `html` or `unified` |
+| `--output-path` | `-o` | string | `visual-diff.html` | File path for the rendered report |
+| `--context-lines` | `-c` | int | 3 | Number of context lines in unified diff |
+
+**Examples**:
+```bash
+# HTML side-by-side diff
+ef-migration-diff visual-diff -s main -t feature/users
+
+# Unified diff for quick review
+ef-migration-diff visual-diff -s main -t feature/users -f unified
+
+# Custom output file
+ef-migration-diff visual-diff -s main -t develop -o reports/schema-diff.html
+```
+
+### graph Command
+
+Build and display the migration dependency graph.
+
+**Usage**:
+```bash
+ef-migration-diff graph [options]
+```
+
+**Options**:
+
+| Option | Short | Type | Default | Description |
+|--------|-------|------|---------|-------------|
+| `--branch` | `-b` | string | HEAD | Branch to analyse |
+| `--format` | `-f` | string | `text` | Output format: `text` or `json` |
+| `--output-path` | `-o` | string | - | File path (console output when omitted) |
+| `--rollback` | `-r` | string | - | Show rollback impact for a named migration |
+
+**Examples**:
+```bash
+# Print dependency graph for current branch
+ef-migration-diff graph
+
+# Graph for a specific branch
+ef-migration-diff graph -b feature/users
+
+# Show what would be rolled back if '20250601_AddOrders' is reverted
+ef-migration-diff graph --rollback 20250601_AddOrders
+```
+
+### auto-merge Command
+
+Generate auto-merge suggestions for detected conflicts.
+
+**Usage**:
+```bash
+ef-migration-diff auto-merge [options]
+```
+
+**Options**:
+
+| Option | Short | Type | Default | Description |
+|--------|-------|------|---------|-------------|
+| `--branch1` | `-b1` | string | - | **Required**. Base branch |
+| `--branch2` | `-b2` | string | - | **Required**. Feature branch |
+| `--apply` | `-a` | flag | false | Apply safe resolutions automatically |
+| `--output-path` | `-o` | string | - | Write suggestions to file |
+
+**Examples**:
+```bash
+# Review suggestions without applying
+ef-migration-diff auto-merge -b1 main -b2 feature/users
+
+# Auto-apply safe suggestions
+ef-migration-diff auto-merge -b1 main -b2 feature/users --apply
+
+# Save suggestions to file
+ef-migration-diff auto-merge -b1 main -b2 feature/users -o suggestions.txt
+```
+
 ### help Command
 
 Display help information.
@@ -442,6 +555,9 @@ ef-migration-diff help [command]
 ef-migration-diff help                 # Show all commands
 ef-migration-diff help compare         # Show compare command details
 ef-migration-diff help validate        # Show validate command details
+ef-migration-diff help visual-diff     # Show visual-diff command details
+ef-migration-diff help graph           # Show graph command details
+ef-migration-diff help auto-merge      # Show auto-merge command details
 ```
 
 ## API Reference

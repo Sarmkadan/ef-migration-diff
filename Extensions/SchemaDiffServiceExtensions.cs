@@ -4,6 +4,7 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Text;
 using EfMigrationDiff.CLI.Commands;
 using EfMigrationDiff.Configuration;
 using EfMigrationDiff.Formatters;
@@ -170,7 +171,7 @@ public static class SchemaDiffServiceExtensions
     /// and the <see cref="VisualDiffCommand"/> alongside the core diff services.
     /// </summary>
     /// <remarks>
-    /// <see cref="AddSchemaDiffServices()"/> must be called before or after this method —
+    /// <see cref="SchemaDiffServiceExtensions.AddSchemaDiffServices(Microsoft.Extensions.DependencyInjection.IServiceCollection)"/> must be called before or after this method —
     /// it registers <see cref="ISchemaDiffEngine"/> and <see cref="IVisualDiffRenderer"/>
     /// that <see cref="SchemaDiffPipelineService"/> depends on.
     /// The v1 <c>MigrationDiffService</c> must also be registered (handled by the

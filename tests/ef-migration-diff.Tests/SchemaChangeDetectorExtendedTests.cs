@@ -244,7 +244,7 @@ public class SchemaChangeDetectorExtendedTests
 
         // Assert
         changes.Should().NotBeEmpty();
-        changes.Should().Contain(c => c.ChangeType == SqlChangeType.RenameTable);
+        changes.Should().Contain(c => c.ChangeType == SqlChangeType.Rename);
     }
 
     [Fact]
