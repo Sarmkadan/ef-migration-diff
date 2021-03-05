@@ -42,7 +42,7 @@ jobs:
       run: dotnet build -c Release --no-restore
 
     - name: Run tests
-      run: dotnet test -c Release --no-build --verbosity normal
+      run: dotnet test -c Release --no-build --verbosity normal --logger "trx" --results-directory TestResults
 
     - name: Create artifact
       if: matrix.os == 'ubuntu-latest'
@@ -101,9 +101,7 @@ jobs:
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: |
         docker tag ef-migration-diff:latest sarmkadan/ef-migration-diff:latest
-        docker tag ef-migration-diff:latest sarmkadan/ef-migration-diff:1.2.0
         docker push sarmkadan/ef-migration-diff:latest
-        docker push sarmkadan/ef-migration-diff:1.2.0
 
   security:
     runs-on: ubuntu-latest
