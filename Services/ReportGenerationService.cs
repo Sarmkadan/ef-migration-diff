@@ -84,7 +84,11 @@ public class ReportGenerationService
             }
         };
 
-        return JsonSerializer.Serialize(reportData, new JsonSerializerOptions { WriteIndented = true });
+        return JsonSerializer.Serialize(reportData, new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+        });
     }
 
     /// <summary>
@@ -205,6 +209,12 @@ public class ReportGenerationService
         }
 
         sb.AppendLine($"Common: {diff.InBoth.Count} migration(s)");
+
+        foreach (var migration in diff.InBoth)
+        {
+            sb.AppendLine($"  • {migration.Name}");
+        }
+
         sb.AppendLine();
     }
 
@@ -214,7 +224,19 @@ public class ReportGenerationService
         sb.AppendLine("──────────────");
         sb.AppendLine($"Total Schema Changes: {diff.GetTotalSchemaChanges()}");
         sb.AppendLine($"  Source: {diff.SourceSchemaChanges.Count} change(s)");
+
+        foreach (var change in diff.SourceSchemaChanges)
+        {
+            sb.AppendLine($"    • {change.ChangeType}: {change.GetDescription()}");
+        }
+
         sb.AppendLine($"  Target: {diff.TargetSchemaChanges.Count} change(s)");
+
+        foreach (var change in diff.TargetSchemaChanges)
+        {
+            sb.AppendLine($"    • {change.ChangeType}: {change.GetDescription()}");
+        }
+
         sb.AppendLine();
     }
 
@@ -273,7 +295,7 @@ public class ReportGenerationService
         sb.AppendLine("            <tr><th>Category</th><th>Count</th><th>Details</th></tr>");
         sb.AppendLine($"            <tr><td>Source Only</td><td>{diff.OnlyInSource.Count}</td><td>{string.Join(", ", diff.OnlyInSource.Select(m => m.Name))}</td></tr>");
         sb.AppendLine($"            <tr><td>Target Only</td><td>{diff.OnlyInTarget.Count}</td><td>{string.Join(", ", diff.OnlyInTarget.Select(m => m.Name))}</td></tr>");
-        sb.AppendLine($"            <tr><td>Common</td><td>{diff.InBoth.Count}</td><td>Migrations present in both branches</td></tr>");
+        sb.AppendLine($"            <tr><td>Common</td><td>{diff.InBoth.Count}</td><td>{string.Join(", ", diff.InBoth.Select(m => m.Name))}</td></tr>");
         sb.AppendLine("        </table>");
         sb.AppendLine("    </div>");
     }

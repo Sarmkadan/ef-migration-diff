@@ -82,12 +82,11 @@ public class MigrationFile
     }
 
     /// <summary>
-    /// Validates the migration file is readable and properly formatted.
+    /// Validates the migration file has the required properties set.
     /// </summary>
     public bool IsValid()
     {
-        return File.Exists(FilePath) &&
-               !string.IsNullOrEmpty(Content) &&
+        return !string.IsNullOrEmpty(FileName) &&
                (FileName.EndsWith(".cs") || FileName.EndsWith(".Designer.cs")) &&
                !string.IsNullOrEmpty(DbContextName);
     }
