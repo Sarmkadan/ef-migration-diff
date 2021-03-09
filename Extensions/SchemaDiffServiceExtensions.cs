@@ -1,9 +1,4 @@
 #nullable enable
-// =============================================================================
-// Author: Vladyslav Zaiets | https://sarmkadan.com
-// CTO & Software Architect
-// =============================================================================
-
 using System.Text;
 using EfMigrationDiff.CLI.Commands;
 using EfMigrationDiff.Configuration;
