@@ -101,7 +101,6 @@ public class ConflictDetectionService
                            (OperationsConflict(sourceOp.ChangeType, t.ChangeType) ||
                             (sourceOp.ChangeType == SqlChangeType.ModifyColumn &&
                              t.ChangeType == SqlChangeType.ModifyColumn &&
-                             // Hotfix: describe what was wrong - Previously, column default values were not compared during conflict detection, leading to missed conflicts.
                              sourceOp.DefaultValue != t.DefaultValue)))
                 .ToList();
 
