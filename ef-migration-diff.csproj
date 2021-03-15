@@ -9,7 +9,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <PackageId>Zaiets.ef.migration.diff</PackageId>
-    <Version>2.0.0</Version>
+    <Version>1.0.0</Version>
     <Authors>Vladyslav Zaiets</Authors>
     <Description>Compare Entity Framework migrations between branches - detect conflicts, preview schema changes</Description>
     <PackageTags>entity-framework ef-core migrations dotnet diff</PackageTags>
