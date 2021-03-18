@@ -1,0 +1,10 @@
+# .dockerignore
+bin/
+obj/
+.git/
+.vs/
+.vscode/
+*.user
+*.lock
+.cache/
+.DS_Store
