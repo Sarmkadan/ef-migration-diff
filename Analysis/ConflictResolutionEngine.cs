@@ -1,7 +1,8 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
+#nullable enable=======
 
 using EfMigrationDiff.Models;
 
@@ -11,7 +12,7 @@ namespace EfMigrationDiff.Analysis;
 /// Engine for analyzing and suggesting resolutions for migration conflicts.
 /// Detects conflict patterns and provides recommendations for resolution strategies.
 /// </summary>
-public class ConflictResolutionEngine
+public sealed class ConflictResolutionEngine
 {
     private readonly Dictionary<ConflictType, Func<ConflictInfo, ResolutionStrategy>> _strategies = new();
 
