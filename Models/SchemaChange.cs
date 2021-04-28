@@ -21,6 +21,7 @@ public class SchemaChange
     public int LineNumber { get; set; }
     public string? OldValue { get; set; }
     public string? NewValue { get; set; }
+    public string? DefaultValue { get; set; }
 
     public SchemaChange()
     {
