@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -21,7 +22,7 @@ public class EventBus : IDisposable
     /// </summary>
     public void Subscribe<TEvent>(Action<TEvent> handler) where TEvent : IEvent
     {
-        if (handler == null)
+        if (handler is null)
             throw new ArgumentNullException(nameof(handler));
 
         _lock.EnterWriteLock();
@@ -44,7 +45,7 @@ public class EventBus : IDisposable
     /// </summary>
     public void Subscribe<TEvent>(Func<TEvent, Task> handler) where TEvent : IEvent
     {
-        if (handler == null)
+        if (handler is null)
             throw new ArgumentNullException(nameof(handler));
 
         _lock.EnterWriteLock();
@@ -88,7 +89,7 @@ public class EventBus : IDisposable
     /// </summary>
     public async Task PublishAsync<TEvent>(TEvent @event) where TEvent : IEvent
     {
-        if (@event == null)
+        if (@event is null)
             throw new ArgumentNullException(nameof(@event));
 
         // Run through middleware pipeline
@@ -143,7 +144,7 @@ public class EventBus : IDisposable
     /// </summary>
     public void UseMiddleware(IEventMiddleware middleware)
     {
-        if (middleware == null)
+        if (middleware is null)
             throw new ArgumentNullException(nameof(middleware));
 
         _middlewares.Add(middleware);

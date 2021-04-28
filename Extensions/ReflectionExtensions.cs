@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -57,7 +58,7 @@ public static class ReflectionExtensions
     /// </summary>
     public static object? GetPropertyValue(this object? obj, string propertyName)
     {
-        if (obj == null || string.IsNullOrEmpty(propertyName))
+        if (obj is null || string.IsNullOrEmpty(propertyName))
             return null;
 
         var property = obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.IgnoreCase | BindingFlags.Instance);
@@ -69,7 +70,7 @@ public static class ReflectionExtensions
     /// </summary>
     public static bool SetPropertyValue(this object? obj, string propertyName, object? value)
     {
-        if (obj == null || string.IsNullOrEmpty(propertyName))
+        if (obj is null || string.IsNullOrEmpty(propertyName))
             return false;
 
         var property = obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.IgnoreCase | BindingFlags.Instance);
@@ -89,14 +90,14 @@ public static class ReflectionExtensions
     {
         var dict = new Dictionary<string, object?>();
 
-        if (obj == null)
+        if (obj is null)
             return dict;
 
         var properties = obj.GetType().GetPublicProperties();
         foreach (var prop in properties)
         {
             var value = prop.GetValue(obj);
-            if (includeNulls || value != null)
+            if (includeNulls || value is not null)
             {
                 dict[prop.Name] = value;
             }
@@ -110,7 +111,7 @@ public static class ReflectionExtensions
     /// </summary>
     public static bool HasParameterlessConstructor(this Type type)
     {
-        return type.GetConstructor(Type.EmptyTypes) != null;
+        return type.GetConstructor(Type.EmptyTypes) is not null;
     }
 
     /// <summary>
@@ -130,7 +131,7 @@ public static class ReflectionExtensions
     public static IEnumerable<Type> GetImplementations(this Type baseType, Assembly? assembly = null)
     {
         var targetAssembly = assembly ?? Assembly.GetAssembly(baseType);
-        if (targetAssembly == null)
+        if (targetAssembly is null)
             return Enumerable.Empty<Type>();
 
         return targetAssembly.GetTypes()

@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -60,7 +61,7 @@ public class PluginSystem
             foreach (var pluginType in pluginTypes)
             {
                 var pluginInstance = Activator.CreateInstance(pluginType) as IPlugin;
-                if (pluginInstance != null)
+                if (pluginInstance is not null)
                 {
                     await pluginInstance.InitializeAsync();
                     _loadedPlugins[pluginInstance.Name] = pluginInstance;
@@ -97,7 +98,7 @@ public class PluginSystem
         foreach (var plugin in _loadedPlugins.Values)
         {
             var method = plugin.GetType().GetMethod(hookName);
-            if (method != null)
+            if (method is not null)
             {
                 try
                 {
