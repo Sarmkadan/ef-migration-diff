@@ -30,7 +30,15 @@ public class MigrationDiffService
 
     /// <summary>
     /// Compares migrations between two branches and generates a diff.
+    /// Retrieves all migrations from both branches, categorizes them as source-only,
+    /// target-only, or common, detects schema changes, and identifies conflicts.
     /// </summary>
+    /// <param name="sourceBranch">The base branch to compare from (typically main/develop).</param>
+    /// <param name="targetBranch">The feature or target branch to compare against.</param>
+    /// <returns>
+    /// A <see cref="MigrationDiff"/> containing categorized migrations, schema changes,
+    /// and any detected conflicts between the two branches.
+    /// </returns>
     public MigrationDiff CompareBranches(BranchInfo sourceBranch, BranchInfo targetBranch)
     {
         var diff = new MigrationDiff(sourceBranch.Id, targetBranch.Id);
@@ -69,7 +77,18 @@ public class MigrationDiffService
 
     /// <summary>
     /// Compares migrations within a single DbContext across branches.
+    /// Useful when a project contains multiple DbContext classes and you need
+    /// to isolate migration analysis to a specific database context.
     /// </summary>
+    /// <param name="sourceBranch">The base branch to compare from.</param>
+    /// <param name="targetBranch">The feature or target branch to compare against.</param>
+    /// <param name="dbContextName">
+    /// The fully qualified or simple name of the DbContext class to filter migrations by.
+    /// Only migrations belonging to this context are included in the comparison.
+    /// </param>
+    /// <returns>
+    /// A <see cref="MigrationDiff"/> scoped to migrations from the specified DbContext only.
+    /// </returns>
     public MigrationDiff CompareDbContextMigrations(
         BranchInfo sourceBranch,
         BranchInfo targetBranch,
@@ -173,8 +192,12 @@ public class MigrationDiffService
     }
 
     /// <summary>
-    /// Generates a detailed comparison report for display.
+    /// Generates a detailed comparison report suitable for console or text display.
+    /// Includes source-only and target-only migration lists, common migration counts,
+    /// conflict details with blocking status, and schema change statistics.
     /// </summary>
+    /// <param name="diff">The migration diff result to generate the report from.</param>
+    /// <returns>A formatted multi-line string containing the full comparison report.</returns>
     public string GenerateReport(MigrationDiff diff)
     {
         var report = new System.Text.StringBuilder();
