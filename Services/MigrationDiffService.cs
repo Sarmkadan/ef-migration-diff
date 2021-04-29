@@ -29,18 +29,25 @@ public class MigrationDiffService
     }
 
     /// <summary>
-    /// Compares migrations between two branches and generates a diff.
-    /// Retrieves all migrations from both branches, categorizes them as source-only,
-    /// target-only, or common, detects schema changes, and identifies conflicts.
+    /// Compares migrations between two branches and generates a diff report
+    /// containing source-only, target-only, and common migrations along with
+    /// detected schema conflicts. Retrieves all migrations from both branches,
+    /// categorizes them, detects schema changes, and identifies conflicts.
     /// </summary>
-    /// <param name="sourceBranch">The base branch to compare from (typically main/develop).</param>
-    /// <param name="targetBranch">The feature or target branch to compare against.</param>
+    /// <param name="sourceBranch">The source (feature) branch to compare.</param>
+    /// <param name="targetBranch">The target (base) branch to compare against.</param>
     /// <returns>
     /// A <see cref="MigrationDiff"/> containing categorized migrations, schema changes,
     /// and any detected conflicts between the two branches.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="sourceBranch"/> or <paramref name="targetBranch"/> is null.
+    /// </exception>
     public MigrationDiff CompareBranches(BranchInfo sourceBranch, BranchInfo targetBranch)
     {
+        ArgumentNullException.ThrowIfNull(sourceBranch);
+        ArgumentNullException.ThrowIfNull(targetBranch);
+
         var diff = new MigrationDiff(sourceBranch.Id, targetBranch.Id);
 
         // Get all migrations for each branch
