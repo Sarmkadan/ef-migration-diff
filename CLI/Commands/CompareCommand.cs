@@ -8,6 +8,7 @@ using EfMigrationDiff.Configuration;
 using EfMigrationDiff.Repositories;
 using EfMigrationDiff.Services;
 using EfMigrationDiff.Exceptions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace EfMigrationDiff.CLI.Commands;
 

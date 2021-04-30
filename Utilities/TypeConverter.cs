@@ -27,7 +27,10 @@ public static class TypeConverter
         {
             // Handle string conversions
             if (typeof(T) == typeof(string))
-                return (T)(object)value.ToString();
+            {
+                var stringValue = value.ToString();
+                return stringValue is null ? default : (T)(object)stringValue;
+            }
 
             // Handle numeric conversions
             if (typeof(T) == typeof(int))
@@ -56,7 +59,10 @@ public static class TypeConverter
 
             // Handle Guid
             if (typeof(T) == typeof(Guid))
-                return (T)(object)Guid.Parse(value.ToString());
+            {
+                var guidValue = value.ToString();
+                return string.IsNullOrWhiteSpace(guidValue) ? default : (T)(object)Guid.Parse(guidValue);
+            }
 
             // Try direct conversion
             return (T)Convert.ChangeType(value, typeof(T));

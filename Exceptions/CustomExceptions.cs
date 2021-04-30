@@ -80,7 +80,6 @@ public class BranchNotFoundException : MigrationDiffException
 {
     public string? BranchName { get; set; }
 
-    public BranchNotFoundException(string message) : base(message) { }
     public BranchNotFoundException(string branchName) : base($"Branch '{branchName}' not found")
     {
         BranchName = branchName;
@@ -110,7 +109,6 @@ public class DbContextNotFoundException : MigrationDiffException
 {
     public string? ContextName { get; set; }
 
-    public DbContextNotFoundException(string message) : base(message) { }
     public DbContextNotFoundException(string contextName) : base($"DbContext '{contextName}' not found")
     {
         ContextName = contextName;
@@ -146,4 +144,10 @@ public class FileOperationException : MigrationDiffException
         Operation = operation;
     }
     public FileOperationException(string message, Exception innerException) : base(message, innerException) { }
+    public FileOperationException(string filePath, string operation, Exception innerException)
+        : base($"Failed to {operation} file: {filePath}", innerException)
+    {
+        FilePath = filePath;
+        Operation = operation;
+    }
 }

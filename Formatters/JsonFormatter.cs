@@ -24,12 +24,9 @@ public class JsonFormatter : IOutputFormatter
             WriteIndented = prettyPrint,
             DefaultIgnoreCondition = includeNulls ? JsonIgnoreCondition.Never : JsonIgnoreCondition.WhenWritingNull,
             PropertyNameCaseInsensitive = false,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters = new List<JsonConverter>
-            {
-                new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
-            }
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
+        _options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
     }
 
     /// <summary>

@@ -4,6 +4,7 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Globalization;
 using EfMigrationDiff.Models;
 
 namespace EfMigrationDiff.Analysis;
@@ -100,9 +101,17 @@ public class MigrationImpactAnalyzer
         score += criticalIssues * 25;
         score += warningIssues * 10;
 
-        // Adjust by migration name (newer migrations have lower baseline risk)
-        if (migration.Timestamp > DateTime.UtcNow.AddDays(-7))
+        // Adjust by migration timestamp (newer migrations have lower baseline risk)
+        if (DateTime.TryParseExact(
+                migration.Timestamp,
+                "yyyyMMddHHmmss",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                out var migrationTimestamp) &&
+            migrationTimestamp > DateTime.UtcNow.AddDays(-7))
+        {
             score -= 5;
+        }
 
         report.RiskScore = Math.Max(0, Math.Min(100, score));
         report.RiskLevel = report.RiskScore switch
@@ -157,12 +166,34 @@ public class MigrationImpactAnalyzer
 /// </summary>
 public class MigrationImpactReport
 {
+    /// <summary>
+    /// Gets or sets the migration name.
+    /// </summary>
     public string MigrationName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the UTC timestamp when analysis completed.
+    /// </summary>
     public DateTime AnalyzedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the detected issues.
+    /// </summary>
     public List<MigrationIssue> IssuesDetected { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the calculated numeric risk score.
+    /// </summary>
     public double RiskScore { get; set; }
+
+    /// <summary>
+    /// Gets or sets the derived risk level.
+    /// </summary>
     public RiskLevel RiskLevel { get; set; }
 
+    /// <summary>
+    /// Gets a value indicating whether any critical issues were detected.
+    /// </summary>
     public bool HasCriticalIssues => IssuesDetected.Any(i => i.Severity == IssueSeverity.Critical);
 }
 
@@ -171,8 +202,19 @@ public class MigrationImpactReport
 /// </summary>
 public class MigrationIssue
 {
+    /// <summary>
+    /// Gets or sets the issue severity.
+    /// </summary>
     public IssueSeverity Severity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the issue message.
+    /// </summary>
     public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the source line number associated with the issue.
+    /// </summary>
     public int LineNumber { get; set; }
 }
 
@@ -181,13 +223,75 @@ public class MigrationIssue
 /// </summary>
 public class MigrationChainAnalysis
 {
+    /// <summary>
+    /// Gets or sets the per-migration reports in the analyzed chain.
+    /// </summary>
     public List<MigrationImpactReport> MigrationReports { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the total number of analyzed migrations.
+    /// </summary>
     public int TotalMigrations { get; set; }
+
+    /// <summary>
+    /// Gets or sets the count of high-risk migrations.
+    /// </summary>
     public int HighRiskCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether critical risks were detected.
+    /// </summary>
     public bool HasCriticalRisks { get; set; }
 
+    /// <summary>
+    /// Gets the average risk score across all analyzed migrations.
+    /// </summary>
     public double GetAverageRiskScore() => MigrationReports.Any() ? MigrationReports.Average(r => r.RiskScore) : 0;
 }
 
-public enum IssueSeverity { Info, Warning, Critical }
-public enum RiskLevel { Low, Medium, High, Critical }
+/// <summary>
+/// Severity levels for migration analysis issues.
+/// </summary>
+public enum IssueSeverity
+{
+    /// <summary>
+    /// Informational issue.
+    /// </summary>
+    Info,
+
+    /// <summary>
+    /// Warning issue.
+    /// </summary>
+    Warning,
+
+    /// <summary>
+    /// Critical issue.
+    /// </summary>
+    Critical
+}
+
+/// <summary>
+/// Overall risk levels assigned to a migration.
+/// </summary>
+public enum RiskLevel
+{
+    /// <summary>
+    /// Low risk.
+    /// </summary>
+    Low,
+
+    /// <summary>
+    /// Medium risk.
+    /// </summary>
+    Medium,
+
+    /// <summary>
+    /// High risk.
+    /// </summary>
+    High,
+
+    /// <summary>
+    /// Critical risk.
+    /// </summary>
+    Critical
+}

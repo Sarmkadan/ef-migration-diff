@@ -4,6 +4,8 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Threading.Channels;
+
 namespace EfMigrationDiff.BackgroundWork;
 
 /// <summary>
@@ -131,7 +133,6 @@ public class BackgroundTaskQueue : IDisposable
 
     public void Dispose()
     {
-        _queue?.Dispose();
         _taskSemaphore?.Dispose();
         _cancellationTokenSource?.Dispose();
     }
