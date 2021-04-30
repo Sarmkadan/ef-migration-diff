@@ -51,8 +51,7 @@ public class Migration
     {
         return !string.IsNullOrWhiteSpace(Id) &&
                !string.IsNullOrWhiteSpace(Name) &&
-               !string.IsNullOrWhiteSpace(DbContextName) &&
-               !string.IsNullOrWhiteSpace(Content);
+               !string.IsNullOrWhiteSpace(DbContextName);
     }
 
     /// <summary>

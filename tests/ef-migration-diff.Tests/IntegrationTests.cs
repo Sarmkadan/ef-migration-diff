@@ -124,7 +124,7 @@ public class IntegrationTests
             {
                 var file = new MigrationFile
                 {
-                    FileName = $"2024011509304{index:D2}_Migration{index}.cs",
+                    FileName = $"202401150930{index:D2}_Migration{index}.cs",
                     Content = $@"migrationBuilder.CreateTable(name: ""Table{index}"")",
                     DbContextName = "AppDbContext"
                 };

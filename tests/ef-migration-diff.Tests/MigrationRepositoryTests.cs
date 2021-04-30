@@ -221,10 +221,10 @@ public class MigrationRepositoryTests
                 for (int i = 0; i < migrationsPerThread; i++)
                 {
                     var mig = new Migration(
-                        $"2024011509304{threadId}{i}",
+                        $"20240115{threadId:D2}{i:D2}000000",
                         $"Mig_T{threadId}_M{i}",
                         "DbContext"
-                    );
+                    ) { Content = "migrationBuilder.CreateTable(...)" };
                     _repository.Add(mig);
                 }
             });
