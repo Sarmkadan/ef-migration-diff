@@ -1,0 +1,185 @@
+name: EF Migration Diff PR Check
+
+# Reusable workflow — call this from your application repository:
+#
+#   jobs:
+#     migration-check:
+#       uses: sarmkadan/ef-migration-diff/.github/workflows/pr-migration-check.yml@main
+#       with:
+#         base-branch: main
+#         head-branch: ${{ github.head_ref }}
+#       secrets:
+#         github-token: ${{ secrets.GITHUB_TOKEN }}
+#
+# Or trigger it directly on PRs in this repository.
+
+on:
+  pull_request:
+    branches: [main, master]
+  workflow_call:
+    inputs:
+      base-branch:
+        description: 'Base branch to compare against (e.g. main)'
+        required: false
+        default: 'main'
+        type: string
+      head-branch:
+        description: 'Head branch to compare (e.g. feature/users)'
+        required: false
+        default: ''
+        type: string
+      dotnet-version:
+        description: '.NET SDK version to install'
+        required: false
+        default: '8.0.x'
+        type: string
+      fail-on-conflicts:
+        description: 'Fail the workflow when blocking conflicts are detected'
+        required: false
+        default: true
+        type: boolean
+      post-pr-comment:
+        description: 'Post comparison results as a PR comment'
+        required: false
+        default: true
+        type: boolean
+    secrets:
+      github-token:
+        description: 'GitHub token used to post PR comments'
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  migration-diff:
+    name: Compare EF Migrations
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ inputs.dotnet-version || '8.0.x' }}
+
+      - name: Cache .NET tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.dotnet/tools
+          key: dotnet-tools-ef-migration-diff-${{ runner.os }}-v1
+
+      - name: Install ef-migration-diff
+        run: dotnet tool install --global ef-migration-diff || dotnet tool update --global ef-migration-diff
+
+      - name: Resolve branch names
+        id: branches
+        run: |
+          BASE="${{ inputs.base-branch || 'main' }}"
+          HEAD="${{ inputs.head-branch || github.head_ref || github.ref_name }}"
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "head=$HEAD" >> "$GITHUB_OUTPUT"
+          echo "Comparing $HEAD → $BASE"
+
+      - name: Run migration comparison
+        id: diff
+        run: |
+          set +e
+          ef-migration-diff compare \
+            --branch1 "origin/${{ steps.branches.outputs.base }}" \
+            --branch2 "${{ steps.branches.outputs.head }}" \
+            --format json \
+            2>diff-status.txt | tee diff-output.json
+          TOOL_EXIT=$?
+          set -e
+
+          echo "tool_exit=$TOOL_EXIT" >> "$GITHUB_OUTPUT"
+
+          if [ -s diff-output.json ]; then
+            CONFLICTS=$(jq '.Conflicts | length' diff-output.json 2>/dev/null || echo 0)
+            SCHEMA_CHANGES=$(jq '(.SchemaChanges.Source | length) + (.SchemaChanges.Target | length)' diff-output.json 2>/dev/null || echo 0)
+            RESULT=$(jq -r '.Result' diff-output.json 2>/dev/null || echo "Unknown")
+            SOURCE_ONLY=$(jq '.Migrations.SourceOnly | length' diff-output.json 2>/dev/null || echo 0)
+            TARGET_ONLY=$(jq '.Migrations.TargetOnly | length' diff-output.json 2>/dev/null || echo 0)
+          else
+            CONFLICTS=0; SCHEMA_CHANGES=0; RESULT="Error"; SOURCE_ONLY=0; TARGET_ONLY=0
+          fi
+
+          echo "conflicts=$CONFLICTS"           >> "$GITHUB_OUTPUT"
+          echo "schema_changes=$SCHEMA_CHANGES" >> "$GITHUB_OUTPUT"
+          echo "result=$RESULT"                 >> "$GITHUB_OUTPUT"
+          echo "source_only=$SOURCE_ONLY"       >> "$GITHUB_OUTPUT"
+          echo "target_only=$TARGET_ONLY"       >> "$GITHUB_OUTPUT"
+
+      - name: Post PR comment
+        if: ${{ (inputs.post-pr-comment == true || inputs.post-pr-comment == '') && github.event_name == 'pull_request' }}
+        uses: actions/github-script@v7
+        env:
+          GH_TOKEN: ${{ secrets.github-token || secrets.GITHUB_TOKEN || github.token }}
+        with:
+          github-token: ${{ secrets.github-token || secrets.GITHUB_TOKEN || github.token }}
+          script: |
+            const conflicts    = parseInt('${{ steps.diff.outputs.conflicts }}', 10);
+            const schemaChanges = parseInt('${{ steps.diff.outputs.schema_changes }}', 10);
+            const result       = '${{ steps.diff.outputs.result }}';
+            const sourceOnly   = parseInt('${{ steps.diff.outputs.source_only }}', 10);
+            const targetOnly   = parseInt('${{ steps.diff.outputs.target_only }}', 10);
+            const base         = '${{ steps.branches.outputs.base }}';
+            const head         = '${{ steps.branches.outputs.head }}';
+
+            const icon = conflicts > 0 ? '⚠️' : '✅';
+            const statusLine = conflicts > 0
+              ? `**${conflicts} conflict(s) detected — review required before merging.**`
+              : 'No migration conflicts detected. Safe to merge.';
+
+            const body = [
+              `## ${icon} EF Migration Diff — \`${head}\` → \`${base}\``,
+              '',
+              statusLine,
+              '',
+              '| Metric | Value |',
+              '|--------|-------|',
+              `| Overall result | \`${result}\` |`,
+              `| Conflicts | ${conflicts} |`,
+              `| Schema changes | ${schemaChanges} |`,
+              `| Migrations only in \`${head}\` | ${sourceOnly} |`,
+              `| Migrations only in \`${base}\` | ${targetOnly} |`,
+              '',
+              '<sub>Generated by [ef-migration-diff](https://github.com/sarmkadan/ef-migration-diff)</sub>'
+            ].join('\n');
+
+            // Delete previous bot comments to avoid clutter
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: context.issue.number
+            });
+            for (const c of comments) {
+              if (c.user?.type === 'Bot' && c.body?.includes('EF Migration Diff')) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo:  context.repo.repo,
+                  comment_id: c.id
+                });
+              }
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
+      - name: Fail on blocking conflicts
+        if: ${{ inputs.fail-on-conflicts != false && steps.diff.outputs.conflicts > 0 }}
+        run: |
+          echo "::error::${{ steps.diff.outputs.conflicts }} blocking migration conflict(s) detected."
+          echo "Run ef-migration-diff locally to see full details:"
+          echo "  ef-migration-diff compare --branch1 ${{ steps.branches.outputs.base }} --branch2 ${{ steps.branches.outputs.head }} --format json"
+          exit 1
