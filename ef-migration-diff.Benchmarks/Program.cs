@@ -1,4 +1,5 @@
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Exporters;
@@ -21,8 +22,8 @@ namespace EfMigrationDiff.Benchmarks;
 [RankColumn]
 [JsonExporterAttribute.Full]
 [MarkdownExporterAttribute.Default]
-[CsvExporterAttribute.Default]
-[HtmlExporterAttribute.Default]
+[CsvExporterAttribute]
+[HtmlExporterAttribute]
 public class SchemaDiffBenchmarks
 {
     private SchemaDiffEngine _engine;
@@ -270,9 +271,6 @@ public class ConfigComparisonBenchmarks
         public Config()
         {
             AddDiagnoser(MemoryDiagnoser.Default);
-            AddColumn(new TagColumn("Configuration", nameof(Config)));
-            AddExporter(MarkdownExporter.Default);
-            AddExporter(CsvExporter.Default);
         }
     }
 
