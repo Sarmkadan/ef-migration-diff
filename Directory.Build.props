@@ -3,7 +3,7 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <!-- Suppress transitive package vulnerability audit warnings -->
     <NuGetAuditMode>direct</NuGetAuditMode>
     <!-- Suppress missing/unresolvable XML doc comment warnings — enforced via editorconfig only -->
