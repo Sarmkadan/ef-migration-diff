@@ -74,3 +74,7 @@ publish/
 # Code coverage reports
 *.coveragexml
 coverage-report/
+bin/
+obj/
+BenchmarkDotNet.Artifacts/
+.aider*
