@@ -1,5 +1,6 @@
 #nullable enable
 using EfMigrationDiff.Models;
+using EfMigrationDiff.Exceptions;
 using System.Text.RegularExpressions;
 
 namespace EfMigrationDiff.Services;
@@ -14,6 +15,8 @@ public class MigrationParserService
     /// </summary>
     public Migration? ParseMigrationFile(MigrationFile migrationFile)
     {
+        ArgumentNullException.ThrowIfNull(migrationFile);
+
         if (!migrationFile.IsValid())
             return null;
 
@@ -135,14 +138,18 @@ public class MigrationParserService
     /// </summary>
     public async Task<List<Migration>> LoadMigrationsFromDirectoryAsync(string directoryPath, string dbContextName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(directoryPath);
+        ArgumentException.ThrowIfNullOrEmpty(dbContextName);
+
         var migrations = new List<Migration>();
 
         if (!Directory.Exists(directoryPath))
-            return migrations;
+            throw new FileOperationException(directoryPath, "read directory");
 
         var migrationFiles = Directory.GetFiles(directoryPath, "*.cs")
                                       .Where(f => !f.EndsWith(".Designer.cs"))
                                       .ToList();
+    // ... (rest remains)
 
         foreach (var filePath in migrationFiles)
         {

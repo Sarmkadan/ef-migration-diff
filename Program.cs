@@ -90,7 +90,7 @@ internal class MigrationDiffApplication
                     break;
             }
         }
-        catch (MigrationDiffException ex)
+        catch (EfMigrationDiffException ex)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Error: {ex.Message}");

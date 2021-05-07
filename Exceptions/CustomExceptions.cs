@@ -4,16 +4,16 @@ namespace EfMigrationDiff.Exceptions;
 /// <summary>
 /// Base exception for all application-specific errors.
 /// </summary>
-public class MigrationDiffException : Exception
+public class EfMigrationDiffException : Exception
 {
-    public MigrationDiffException(string message) : base(message) { }
-    public MigrationDiffException(string message, Exception innerException) : base(message, innerException) { }
+    public EfMigrationDiffException(string message) : base(message) { }
+    public EfMigrationDiffException(string message, Exception innerException) : base(message, innerException) { }
 }
 
 /// <summary>
 /// Thrown when a repository operation fails.
 /// </summary>
-public class RepositoryException : MigrationDiffException
+public class RepositoryException : EfMigrationDiffException
 {
     public RepositoryException(string message) : base(message) { }
     public RepositoryException(string message, Exception innerException) : base(message, innerException) { }
@@ -22,7 +22,7 @@ public class RepositoryException : MigrationDiffException
 /// <summary>
 /// Thrown when a migration file cannot be parsed.
 /// </summary>
-public class MigrationParsingException : MigrationDiffException
+public class MigrationParsingException : EfMigrationDiffException
 {
     public string? FilePath { get; set; }
     public int? LineNumber { get; set; }
@@ -42,7 +42,7 @@ public class MigrationParsingException : MigrationDiffException
 /// <summary>
 /// Thrown when a git repository operation fails.
 /// </summary>
-public class GitRepositoryException : MigrationDiffException
+public class GitRepositoryException : EfMigrationDiffException
 {
     public string? RepositoryPath { get; set; }
 
@@ -57,7 +57,7 @@ public class GitRepositoryException : MigrationDiffException
 /// <summary>
 /// Thrown when migration conflicts are detected.
 /// </summary>
-public class MigrationConflictException : MigrationDiffException
+public class MigrationConflictException : EfMigrationDiffException
 {
     public List<string> ConflictingMigrations { get; set; } = [];
 
@@ -71,7 +71,7 @@ public class MigrationConflictException : MigrationDiffException
 /// <summary>
 /// Thrown when a branch cannot be found.
 /// </summary>
-public class BranchNotFoundException : MigrationDiffException
+public class BranchNotFoundException : EfMigrationDiffException
 {
     public string? BranchName { get; set; }
 
@@ -84,7 +84,7 @@ public class BranchNotFoundException : MigrationDiffException
 /// <summary>
 /// Thrown when a migration is invalid or malformed.
 /// </summary>
-public class InvalidMigrationException : MigrationDiffException
+public class InvalidMigrationException : EfMigrationDiffException
 {
     public string? MigrationId { get; set; }
     public List<string> ValidationErrors { get; set; } = [];
@@ -100,7 +100,7 @@ public class InvalidMigrationException : MigrationDiffException
 /// <summary>
 /// Thrown when a DbContext is not found.
 /// </summary>
-public class DbContextNotFoundException : MigrationDiffException
+public class DbContextNotFoundException : EfMigrationDiffException
 {
     public string? ContextName { get; set; }
 
@@ -113,7 +113,7 @@ public class DbContextNotFoundException : MigrationDiffException
 /// <summary>
 /// Thrown when application configuration is invalid.
 /// </summary>
-public class ConfigurationException : MigrationDiffException
+public class ConfigurationException : EfMigrationDiffException
 {
     public List<string> ValidationErrors { get; set; } = [];
 
@@ -125,9 +125,23 @@ public class ConfigurationException : MigrationDiffException
 }
 
 /// <summary>
+/// Thrown when validation fails.
+/// </summary>
+public class ValidationException : EfMigrationDiffException
+{
+    public List<string> ValidationErrors { get; set; } = [];
+
+    public ValidationException(string message) : base(message) { }
+    public ValidationException(string message, List<string> errors) : base(message)
+    {
+        ValidationErrors = errors;
+    }
+}
+
+/// <summary>
 /// Thrown when file operations fail.
 /// </summary>
-public class FileOperationException : MigrationDiffException
+public class FileOperationException : EfMigrationDiffException
 {
     public string? FilePath { get; set; }
     public string? Operation { get; set; }

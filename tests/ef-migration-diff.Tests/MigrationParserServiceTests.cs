@@ -119,7 +119,7 @@ public class MigrationParserServiceTests
     {
         // Act & Assert
         var act = () => _parser.ParseMigrationFile(null!);
-        act.Should().ThrowExactly<NullReferenceException>();
+        act.Should().ThrowExactly<ArgumentNullException>();
     }
 
     [Fact]
