@@ -26,7 +26,7 @@ namespace EfMigrationDiff.Benchmarks;
 [HtmlExporterAttribute]
 public class SchemaDiffBenchmarks
 {
-    private SchemaDiffEngine _engine;
+    private SchemaDiffEngine _engine = null!;
     private List<SchemaChange> _smallSourceChanges = new();
     private List<SchemaChange> _smallTargetChanges = new();
     private List<SchemaChange> _mediumSourceChanges = new();
@@ -262,7 +262,7 @@ public class SchemaDiffBenchmarks
 [Config(typeof(Config))]
 public class ConfigComparisonBenchmarks
 {
-    private SchemaDiffEngine _engine;
+    private SchemaDiffEngine _engine = null!;
     private List<SchemaChange> _sourceChanges = new();
     private List<SchemaChange> _targetChanges = new();
 
@@ -369,7 +369,7 @@ public class ConfigComparisonBenchmarks
 [MemoryDiagnoser]
 public class MemoryBenchmarks
 {
-    private SchemaDiffEngine _engine;
+    private SchemaDiffEngine _engine = null!;
     private List<SchemaChange> _sourceChanges = new();
     private List<SchemaChange> _targetChanges = new();
     private List<SchemaChange> _baseChanges = new();
