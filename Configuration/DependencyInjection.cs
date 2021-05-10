@@ -4,6 +4,7 @@ using EfMigrationDiff.Repositories;
 using EfMigrationDiff.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace EfMigrationDiff.Configuration;
 
@@ -38,7 +39,11 @@ public static class DependencyInjection
         services.AddSchemaDiffServices();
         services.AddSchemaDiffPipeline();
 
-        // Register configuration
+        // Register configuration with IOptions pattern
+        services.AddOptions<EfMigrationDiffOptions>()
+            .BindConfiguration("EfMigrationDiff")
+            .ValidateOnStart();
+
         services.AddSingleton<AppSettings>();
 
         return services;
@@ -63,6 +68,8 @@ public static class DependencyInjection
     /// <summary>
     /// Creates a service provider with all required services.
     /// </summary>
+    /// <param name="repositoryPath">The path to the repository.</param>
+    /// <returns>A configured service provider.</returns>
     public static Microsoft.Extensions.DependencyInjection.ServiceProvider CreateServiceProvider(string repositoryPath)
     {
         IServiceCollection services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
@@ -78,10 +85,34 @@ public static class DependencyInjection
     /// <summary>
     /// Creates a service provider with custom settings.
     /// </summary>
+    /// <param name="configureSettings">Action to configure settings.</param>
+    /// <returns>A configured service provider.</returns>
     public static Microsoft.Extensions.DependencyInjection.ServiceProvider CreateServiceProvider(Action<AppSettings> configureSettings)
     {
         IServiceCollection services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
         services.AddApplicationServices(configureSettings);
+        return services.BuildServiceProvider();
+    }
+
+    /// <summary>
+    /// Creates a service provider with IOptions configuration.
+    /// </summary>
+    /// <param name="configureOptions">Action to configure EfMigrationDiffOptions.</param>
+    /// <returns>A configured service provider.</returns>
+    public static Microsoft.Extensions.DependencyInjection.ServiceProvider CreateServiceProviderWithOptions(
+        Action<EfMigrationDiffOptions> configureOptions)
+    {
+        IServiceCollection services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+
+        services.AddOptions<EfMigrationDiffOptions>()
+            .BindConfiguration("EfMigrationDiff")
+            .ValidateOnStart();
+
+        configureOptions?.Invoke(new EfMigrationDiffOptions());
+
+        services.AddApplicationServices();
+        services.AddSingleton<AppSettings>();
+
         return services.BuildServiceProvider();
     }
 

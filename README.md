@@ -30,6 +30,94 @@ ef-migration-diff compare main feature/add-users
 ef-migration-diff validate
 ```
 
+## Configuration
+
+The ef-migration-diff tool supports configuration through the standard .NET configuration system. You can configure the tool using:
+
+- **appsettings.json** file (recommended)
+- **Environment variables**
+- **Command-line arguments**
+- **Programmatic configuration**
+
+
+### Configuration File (appsettings.json)
+
+Create an `appsettings.json` file in your working directory or specify a custom path using the `EF_MIGRATION_DIFF_SETTINGS` environment variable. See [appsettings.example.json](appsettings.example.json) for all available options and default values.
+
+### Environment Variables
+
+All configuration options can be set via environment variables using the double underscore (`__`) notation:
+
+```bash
+# Example: Set repository path and output format
+export EfMigrationDiff__RepositoryPath="/path/to/your/repo"
+export EfMigrationDiff__OutputPath="./custom-reports"
+export EfMigrationDiff__ReportFormat="html"
+
+# Run the tool
+ef-migration-diff compare main feature/branch
+```
+
+### Available Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `EfMigrationDiff:RepositoryPath` | string | `./` | Path to the repository containing EF Core migrations |
+| `EfMigrationDiff:MigrationsPath` | string | `Migrations` | Path to the migrations directory relative to repository |
+| `EfMigrationDiff:OutputPath` | string | `./reports` | Path to output directory for reports |
+| `EfMigrationDiff:ReportFormat` | string | `text` | Report format: `text`, `json`, or `html` |
+| `EfMigrationDiff:EnableDetailedLogging` | bool | `false` | Enable detailed logging output |
+| `EfMigrationDiff:MaxConcurrentAnalysis` | int | `4` | Maximum concurrent analysis operations (1-16) |
+| `EfMigrationDiff:GenerateHtmlReport` | bool | `true` | Generate HTML reports |
+| `EfMigrationDiff:GenerateJsonReport` | bool | `true` | Generate JSON reports |
+| `EfMigrationDiff:DbContextNames` | string[] | `[]` | List of DbContext names to analyze |
+| `EfMigrationDiff:SourceBranch` | string | `develop` | Source branch name for comparisons |
+| `EfMigrationDiff:TargetBranch` | string | `main` | Target branch name for comparisons |
+| `EfMigrationDiff:SchemaDiff:BaseLabel` | string | `base` | Label for base branch in three-way diff |
+| `EfMigrationDiff:SchemaDiff:SourceLabel` | string | `source` | Label for source branch in diff output |
+| `EfMigrationDiff:SchemaDiff:TargetLabel` | string | `target` | Label for target branch in diff output |
+| `EfMigrationDiff:SchemaDiff:ContextLines` | int | `3` | Context lines to show around changes |
+| `EfMigrationDiff:SchemaDiff:IncludeSqlContent` | bool | `true` | Include SQL statements in diff output |
+| `EfMigrationDiff:SchemaDiff:IncludeMetadata` | bool | `false` | Include metadata lines in diff output |
+| `EfMigrationDiff:SchemaDiff:IgnoreWhitespace` | bool | `false` | Normalize whitespace differences |
+| `EfMigrationDiff:SchemaDiff:MaxHunkLines` | int | `0` | Maximum hunk lines before splitting |
+
+### Validation
+
+The configuration system validates required fields and value ranges on startup. Invalid configurations will throw a `ValidationException` with detailed error messages.
+
+### Usage Examples
+
+#### Using appsettings.json
+```json
+{
+  "EfMigrationDiff": {
+    "RepositoryPath": "./",
+    "OutputPath": "./custom-reports",
+    "ReportFormat": "html",
+    "EnableDetailedLogging": true
+  }
+}
+```
+
+#### Using Environment Variables
+```bash
+export EfMigrationDiff__RepositoryPath="/path/to/repo"
+export EfMigrationDiff__SourceBranch="develop"
+export EfMigrationDiff__TargetBranch="main"
+```
+
+#### Programmatic Configuration
+```csharp
+var services = new ServiceCollection();
+services.AddApplicationServices(settings =>
+{
+    settings.RepositoryPath = "/path/to/repo";
+    settings.OutputPath = "./reports";
+    settings.ReportFormat = "html";
+});
+```
+
 ## Usage
 
 ```bash
