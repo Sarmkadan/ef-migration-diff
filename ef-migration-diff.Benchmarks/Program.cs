@@ -7,6 +7,7 @@ using BenchmarkDotNet.Running;
 using EfMigrationDiff.Configuration;
 using EfMigrationDiff.Models;
 using EfMigrationDiff.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,8 +41,8 @@ public class SchemaDiffBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        var conflictDetection = new ConflictDetectionService();
-        _engine = new SchemaDiffEngine(conflictDetection);
+        var conflictDetection = new ConflictDetectionService(NullLogger<ConflictDetectionService>.Instance);
+        _engine = new SchemaDiffEngine(conflictDetection, NullLogger<SchemaDiffEngine>.Instance);
 
         // Generate test data - simulating realistic schema changes
         _baseChanges = GenerateSchemaChanges(50);
@@ -277,8 +278,8 @@ public class ConfigComparisonBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        var conflictDetection = new ConflictDetectionService();
-        _engine = new SchemaDiffEngine(conflictDetection);
+        var conflictDetection = new ConflictDetectionService(NullLogger<ConflictDetectionService>.Instance);
+        _engine = new SchemaDiffEngine(conflictDetection, NullLogger<SchemaDiffEngine>.Instance);
 
         _sourceChanges = GenerateSchemaChanges(200);
         _targetChanges = GenerateSchemaChanges(200);
@@ -377,8 +378,8 @@ public class MemoryBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        var conflictDetection = new ConflictDetectionService();
-        _engine = new SchemaDiffEngine(conflictDetection);
+        var conflictDetection = new ConflictDetectionService(NullLogger<ConflictDetectionService>.Instance);
+        _engine = new SchemaDiffEngine(conflictDetection, NullLogger<SchemaDiffEngine>.Instance);
 
         _sourceChanges = GenerateSchemaChanges(500);
         _targetChanges = GenerateSchemaChanges(500);
