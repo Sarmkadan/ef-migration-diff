@@ -2,6 +2,7 @@
 using EfMigrationDiff.Configuration;
 using EfMigrationDiff.Interfaces;
 using EfMigrationDiff.Models;
+using Microsoft.Extensions.Logging;
 
 namespace EfMigrationDiff.Services;
 
@@ -14,14 +15,17 @@ namespace EfMigrationDiff.Services;
 public sealed class SchemaDiffEngine : ISchemaDiffEngine, IMergeEditor
 {
     private readonly ConflictDetectionService _conflictDetection;
+    private readonly ILogger<SchemaDiffEngine> _logger;
 
     /// <summary>
     /// Initialises a new instance with the required conflict detection dependency.
     /// </summary>
     /// <param name="conflictDetection">Service used to detect conflicts between schema changes.</param>
-    public SchemaDiffEngine(ConflictDetectionService conflictDetection)
+    /// <param name="logger">Logger instance.</param>
+    public SchemaDiffEngine(ConflictDetectionService conflictDetection, ILogger<SchemaDiffEngine> logger)
     {
         _conflictDetection = conflictDetection;
+        _logger = logger;
     }
 
     // =========================================================================
@@ -34,6 +38,7 @@ public sealed class SchemaDiffEngine : ISchemaDiffEngine, IMergeEditor
         IReadOnlyList<SchemaChange> targetChanges,
         SchemaDiffOptions? options = null)
     {
+        _logger.LogInformation("Computing schema diff with {SourceChangeCount} source changes and {TargetChangeCount} target changes", sourceChanges.Count, targetChanges.Count);
         options ??= SchemaDiffOptions.Default;
 
         var sourceLines = ProjectToLines(sourceChanges, options);

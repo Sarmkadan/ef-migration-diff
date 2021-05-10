@@ -4,6 +4,7 @@ using EfMigrationDiff.Models;
 using EfMigrationDiff.Services;
 using EfMigrationDiff.Repositories;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EfMigrationDiff.Tests;
 
@@ -15,7 +16,7 @@ public class IntegrationTests
         // Arrange
         var parser = new MigrationParserService();
         var detector = new SchemaChangeDetectorService();
-        var conflictDetector = new ConflictDetectionService();
+        var conflictDetector = new ConflictDetectionService(NullLogger<ConflictDetectionService>.Instance);
         var reportService = new ReportGenerationService();
 
         var sourceFile = new MigrationFile
@@ -237,7 +238,7 @@ public class IntegrationTests
     {
         // Arrange
         var detector = new SchemaChangeDetectorService();
-        var conflictDetector = new ConflictDetectionService();
+        var conflictDetector = new ConflictDetectionService(NullLogger<ConflictDetectionService>.Instance);
 
         var sourceMigration = new Migration("20240115093045", "CreateUsersV1", "AppDbContext")
         {

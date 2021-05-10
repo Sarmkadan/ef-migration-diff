@@ -1,6 +1,7 @@
 #nullable enable
 using EfMigrationDiff.Models;
 using EfMigrationDiff.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace EfMigrationDiff.Services;
 
@@ -12,15 +13,18 @@ public class MigrationDiffService
     private readonly MigrationRepository _migrationRepository;
     private readonly ConflictDetectionService _conflictDetectionService;
     private readonly SchemaChangeDetectorService _schemaChangeDetectorService;
+    private readonly ILogger<MigrationDiffService> _logger;
 
     public MigrationDiffService(
         MigrationRepository migrationRepository,
         ConflictDetectionService conflictDetectionService,
-        SchemaChangeDetectorService schemaChangeDetectorService)
+        SchemaChangeDetectorService schemaChangeDetectorService,
+        ILogger<MigrationDiffService> logger)
     {
         _migrationRepository = migrationRepository;
         _conflictDetectionService = conflictDetectionService;
         _schemaChangeDetectorService = schemaChangeDetectorService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -43,6 +47,8 @@ public class MigrationDiffService
         ArgumentNullException.ThrowIfNull(sourceBranch);
         ArgumentNullException.ThrowIfNull(targetBranch);
 
+        _logger.LogInformation("Starting comparison between branch {SourceBranch} and {TargetBranch}", sourceBranch.Id, targetBranch.Id);
+        
         var diff = new MigrationDiff(sourceBranch.Id, targetBranch.Id);
 
         // Get all migrations for each branch
@@ -71,6 +77,15 @@ public class MigrationDiffService
         foreach (var conflict in conflicts)
         {
             diff.AddConflict(conflict);
+        }
+
+        if (diff.HasConflicts())
+        {
+            _logger.LogWarning("Detected {ConflictCount} conflicts between {SourceBranch} and {TargetBranch}", diff.Conflicts.Count, sourceBranch.Id, targetBranch.Id);
+        }
+        else
+        {
+            _logger.LogInformation("No conflicts detected between {SourceBranch} and {TargetBranch}", sourceBranch.Id, targetBranch.Id);
         }
 
         diff.GenerateSummary();

@@ -1,5 +1,6 @@
 #nullable enable
 using EfMigrationDiff.Models;
+using Microsoft.Extensions.Logging;
 
 namespace EfMigrationDiff.Services;
 
@@ -10,6 +11,12 @@ public class ConflictDetectionService
 {
     private const int MaxTableNameLength = 128;
     private const int MaxColumnNameLength = 128;
+    private readonly ILogger<ConflictDetectionService> _logger;
+
+    public ConflictDetectionService(ILogger<ConflictDetectionService> logger)
+    {
+        _logger = logger;
+    }
 
     /// <summary>
     /// Detects conflicts between two sets of schema changes by analyzing table, column,
@@ -38,6 +45,15 @@ public class ConflictDetectionService
 
         // Check for naming conflicts
         conflicts.AddRange(DetectNamingConflicts(sourceChanges, targetChanges));
+        
+        if (conflicts.Count > 0)
+        {
+            _logger.LogWarning("Detected {ConflictCount} conflicts during schema analysis", conflicts.Count);
+        }
+        else
+        {
+            _logger.LogDebug("No conflicts detected during schema analysis");
+        }
 
         return conflicts;
     }

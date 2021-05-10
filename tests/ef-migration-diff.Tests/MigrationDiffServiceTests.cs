@@ -4,6 +4,8 @@ using EfMigrationDiff.Models;
 using EfMigrationDiff.Services;
 using EfMigrationDiff.Repositories;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 
 namespace EfMigrationDiff.Tests;
 
@@ -14,9 +16,9 @@ public class MigrationDiffServiceTests
     {
         // Arrange
         var mockRepository = new Mock<MigrationRepository>();
-        var mockConflictDetector = new Mock<ConflictDetectionService>();
+        var mockConflictDetector = new Mock<ConflictDetectionService>(NullLogger<ConflictDetectionService>.Instance);
         var mockSchemaDetector = new Mock<SchemaChangeDetectorService>();
-        var service = new MigrationDiffService(mockRepository.Object, mockConflictDetector.Object, mockSchemaDetector.Object);
+        var service = new MigrationDiffService(mockRepository.Object, mockConflictDetector.Object, mockSchemaDetector.Object, NullLogger<MigrationDiffService>.Instance);
 
         var targetBranch = new BranchInfo("main", "abc123");
 
@@ -30,9 +32,9 @@ public class MigrationDiffServiceTests
     {
         // Arrange
         var mockRepository = new Mock<MigrationRepository>();
-        var mockConflictDetector = new Mock<ConflictDetectionService>();
+        var mockConflictDetector = new Mock<ConflictDetectionService>(NullLogger<ConflictDetectionService>.Instance);
         var mockSchemaDetector = new Mock<SchemaChangeDetectorService>();
-        var service = new MigrationDiffService(mockRepository.Object, mockConflictDetector.Object, mockSchemaDetector.Object);
+        var service = new MigrationDiffService(mockRepository.Object, mockConflictDetector.Object, mockSchemaDetector.Object, NullLogger<MigrationDiffService>.Instance);
 
         var sourceBranch = new BranchInfo("feature", "def456");
 
@@ -46,9 +48,9 @@ public class MigrationDiffServiceTests
     {
         // Arrange
         var repository = new MigrationRepository();
-        var conflictDetector = new ConflictDetectionService();
+        var conflictDetector = new ConflictDetectionService(NullLogger<ConflictDetectionService>.Instance);
         var schemaDetector = new SchemaChangeDetectorService();
-        var service = new MigrationDiffService(repository, conflictDetector, schemaDetector);
+        var service = new MigrationDiffService(repository, conflictDetector, schemaDetector, NullLogger<MigrationDiffService>.Instance);
 
         var migration = new Migration("20240115093045", "CreateUsers", "AppDbContext")
         {
@@ -76,9 +78,9 @@ public class MigrationDiffServiceTests
     {
         // Arrange
         var repository = new MigrationRepository();
-        var conflictDetector = new ConflictDetectionService();
+        var conflictDetector = new ConflictDetectionService(NullLogger<ConflictDetectionService>.Instance);
         var schemaDetector = new SchemaChangeDetectorService();
-        var service = new MigrationDiffService(repository, conflictDetector, schemaDetector);
+        var service = new MigrationDiffService(repository, conflictDetector, schemaDetector, NullLogger<MigrationDiffService>.Instance);
 
         var sourceMigration = new Migration("20240115093045", "CreateNewTable", "AppDbContext");
         var targetMigration = new Migration("20240115093044", "OldMigration", "AppDbContext");
@@ -106,9 +108,9 @@ public class MigrationDiffServiceTests
     {
         // Arrange
         var repository = new MigrationRepository();
-        var conflictDetector = new ConflictDetectionService();
+        var conflictDetector = new ConflictDetectionService(NullLogger<ConflictDetectionService>.Instance);
         var schemaDetector = new SchemaChangeDetectorService();
-        var service = new MigrationDiffService(repository, conflictDetector, schemaDetector);
+        var service = new MigrationDiffService(repository, conflictDetector, schemaDetector, NullLogger<MigrationDiffService>.Instance);
 
         var sourceMigration = new Migration("20240115093044", "OldMigration", "AppDbContext");
         var targetMigration = new Migration("20240115093046", "TargetOnlyMigration", "AppDbContext");
@@ -135,9 +137,9 @@ public class MigrationDiffServiceTests
     {
         // Arrange
         var repository = new MigrationRepository();
-        var conflictDetector = new ConflictDetectionService();
+        var conflictDetector = new ConflictDetectionService(NullLogger<ConflictDetectionService>.Instance);
         var schemaDetector = new SchemaChangeDetectorService();
-        var service = new MigrationDiffService(repository, conflictDetector, schemaDetector);
+        var service = new MigrationDiffService(repository, conflictDetector, schemaDetector, NullLogger<MigrationDiffService>.Instance);
 
         var sourceMigration = new Migration("20240115093045", "CreateUsers", "AppDbContext")
         {
@@ -163,9 +165,9 @@ public class MigrationDiffServiceTests
     {
         // Arrange
         var repository = new MigrationRepository();
-        var conflictDetector = new ConflictDetectionService();
+        var conflictDetector = new ConflictDetectionService(NullLogger<ConflictDetectionService>.Instance);
         var schemaDetector = new SchemaChangeDetectorService();
-        var service = new MigrationDiffService(repository, conflictDetector, schemaDetector);
+        var service = new MigrationDiffService(repository, conflictDetector, schemaDetector, NullLogger<MigrationDiffService>.Instance);
 
         var sourceBranch = new BranchInfo("feature", "abc123");
         var targetBranch = new BranchInfo("main", "def456");

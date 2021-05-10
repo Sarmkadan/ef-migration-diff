@@ -3,6 +3,7 @@
 using EfMigrationDiff.Models;
 using EfMigrationDiff.Services;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace EfMigrationDiff.Tests;
@@ -13,7 +14,7 @@ public class ConflictDetectionServiceTests
 
     public ConflictDetectionServiceTests()
     {
-        _service = new ConflictDetectionService();
+        _service = new ConflictDetectionService(NullLogger<ConflictDetectionService>.Instance);
     }
 
     [Fact]

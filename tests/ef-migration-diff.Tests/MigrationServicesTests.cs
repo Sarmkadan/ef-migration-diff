@@ -3,6 +3,7 @@ using EfMigrationDiff.CLI;
 using EfMigrationDiff.Models;
 using EfMigrationDiff.Services;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace EfMigrationDiff.Tests;
@@ -10,7 +11,7 @@ namespace EfMigrationDiff.Tests;
 public class MigrationServicesTests
 {
     private readonly SchemaChangeDetectorService _detector = new();
-    private readonly ConflictDetectionService _conflictDetector = new();
+    private readonly ConflictDetectionService _conflictDetector = new(NullLogger<ConflictDetectionService>.Instance);
 
     [Fact]
     public void DetectChanges_WithCreateTableContent_DetectsOneCreateTableChange()

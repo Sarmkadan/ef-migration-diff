@@ -2,6 +2,7 @@
 using EfMigrationDiff.Models;
 using EfMigrationDiff.Services;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EfMigrationDiff.Tests;
 
@@ -11,9 +12,9 @@ namespace EfMigrationDiff.Tests;
 public class VisualDiffOutputTests
 {
     private readonly SchemaChangeDetectorService _detector = new();
-    private readonly ConflictDetectionService    _conflictDetection = new();
+    private readonly ConflictDetectionService    _conflictDetection = new(NullLogger<ConflictDetectionService>.Instance);
 
-    private SchemaDiffEngine CreateEngine() => new(_conflictDetection);
+    private SchemaDiffEngine CreateEngine() => new(_conflictDetection, NullLogger<SchemaDiffEngine>.Instance);
 
     // =========================================================================
     // SchemaDiffEngine — two-way diff
