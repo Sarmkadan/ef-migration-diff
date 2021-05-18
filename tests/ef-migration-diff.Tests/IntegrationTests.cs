@@ -8,8 +8,17 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EfMigrationDiff.Tests;
 
+/// <summary>
+/// Integration tests for the EF Core migration comparison and conflict detection system.
+/// Tests the complete workflow from parsing migration files to generating comparison reports,
+/// including schema change detection, conflict identification, and multiple database context scenarios.
+/// </summary>
 public class IntegrationTests
 {
+    /// <summary>
+    /// Tests the complete end-to-end workflow including parsing migration files,
+    /// detecting schema changes, identifying conflicts, and generating comparison reports.
+    /// </summary>
     [Fact]
     public void EndToEnd_ParseParseCompareAndReport_CompletesSuccessfully()
     {
@@ -62,6 +71,10 @@ public class IntegrationTests
         report.Should().NotBeEmpty();
     }
 
+    /// <summary>
+    /// Tests the complete workflow with multiple database contexts to ensure
+    /// migrations from different contexts are processed independently without interference.
+    /// </summary>
     [Fact]
     public void FullWorkflow_MultipleDbContexts_HandlesCorrectly()
     {
@@ -104,6 +117,10 @@ public class IntegrationTests
         salesDbContextMigrations[0].DbContextName.Should().Be("SalesDbContext");
     }
 
+    /// <summary>
+    /// Tests concurrent processing of multiple migrations across different threads to ensure thread safety
+    /// and proper handling when multiple migrations are processed simultaneously.
+    /// </summary>
     [Fact]
     public void ConcurrentMigrationProcessing_MultipleThreadsProcessDifferentMigrations_AllProcessed()
     {
@@ -155,6 +172,10 @@ public class IntegrationTests
         repository.GetByDbContext("AppDbContext").Should().HaveCount(migrationCount);
     }
 
+    /// <summary>
+    /// Tests report generation with different output formats (text, JSON, HTML) to ensure
+    /// all formats produce consistent and complete data for the same migration comparison.
+    /// </summary>
     [Fact]
     public void ReportGeneration_WithDifferentFormats_AllFormatsProduceConsistentData()
     {
@@ -185,6 +206,10 @@ public class IntegrationTests
         htmlReport.Should().Contain("Initial");
     }
 
+    /// <summary>
+    /// Tests schema change detection with a complex migration containing multiple operations
+    /// (CreateTable, CreateIndex, AddColumn, AlterColumn) to verify all operations are detected correctly.
+    /// </summary>
     [Fact]
     public void SchemaChangeDetectionPipeline_ComplexMigration_DetectsAllOperations()
     {
@@ -233,6 +258,10 @@ public class IntegrationTests
         changes.Should().Contain(c => c.ChangeType == SqlChangeType.ModifyColumn);
     }
 
+    /// <summary>
+    /// Tests conflict detection specifically for table name conflicts where the same table
+    /// is created with different schemas in different migrations.
+    /// </summary>
     [Fact]
     public void ConflictDetection_WithTableNameConflict_IdentifiesConflict()
     {
@@ -261,6 +290,10 @@ public class IntegrationTests
         conflicts.Should().Contain(c => c.ConflictType == ConflictType.NameConflict);
     }
 
+    /// <summary>
+    /// Tests migration validation to ensure valid migrations are correctly identified and
+    /// invalid migrations (with missing required fields) are properly flagged.
+    /// </summary>
     [Fact]
     public void MigrationValidation_WithValidAndInvalidMigrations_IdentifiesInvalidOnes()
     {
@@ -277,6 +310,10 @@ public class IntegrationTests
         invalidResult.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests comparison of migrations across multiple independent database contexts to verify
+    /// that migrations from different contexts do not interfere with each other during processing.
+    /// </summary>
     [Fact]
     public void MultipleDbContextComparison_IndependentContexts_ProcessesWithoutInterference()
     {
@@ -312,6 +349,10 @@ public class IntegrationTests
         identityChanges.Should().Contain(c => c.TableName == "Roles");
     }
 
+    /// <summary>
+    /// Tests the basic comparison scenario described in the README documentation,
+    /// verifying that migrations between feature and main branches can be compared successfully.
+    /// </summary>
     [Fact]
     public void ReadmeExample_BasicComparison_WorksAsDocumented()
     {
