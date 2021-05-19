@@ -4,8 +4,14 @@ using FluentAssertions;
 
 namespace EfMigrationDiff.Tests;
 
+/// <summary>
+/// Tests for string and collection extension methods.
+/// </summary>
 public class StringAndCollectionExtensionsTests
 {
+    /// <summary>
+    /// Verifies that <c>ToPascalCase</c> converts underscore separated words to PascalCase.
+    /// </summary>
     [Fact]
     public void ToPascalCase_WithUnderscoreSeparatedWords_ReturnsPascalCase()
     {
@@ -19,6 +25,9 @@ public class StringAndCollectionExtensionsTests
         result.Should().Be("HelloWorld");
     }
 
+    /// <summary>
+    /// Verifies that <c>ToSnakeCase</c> inserts an underscore before each uppercase letter in a PascalCase string.
+    /// </summary>
     [Fact]
     public void ToSnakeCase_WithPascalCaseInput_InsertsUnderscoreBeforeUppercase()
     {
@@ -32,6 +41,9 @@ public class StringAndCollectionExtensionsTests
         result.Should().Be("hello_world");
     }
 
+    /// <summary>
+    /// Verifies that <c>Truncate</c> returns a string truncated to the specified maximum length with an ellipsis when the input exceeds that length.
+    /// </summary>
     [Fact]
     public void Truncate_WhenStringExceedsMaxLength_ReturnsTruncatedStringWithEllipsis()
     {
@@ -46,6 +58,9 @@ public class StringAndCollectionExtensionsTests
         result.Length.Should().Be(8);
     }
 
+    /// <summary>
+    /// Verifies that <c>Batch</c> splits a sequence into batches of the specified size, producing a final partial batch if necessary.
+    /// </summary>
     [Fact]
     public void Batch_WithTenItemsAndBatchSizeThree_CreatesFourBatchesWithLastPartial()
     {
