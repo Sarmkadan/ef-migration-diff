@@ -9,8 +9,17 @@ using Moq;
 
 namespace EfMigrationDiff.Tests;
 
+/// <summary>
+/// Provides unit tests for the <see cref="MigrationDiffService"/> class.
+/// Tests various scenarios for comparing Entity Framework Core migrations between branches,
+/// including identical migrations, migrations present in only one branch, schema changes,
+/// and conflict detection.
+/// </summary>
 public class MigrationDiffServiceTests
 {
+    /// <summary>
+    /// Tests that comparing branches with a null source branch throws an <see cref="ArgumentNullException"/>.
+    /// </summary>
     [Fact]
     public void CompareBranches_WithNullSourceBranch_ThrowsArgumentNullException()
     {
@@ -27,6 +36,9 @@ public class MigrationDiffServiceTests
         act.Should().ThrowExactly<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Tests that comparing branches with a null target branch throws an <see cref="ArgumentNullException"/>.
+    /// </summary>
     [Fact]
     public void CompareBranches_WithNullTargetBranch_ThrowsArgumentNullException()
     {
@@ -43,6 +55,10 @@ public class MigrationDiffServiceTests
         act.Should().ThrowExactly<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Tests that when both branches contain the same migrations, they are correctly categorized in the 'InBoth' collection.
+    /// Verifies that no migrations are incorrectly categorized as being only in one branch.
+    /// </summary>
     [Fact]
     public void CompareBranches_WithIdenticalMigrations_CategorizesCorrectly()
     {
@@ -73,6 +89,10 @@ public class MigrationDiffServiceTests
         result.OnlyInTarget.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that migrations present only in the source branch are correctly identified and categorized in the 'OnlyInSource' collection.
+    /// Verifies that the migration ID is properly extracted and returned.
+    /// </summary>
     [Fact]
     public void CompareBranches_WithSourceOnlyMigration_CategorizesCorrectly()
     {
@@ -103,6 +123,10 @@ public class MigrationDiffServiceTests
         result.InBoth.Should().ContainSingle();
     }
 
+    /// <summary>
+    /// Tests that migrations present only in the target branch are correctly identified and categorized in the 'OnlyInTarget' collection.
+    /// Verifies that the migration ID is properly extracted and returned.
+    /// </summary>
     [Fact]
     public void CompareBranches_WithTargetOnlyMigration_CategorizesCorrectly()
     {
@@ -132,6 +156,10 @@ public class MigrationDiffServiceTests
         result.OnlyInTarget[0].Id.Should().Be("20240115093046");
     }
 
+    /// <summary>
+    /// Tests that schema changes introduced by migrations are correctly detected and categorized in the 'SourceSchemaChanges' collection.
+    /// Verifies that CREATE TABLE operations are properly identified from migration content.
+    /// </summary>
     [Fact]
     public void CompareBranches_DetectsSchemaChanges()
     {
@@ -160,6 +188,10 @@ public class MigrationDiffServiceTests
         result.SourceSchemaChanges.Should().Contain(c => c.ChangeType == SqlChangeType.CreateTable);
     }
 
+    /// <summary>
+    /// Tests that when both branches are empty (contain no migrations), the comparison returns an empty diff result.
+    /// Verifies that all collections (OnlyInSource, OnlyInTarget, InBoth, Conflicts) are empty.
+    /// </summary>
     [Fact]
     public void CompareBranches_WithEmptyBranches_ReturnsEmptyDiff()
     {
