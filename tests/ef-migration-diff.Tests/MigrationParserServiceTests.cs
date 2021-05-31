@@ -6,10 +6,16 @@ using FluentAssertions;
 
 namespace EfMigrationDiff.Tests;
 
+/// <summary>
+/// Tests for the MigrationParserService class.
+/// </summary>
 public class MigrationParserServiceTests
 {
     private readonly MigrationParserService _parser = new();
 
+    /// <summary>
+    /// Tests that a valid migration file is parsed correctly.
+    /// </summary>
     [Fact]
     public void ParseMigrationFile_WithValidMigrationFile_ReturnsMigrationObject()
     {
@@ -32,6 +38,9 @@ public class MigrationParserServiceTests
         result.Content.Should().Contain("CreateTable");
     }
 
+    /// <summary>
+    /// Tests that a designer file is parsed correctly, extracting the migration ID.
+    /// </summary>
     [Fact]
     public void ParseMigrationFile_WithDesignerFile_ExtractsCorrectMigrationId()
     {
@@ -52,6 +61,9 @@ public class MigrationParserServiceTests
         result.Name.Should().Be("CreateUsersTable");
     }
 
+    /// <summary>
+    /// Tests that an invalid timestamp returns null.
+    /// </summary>
     [Fact]
     public void ParseMigrationFile_WithInvalidTimestamp_ReturnsNull()
     {
@@ -70,6 +82,9 @@ public class MigrationParserServiceTests
         result.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that an empty content migration file still parses metadata correctly.
+    /// </summary>
     [Fact]
     public void ParseMigrationFile_WithEmptyContent_StillParsesMetadata()
     {
@@ -90,6 +105,10 @@ public class MigrationParserServiceTests
         result.Content.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that various valid migration file names are parsed correctly.
+    /// </summary>
+    /// <param name="fileName">The name of the migration file.</param>
     [Theory]
     [InlineData("20240115093045_CreateUsersTable.cs")]
     [InlineData("20240115093045_UpdateProductsTable.cs")]
@@ -114,6 +133,9 @@ public class MigrationParserServiceTests
         result.Name.Should().NotBeEmpty();
     }
 
+    /// <summary>
+    /// Tests that a null migration file throws an exception.
+    /// </summary>
     [Fact]
     public void ParseMigrationFile_WithNullMigrationFile_ThrowsException()
     {
@@ -122,6 +144,9 @@ public class MigrationParserServiceTests
         act.Should().ThrowExactly<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Tests that a complex migration file content is parsed correctly.
+    /// </summary>
     [Fact]
     public void ParseMigrationFile_WithComplexContent_ParsesSuccessfully()
     {
