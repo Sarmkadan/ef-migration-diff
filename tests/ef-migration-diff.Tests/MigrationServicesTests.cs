@@ -8,11 +8,17 @@ using Moq;
 
 namespace EfMigrationDiff.Tests;
 
+/// <summary>
+/// Tests for the MigrationServices class.
+/// </summary>
 public class MigrationServicesTests
 {
     private readonly SchemaChangeDetectorService _detector = new();
     private readonly ConflictDetectionService _conflictDetector = new(NullLogger<ConflictDetectionService>.Instance);
 
+    /// <summary>
+    /// Tests that the DetectChanges method correctly detects a single CreateTable change.
+    /// </summary>
     [Fact]
     public void DetectChanges_WithCreateTableContent_DetectsOneCreateTableChange()
     {
@@ -31,6 +37,9 @@ public class MigrationServicesTests
         changes[0].TableName.Should().Be("Users");
     }
 
+    /// <summary>
+    /// Tests that the IsMigrationSafe method returns false when the migration content contains a DropTable operation.
+    /// </summary>
     [Fact]
     public void IsMigrationSafe_WithDropTableContent_ReturnsFalse()
     {
@@ -47,6 +56,9 @@ public class MigrationServicesTests
         isSafe.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that the DetectConflicts method correctly detects a naming conflict when the same table is created with different schema.
+    /// </summary>
     [Fact]
     public void DetectConflicts_WhenSameTableCreatedWithDifferentSchema_ReturnsNamingConflict()
     {
@@ -72,11 +84,14 @@ public class MigrationServicesTests
 
         // Assert
         conflicts.Should().Contain(c => c.ConflictType == ConflictType.NameConflict);
-        }
+    }
 
-        [Fact]
-        public void DetectConflicts_WhenSameColumnModifiedWithDifferentDefaultValue_ReturnsColumnConflict()
-        {
+    /// <summary>
+    /// Tests that the DetectConflicts method correctly detects a column conflict when the same column is modified with different default values.
+    /// </summary>
+    [Fact]
+    public void DetectConflicts_WhenSameColumnModifiedWithDifferentDefaultValue_ReturnsColumnConflict()
+    {
         // Arrange - two branches modify the same column but with different default values
         var sourceMigration = new Migration("mig_src", "ModifyColumnWithDefault", "AppDbContext")
         {
@@ -98,11 +113,14 @@ public class MigrationServicesTests
         conflicts[0].ConflictType.Should().Be(ConflictType.ColumnConflict);
         conflicts[0].Description.Should().Contain("Status");
         conflicts[0].Description.Should().Contain("conflicting operations");
-        }
+    }
 
-        [Fact]
-        public void DetectConflicts_WhenSameColumnModifiedWithSameDefaultValue_ReturnsNoConflicts()
-        {
+    /// <summary>
+    /// Tests that the DetectConflicts method returns no conflicts when the same column is modified with the same default values.
+    /// </summary>
+    [Fact]
+    public void DetectConflicts_WhenSameColumnModifiedWithSameDefaultValue_ReturnsNoConflicts()
+    {
         // Arrange - two branches modify the same column with the same default values
         var sourceMigration = new Migration("mig_src", "ModifyColumnWithSameDefault", "AppDbContext")
         {
@@ -123,6 +141,9 @@ public class MigrationServicesTests
         conflicts.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that the ExecuteAsync method invokes the registered command exactly once.
+    /// </summary>
     [Fact]
     public async Task ExecuteAsync_WithRegisteredMockedCommand_InvokesCommandExactlyOnce()
     {
