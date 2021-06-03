@@ -6,17 +6,24 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace EfMigrationDiff.Tests;
-
+/// <summary>
+/// Tests for the ConflictDetectionService class.
+/// </summary>
 public class ConflictDetectionServiceTests
 {
     private readonly ConflictDetectionService _service;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConflictDetectionServiceTests"/> class.
+    /// </summary>
     public ConflictDetectionServiceTests()
     {
         _service = new ConflictDetectionService(NullLogger<ConflictDetectionService>.Instance);
     }
 
+    /// <summary>
+    /// Verifies that the DetectConflicts method returns an empty list when there are no changes.
+    /// </summary>
     [Fact]
     public void DetectConflicts_WithNoChanges_ReturnsEmptyList()
     {
@@ -28,6 +35,9 @@ public class ConflictDetectionServiceTests
         conflicts.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that the DetectConflicts method returns a table conflict when there are conflicting table operations.
+    /// </summary>
     [Fact]
     public void DetectConflicts_WithConflictingTableOperations_ReturnsTableConflict()
     {
@@ -45,6 +55,9 @@ public class ConflictDetectionServiceTests
         conflicts.First().Severity.Should().Be(ConflictSeverity.Error);
     }
 
+    /// <summary>
+    /// Verifies that the DetectConflicts method returns a column conflict when there are conflicting column operations.
+    /// </summary>
     [Fact]
     public void DetectConflicts_WithConflictingColumnOperations_ReturnsColumnConflict()
     {
@@ -61,6 +74,9 @@ public class ConflictDetectionServiceTests
         conflicts.First().ConflictType.Should().Be(ConflictType.ColumnConflict);
     }
 
+    /// <summary>
+    /// Verifies that the DetectConflicts method returns an empty list when there are non-conflicting changes.
+    /// </summary>
     [Fact]
     public void DetectConflicts_WithNonConflictingChanges_ReturnsEmptyList()
     {
@@ -76,6 +92,9 @@ public class ConflictDetectionServiceTests
         conflicts.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that the DetectConflicts method returns an error severity when there are conflicting table operations.
+    /// </summary>
     [Fact]
     public void DetectConflicts_WithConflictingTableOperations_ReturnsErrorSeverity()
     {
@@ -91,6 +110,9 @@ public class ConflictDetectionServiceTests
         conflicts.First().Severity.Should().Be(ConflictSeverity.Error);
     }
 
+    /// <summary>
+    /// Verifies that the DetectConflicts method returns a warning severity when there are conflicting index operations.
+    /// </summary>
     [Fact]
     public void DetectConflicts_WithConflictingIndexOperations_ReturnsWarningSeverity()
     {
