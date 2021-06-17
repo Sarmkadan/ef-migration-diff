@@ -7,10 +7,19 @@ using System.Text.Json;
 
 namespace EfMigrationDiff.Tests;
 
+/// <summary>
+/// Contains unit tests for <see cref="ReportGenerationService"/> that verify the
+/// generation of text, JSON, and HTML reports as well as conflict and schema‑change
+/// summaries under various scenarios.
+/// </summary>
 public class ReportGenerationServiceTests
 {
     private readonly ReportGenerationService _reportService = new();
 
+    /// <summary>
+    /// Verifies that <see cref="ReportGenerationService.GenerateTextReport"/> includes a
+    /// conflict summary when the <see cref="MigrationDiff"/> contains at least one conflict.
+    /// </summary>
     [Fact]
     public void GenerateTextReport_WithDiffContainingConflicts_IncludesConflictSummary()
     {
@@ -31,6 +40,10 @@ public class ReportGenerationServiceTests
         report.Should().NotBeEmpty();
     }
 
+    /// <summary>
+    /// Ensures that the text report lists migrations that exist only in the source,
+    /// only in the target, and in both branches.
+    /// </summary>
     [Fact]
     public void GenerateTextReport_WithMultipleMigrations_IncludesMigrationSummary()
     {
@@ -49,6 +62,10 @@ public class ReportGenerationServiceTests
         report.Should().Contain("Initial");
     }
 
+    /// <summary>
+    /// Checks that schema changes are reflected in the generated text report,
+    /// including the table name and the SQL operation type.
+    /// </summary>
     [Fact]
     public void GenerateTextReport_WithSchemaChanges_IncludesSchemaChangeSummary()
     {
@@ -68,6 +85,10 @@ public class ReportGenerationServiceTests
         report.Should().Contain("CreateTable");
     }
 
+    /// <summary>
+    /// Confirms that a report generated for a diff with no issues still contains the
+    /// header and is not empty.
+    /// </summary>
     [Fact]
     public void GenerateTextReport_WithNoIssues_ReportsCleanComparison()
     {
@@ -82,6 +103,10 @@ public class ReportGenerationServiceTests
         report.Should().Contain("EF Migration Diff Report");
     }
 
+    /// <summary>
+    /// Validates that <see cref="ReportGenerationService.GenerateJsonReport"/> returns a
+    /// string that can be parsed as valid JSON.
+    /// </summary>
     [Fact]
     public void GenerateJsonReport_ProducesValidJson()
     {
@@ -97,6 +122,10 @@ public class ReportGenerationServiceTests
         act.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Ensures that the JSON report contains the three migration categories
+    /// (source‑only, target‑only, and common) when they are present in the diff.
+    /// </summary>
     [Fact]
     public void GenerateJsonReport_IncludesAllMigrationCategories()
     {
@@ -117,6 +146,9 @@ public class ReportGenerationServiceTests
         migrations.TryGetProperty("Common", out _).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Verifies that conflicts added to the diff are present in the generated JSON report.
+    /// </summary>
     [Fact]
     public void GenerateJsonReport_IncludesConflicts()
     {
@@ -138,6 +170,10 @@ public class ReportGenerationServiceTests
         conflicts.GetArrayLength().Should().Be(1);
     }
 
+    /// <summary>
+    /// Checks that schema changes are included in the JSON report under the
+    /// <c>SchemaChanges</c> property.
+    /// </summary>
     [Fact]
     public void GenerateJsonReport_IncludesSchemaChanges()
     {
@@ -157,6 +193,10 @@ public class ReportGenerationServiceTests
         jsonDoc.RootElement.TryGetProperty("SchemaChanges", out var schemaChanges).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Confirms that the HTML report contains a valid DOCTYPE declaration, HTML tags,
+    /// and the migration name.
+    /// </summary>
     [Fact]
     public void GenerateHtmlReport_ProducesValidHtml()
     {
@@ -173,6 +213,10 @@ public class ReportGenerationServiceTests
         report.Should().Contain("CreateUsers");
     }
 
+    /// <summary>
+    /// Validates that the conflict summary generated for a diff containing conflicts
+    /// includes the conflict description and the heading “CONFLICT ANALYSIS”.
+    /// </summary>
     [Fact]
     public void GenerateConflictSummary_WithConflicts_IncludesAllConflictDetails()
     {
@@ -194,6 +238,10 @@ public class ReportGenerationServiceTests
         report.Should().Contain("CONFLICT ANALYSIS");
     }
 
+    /// <summary>
+    /// Ensures that when a diff has no conflicts, the conflict summary reports a
+    /// “No conflicts detected” message.
+    /// </summary>
     [Fact]
     public void GenerateConflictSummary_WithNoConflicts_ReturnsNoConflictsMessage()
     {
@@ -207,6 +255,10 @@ public class ReportGenerationServiceTests
         report.Should().Contain("No conflicts detected");
     }
 
+    /// <summary>
+    /// Checks that generating reports in all supported formats (text, JSON, HTML) produces
+    /// non‑empty output for a simple diff.
+    /// </summary>
     [Fact]
     public void GenerateReport_WithDifferentFormats_AllProduceSomeOutput()
     {
@@ -225,6 +277,9 @@ public class ReportGenerationServiceTests
         htmlReport.Should().NotBeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that destructive schema changes (e.g., <c>DropTable</c>) are reflected in the JSON report.
+    /// </summary>
     [Fact]
     public void GenerateJsonReport_WithDestructiveChanges_IncludesDestructiveChanges()
     {
@@ -243,6 +298,9 @@ public class ReportGenerationServiceTests
         report.Should().Contain("DropTable");
     }
 
+    /// <summary>
+    /// Confirms that the generated text report contains a timestamp line with “Generated:” and “UTC”.
+    /// </summary>
     [Fact]
     public void GenerateTextReport_IncludesTimestamp()
     {
@@ -257,6 +315,10 @@ public class ReportGenerationServiceTests
         report.Should().Contain("UTC");
     }
 
+    /// <summary>
+    /// Ensures that when multiple conflicts are present, the HTML report contains a table
+    /// with a header “Conflicts” and rows for each conflict description.
+    /// </summary>
     [Fact]
     public void GenerateHtmlReport_WithMultipleConflicts_CreatesProperTable()
     {
