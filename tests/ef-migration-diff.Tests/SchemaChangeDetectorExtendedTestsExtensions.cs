@@ -15,9 +15,10 @@ namespace EfMigrationDiff.Tests
         /// Executes all public methods whose name starts with <c>DetectChanges_</c> on the supplied test instance.
         /// </summary>
         /// <param name="testInstance">The test class instance.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="testInstance"/> is <see langword="null"/>.</exception>
         public static void RunAllDetectChangesTests(this SchemaChangeDetectorExtendedTests testInstance)
         {
-            if (testInstance == null) throw new ArgumentNullException(nameof(testInstance));
+            ArgumentNullException.ThrowIfNull(testInstance);
 
             var methods = GetTestMethods(testInstance.GetType(), "DetectChanges_");
             foreach (var method in methods)
@@ -30,9 +31,10 @@ namespace EfMigrationDiff.Tests
         /// Executes all public methods whose name starts with <c>IsMigrationSafe_</c> on the supplied test instance.
         /// </summary>
         /// <param name="testInstance">The test class instance.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="testInstance"/> is <see langword="null"/>.</exception>
         public static void RunAllIsMigrationSafeTests(this SchemaChangeDetectorExtendedTests testInstance)
         {
-            if (testInstance == null) throw new ArgumentNullException(nameof(testInstance));
+            ArgumentNullException.ThrowIfNull(testInstance);
 
             var methods = GetTestMethods(testInstance.GetType(), "IsMigrationSafe_");
             foreach (var method in methods)
@@ -46,15 +48,16 @@ namespace EfMigrationDiff.Tests
         /// </summary>
         /// <param name="testInstance">The test class instance.</param>
         /// <returns>A list of method names.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="testInstance"/> is <see langword="null"/>.</exception>
         public static List<string> GetAllTestMethodNames(this SchemaChangeDetectorExtendedTests testInstance)
         {
-            if (testInstance == null) throw new ArgumentNullException(nameof(testInstance));
+            ArgumentNullException.ThrowIfNull(testInstance);
 
             return testInstance.GetType()
-                               .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
-                               .Where(m => m.GetParameters().Length == 0 && m.ReturnType == typeof(void))
-                               .Select(m => m.Name)
-                               .ToList();
+                .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
+                .Where(m => m.GetParameters().Length == 0 && m.ReturnType == typeof(void))
+                .Select(m => m.Name)
+                .ToList();
         }
 
         /// <summary>
@@ -62,13 +65,14 @@ namespace EfMigrationDiff.Tests
         /// </summary>
         /// <param name="testInstance">The test class instance.</param>
         /// <returns><c>true</c> when all tests pass; otherwise <c>false</c>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="testInstance"/> is <see langword="null"/>.</exception>
         public static bool AssertAllTestsPass(this SchemaChangeDetectorExtendedTests testInstance)
         {
-            if (testInstance == null) throw new ArgumentNullException(nameof(testInstance));
+            ArgumentNullException.ThrowIfNull(testInstance);
 
             var methods = testInstance.GetType()
-                                      .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
-                                      .Where(m => m.GetParameters().Length == 0 && m.ReturnType == typeof(void));
+                .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
+                .Where(m => m.GetParameters().Length == 0 && m.ReturnType == typeof(void));
 
             foreach (var method in methods)
             {
@@ -86,13 +90,22 @@ namespace EfMigrationDiff.Tests
             return true;
         }
 
-        // Helper that filters methods by a given prefix.
+        /// <summary>
+        /// Filters public instance methods by name prefix and validates method signature.
+        /// </summary>
+        /// <param name="type">The type to search for methods.</param>
+        /// <param name="prefix">The method name prefix to filter by.</param>
+        /// <returns>An enumerable of matching method infos.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="type"/> or <paramref name="prefix"/> is <see langword="null"/>.</exception>
         private static IEnumerable<MethodInfo> GetTestMethods(Type type, string prefix)
         {
+            ArgumentNullException.ThrowIfNull(type);
+            ArgumentNullException.ThrowIfNull(prefix);
+
             return type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
-                       .Where(m => m.Name.StartsWith(prefix, StringComparison.Ordinal) &&
-                                   m.GetParameters().Length == 0 &&
-                                   m.ReturnType == typeof(void));
+                .Where(m => m.Name.StartsWith(prefix, StringComparison.Ordinal) &&
+                    m.GetParameters().Length == 0 &&
+                    m.ReturnType == typeof(void));
         }
     }
 }
