@@ -1,4 +1,5 @@
 #nullable enable
+
 namespace EfMigrationDiff.Extensions;
 
 /// <summary>
@@ -10,6 +11,7 @@ public static class CollectionExtensions
     /// <summary>
     /// Checks if collection is null or empty.
     /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="collection"/> is <see langword="null"/></exception>
     public static bool IsNullOrEmpty<T>(this IEnumerable<T>? collection)
     {
         return collection is null || !collection.Any();
@@ -18,6 +20,7 @@ public static class CollectionExtensions
     /// <summary>
     /// Returns the collection if not null/empty, otherwise returns an empty collection.
     /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="collection"/> is <see langword="null"/></exception>
     public static IEnumerable<T> OrEmpty<T>(this IEnumerable<T>? collection)
     {
         return collection ?? Enumerable.Empty<T>();
@@ -26,8 +29,12 @@ public static class CollectionExtensions
     /// <summary>
     /// Returns distinct items based on a key selector function.
     /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="items"/> or <paramref name="keySelector"/> is <see langword="null"/></exception>
     public static IEnumerable<T> DistinctBy<T, TKey>(this IEnumerable<T> items, Func<T, TKey> keySelector)
     {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(keySelector);
+
         var seen = new HashSet<TKey>();
         foreach (var item in items)
         {
@@ -40,10 +47,12 @@ public static class CollectionExtensions
     /// <summary>
     /// Batches items into groups of specified size.
     /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="items"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="batchSize"/> is less than or equal to 0</exception>
     public static IEnumerable<IEnumerable<T>> Batch<T>(this IEnumerable<T> items, int batchSize)
     {
-        if (batchSize <= 0)
-            throw new ArgumentException("Batch size must be greater than 0", nameof(batchSize));
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(batchSize, 0);
 
         var batch = new List<T>(batchSize);
         foreach (var item in items)
@@ -63,8 +72,12 @@ public static class CollectionExtensions
     /// <summary>
     /// Performs an action on each item in the collection.
     /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="items"/> or <paramref name="action"/> is <see langword="null"/></exception>
     public static IEnumerable<T> ForEach<T>(this IEnumerable<T> items, Action<T> action)
     {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(action);
+
         foreach (var item in items)
         {
             action(item);
@@ -75,10 +88,12 @@ public static class CollectionExtensions
     /// <summary>
     /// Chunks collection into groups of specified size. Similar to Batch.
     /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="items"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="chunkSize"/> is less than or equal to 0</exception>
     public static List<List<T>> Chunk<T>(this IEnumerable<T> items, int chunkSize)
     {
-        if (chunkSize <= 0)
-            throw new ArgumentException("Chunk size must be greater than 0", nameof(chunkSize));
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(chunkSize, 0);
 
         var result = new List<List<T>>();
         var currentChunk = new List<T>(chunkSize);
@@ -103,9 +118,14 @@ public static class CollectionExtensions
     /// Converts IEnumerable to dictionary, using a key selector function.
     /// Throws if duplicate keys exist.
     /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="items"/> or <paramref name="keySelector"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentException">Duplicate key exists in the collection</exception>
     public static Dictionary<TKey, T> ToDict<T, TKey>(this IEnumerable<T> items, Func<T, TKey> keySelector)
         where TKey : notnull
     {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(keySelector);
+
         var dict = new Dictionary<TKey, T>();
         foreach (var item in items)
         {
@@ -120,9 +140,13 @@ public static class CollectionExtensions
     /// <summary>
     /// Groups items by a key and returns a dictionary.
     /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="items"/> or <paramref name="keySelector"/> is <see langword="null"/></exception>
     public static Dictionary<TKey, List<T>> GroupByDict<T, TKey>(this IEnumerable<T> items, Func<T, TKey> keySelector)
         where TKey : notnull
     {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(keySelector);
+
         var dict = new Dictionary<TKey, List<T>>();
         foreach (var item in items)
         {
@@ -137,14 +161,17 @@ public static class CollectionExtensions
     /// <summary>
     /// Returns items that match the predicate, or empty if predicate is null.
     /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="items"/> is <see langword="null"/></exception>
     public static IEnumerable<T> WhereIf<T>(this IEnumerable<T> items, Func<T, bool>? predicate)
     {
+        ArgumentNullException.ThrowIfNull(items);
         return predicate is null ? items : items.Where(predicate);
     }
 
     /// <summary>
     /// Returns first item or a default value if collection is empty.
     /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="items"/> is <see langword="null"/></exception>
     public static T? FirstOrNull<T>(this IEnumerable<T>? items) where T : class
     {
         return items?.FirstOrDefault();
@@ -153,8 +180,11 @@ public static class CollectionExtensions
     /// <summary>
     /// Flattens a collection of collections into a single collection.
     /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="items"/> is <see langword="null"/></exception>
     public static IEnumerable<T> Flatten<T>(this IEnumerable<IEnumerable<T>> items)
     {
+        ArgumentNullException.ThrowIfNull(items);
+
         foreach (var subCollection in items)
         {
             foreach (var item in subCollection)
@@ -167,16 +197,20 @@ public static class CollectionExtensions
     /// <summary>
     /// Returns specified count of items, or fewer if collection has fewer items.
     /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="items"/> is <see langword="null"/></exception>
     public static IEnumerable<T> TakeSafe<T>(this IEnumerable<T> items, int count)
     {
+        ArgumentNullException.ThrowIfNull(items);
         return items.Take(Math.Max(0, count));
     }
 
     /// <summary>
     /// Returns all items except the specified count from the end.
     /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="items"/> is <see langword="null"/></exception>
     public static IEnumerable<T> SkipLast<T>(this IEnumerable<T> items, int count)
     {
+        ArgumentNullException.ThrowIfNull(items);
         var list = items.ToList();
         return list.Take(Math.Max(0, list.Count - count));
     }
