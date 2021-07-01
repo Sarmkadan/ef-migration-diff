@@ -24,12 +24,10 @@ public static class StringAndCollectionExtensionsTestsJsonExtensions
     /// <param name="value">The instance to serialize.</param>
     /// <param name="indented">Whether to format the JSON with indentation for readability.</param>
     /// <returns>A JSON string representation of the instance.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     public static string ToJson(this StringAndCollectionExtensionsTests value, bool indented = false)
     {
-        if (value is null)
-        {
-            return "{}";
-        }
+        ArgumentNullException.ThrowIfNull(value);
 
         var options = indented
             ? new JsonSerializerOptions(_jsonOptions)
@@ -45,9 +43,12 @@ public static class StringAndCollectionExtensionsTestsJsonExtensions
     /// Deserializes a JSON string to a <see cref="StringAndCollectionExtensionsTests"/> instance.
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
-    /// <returns>The deserialized instance, or null if the JSON is invalid.</returns>
+    /// <returns>The deserialized instance, or <see langword="null"/> if the JSON is invalid or whitespace.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="json"/> is <see langword="null"/>.</exception>
     public static StringAndCollectionExtensionsTests? FromJson(string json)
     {
+        ArgumentNullException.ThrowIfNull(json);
+
         if (string.IsNullOrWhiteSpace(json))
         {
             return null;
@@ -67,10 +68,13 @@ public static class StringAndCollectionExtensionsTestsJsonExtensions
     /// Attempts to deserialize a JSON string to a <see cref="StringAndCollectionExtensionsTests"/> instance.
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
-    /// <param name="value">The deserialized instance, or null if deserialization failed.</param>
-    /// <returns>True if deserialization succeeded; otherwise, false.</returns>
+    /// <param name="value">The deserialized instance, or <see langword="null"/> if deserialization failed.</param>
+    /// <returns><see langword="true"/> if deserialization succeeded; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="json"/> is <see langword="null"/>.</exception>
     public static bool TryFromJson(string json, out StringAndCollectionExtensionsTests? value)
     {
+        ArgumentNullException.ThrowIfNull(json);
+
         value = null;
 
         if (string.IsNullOrWhiteSpace(json))
