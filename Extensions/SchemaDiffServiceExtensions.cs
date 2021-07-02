@@ -1,4 +1,5 @@
 #nullable enable
+
 using System.Text;
 using EfMigrationDiff.CLI.Commands;
 using EfMigrationDiff.Configuration;
@@ -28,11 +29,14 @@ public static class SchemaDiffServiceExtensions
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection"/> to configure.</param>
     /// <returns>The same <see cref="IServiceCollection"/> for chaining.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="services"/> is <see langword="null"/></exception>
     public static IServiceCollection AddSchemaDiffServices(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddSingleton<SchemaDiffEngine>();
         services.AddSingleton<ISchemaDiffEngine>(sp => sp.GetRequiredService<SchemaDiffEngine>());
-        services.AddSingleton<IMergeEditor>(sp      => sp.GetRequiredService<SchemaDiffEngine>());
+        services.AddSingleton<IMergeEditor>(sp => sp.GetRequiredService<SchemaDiffEngine>());
         services.AddSingleton<IVisualDiffRenderer, VisualDiffFormatter>();
         services.AddSingleton(SchemaDiffOptions.Default);
 
@@ -48,10 +52,15 @@ public static class SchemaDiffServiceExtensions
     /// Factory that returns the <see cref="SchemaDiffOptions"/> to register as a singleton.
     /// </param>
     /// <returns>The same <see cref="IServiceCollection"/> for chaining.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="services"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentNullException"><paramref name="configure"/> is <see langword="null"/></exception>
     public static IServiceCollection AddSchemaDiffServices(
         this IServiceCollection services,
         Func<SchemaDiffOptions> configure)
     {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configure);
+
         services.AddSchemaDiffServices();
         // Override the default options registered by the overload above.
         services.AddSingleton(configure());
@@ -68,6 +77,8 @@ public static class SchemaDiffServiceExtensions
     /// <param name="diff">The diff to render.</param>
     /// <param name="renderer">The <see cref="IVisualDiffRenderer"/> to use.</param>
     /// <returns>A self-contained HTML document string.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="diff"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentNullException"><paramref name="renderer"/> is <see langword="null"/></exception>
     public static string ToSideBySideHtml(this SchemaDiffResult diff, IVisualDiffRenderer renderer) =>
         renderer.RenderSideBySide(diff);
 
@@ -77,6 +88,8 @@ public static class SchemaDiffServiceExtensions
     /// <param name="diff">The diff to render.</param>
     /// <param name="renderer">The <see cref="IVisualDiffRenderer"/> to use.</param>
     /// <returns>A self-contained HTML document string.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="diff"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentNullException"><paramref name="renderer"/> is <see langword="null"/></exception>
     public static string ToUnifiedHtml(this SchemaDiffResult diff, IVisualDiffRenderer renderer) =>
         renderer.RenderUnified(diff);
 
@@ -85,6 +98,8 @@ public static class SchemaDiffServiceExtensions
     /// Destructive operations include dropping tables, columns, indexes, and foreign keys.
     /// </summary>
     /// <param name="diff">The diff to inspect.</param>
+    /// <returns>An enumerable of destructive changes.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="diff"/> is <see langword="null"/></exception>
     public static IEnumerable<SchemaChange> GetDestructiveChanges(this SchemaDiffResult diff) =>
         diff.SourceOnlyChanges.Concat(diff.TargetOnlyChanges).Where(c => c.IsDestructive());
 
@@ -93,18 +108,21 @@ public static class SchemaDiffServiceExtensions
     /// </summary>
     /// <param name="diff">The diff to summarize.</param>
     /// <returns>A multi-line plain-text summary string.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="diff"/> is <see langword="null"/></exception>
     public static string ToTextSummary(this SchemaDiffResult diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+
         var sb = new StringBuilder();
         sb.AppendLine($"Diff: {diff.SourceLabel} → {diff.TargetLabel}");
-        sb.AppendLine($"  Hunks:         {diff.Hunks.Count}");
-        sb.AppendLine($"  Added lines:   {diff.TotalAdded}");
-        sb.AppendLine($"  Removed lines: {diff.TotalRemoved}");
-        sb.AppendLine($"  Source-only:   {diff.SourceOnlyChanges.Count} change(s)");
-        sb.AppendLine($"  Target-only:   {diff.TargetOnlyChanges.Count} change(s)");
-        sb.AppendLine($"  Modified:      {diff.ModifiedChanges.Count} change(s)");
-        sb.AppendLine($"  Destructive:   {(diff.HasDestructiveChanges ? "YES — review required" : "none")}");
-        sb.AppendLine($"  Identical:     {diff.IsIdentical}");
+        sb.AppendLine($" Hunks: {diff.Hunks.Count}");
+        sb.AppendLine($" Added lines: {diff.TotalAdded}");
+        sb.AppendLine($" Removed lines: {diff.TotalRemoved}");
+        sb.AppendLine($" Source-only: {diff.SourceOnlyChanges.Count} change(s)");
+        sb.AppendLine($" Target-only: {diff.TargetOnlyChanges.Count} change(s)");
+        sb.AppendLine($" Modified: {diff.ModifiedChanges.Count} change(s)");
+        sb.AppendLine($" Destructive: {(diff.HasDestructiveChanges ? "YES — review required" : "none")}");
+        sb.AppendLine($" Identical: {diff.IsIdentical}");
         return sb.ToString();
     }
 
@@ -118,6 +136,8 @@ public static class SchemaDiffServiceExtensions
     /// <param name="diff">The three-way diff to render.</param>
     /// <param name="renderer">The <see cref="IVisualDiffRenderer"/> to use.</param>
     /// <returns>A self-contained HTML document string representing the merge editor.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="diff"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentNullException"><paramref name="renderer"/> is <see langword="null"/></exception>
     public static string ToMergeEditorHtml(this ThreeWayDiffResult diff, IVisualDiffRenderer renderer) =>
         renderer.RenderMergeEditor(diff);
 
@@ -126,6 +146,8 @@ public static class SchemaDiffServiceExtensions
     /// indicating the merge requires no manual resolution.
     /// </summary>
     /// <param name="diff">The three-way diff to inspect.</param>
+    /// <returns><c>true</c> if clean merge; otherwise <c>false</c>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="diff"/> is <see langword="null"/></exception>
     public static bool IsCleanMerge(this ThreeWayDiffResult diff) =>
         diff.ConflictCount == 0;
 
@@ -137,6 +159,8 @@ public static class SchemaDiffServiceExtensions
     /// <param name="diff">The three-way diff to process.</param>
     /// <param name="editor">The <see cref="IMergeEditor"/> to use.</param>
     /// <returns>A <see cref="MergeResolutionPlan"/> with trivial conflicts resolved.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="diff"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentNullException"><paramref name="editor"/> is <see langword="null"/></exception>
     public static MergeResolutionPlan TryAutoResolve(this ThreeWayDiffResult diff, IMergeEditor editor) =>
         editor.AutoMerge(diff);
 
@@ -148,14 +172,19 @@ public static class SchemaDiffServiceExtensions
     /// A read-only dictionary mapping status labels to counts:
     /// <c>Total</c>, <c>Unresolved</c>, <c>AutoResolvable</c>, <c>Resolved</c>.
     /// </returns>
-    public static IReadOnlyDictionary<string, int> GetConflictSummary(this ThreeWayDiffResult diff) =>
-        new Dictionary<string, int>
+    /// <exception cref="ArgumentNullException"><paramref name="diff"/> is <see langword="null"/></exception>
+    public static IReadOnlyDictionary<string, int> GetConflictSummary(this ThreeWayDiffResult diff)
+    {
+        ArgumentNullException.ThrowIfNull(diff);
+
+        return new Dictionary<string, int>
         {
-            ["Total"]          = diff.ConflictCount,
-            ["Unresolved"]     = diff.ConflictRegions.Count(r => !r.IsResolved),
+            ["Total"] = diff.ConflictCount,
+            ["Unresolved"] = diff.ConflictRegions.Count(r => !r.IsResolved),
             ["AutoResolvable"] = diff.ConflictRegions.Count(r => r.IsTriviallyResolvable),
-            ["Resolved"]       = diff.ConflictRegions.Count(r => r.IsResolved)
+            ["Resolved"] = diff.ConflictRegions.Count(r => r.IsResolved)
         };
+    }
 
     // =========================================================================
     // Pipeline + CLI registration
@@ -174,8 +203,11 @@ public static class SchemaDiffServiceExtensions
     /// </remarks>
     /// <param name="services">The <see cref="IServiceCollection"/> to configure.</param>
     /// <returns>The same <see cref="IServiceCollection"/> for chaining.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="services"/> is <see langword="null"/></exception>
     public static IServiceCollection AddSchemaDiffPipeline(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddSingleton<SchemaDiffPipelineService>();
         services.AddTransient<VisualDiffCommand>();
         return services;
