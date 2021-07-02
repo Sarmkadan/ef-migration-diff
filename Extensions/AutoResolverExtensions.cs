@@ -19,8 +19,11 @@ public static class AutoResolverExtensions
     /// </summary>
     /// <param name="services">The service collection to configure.</param>
     /// <returns>The same <paramref name="services"/> instance for fluent chaining.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="services"/> is <see langword="null"/>.</exception>
     public static IServiceCollection AddMigrationAutoResolver(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddLogging();
         services.AddSingleton<MigrationAutoResolverService>();
         return services;
@@ -32,10 +35,13 @@ public static class AutoResolverExtensions
     /// <see cref="ConflictSeverity.Error"/>.
     /// </summary>
     /// <param name="conflicts">Source conflict collection to filter.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="conflicts"/> is <see langword="null"/>.</exception>
     /// <returns>An enumerable of auto-resolvable candidates.</returns>
     public static IEnumerable<ConflictInfo> GetAutoResolvableCandidates(
         this IEnumerable<ConflictInfo> conflicts)
     {
+        ArgumentNullException.ThrowIfNull(conflicts);
+
         return conflicts.Where(c =>
             !c.IsResolved &&
             c.Severity < ConflictSeverity.Error);
@@ -46,32 +52,35 @@ public static class AutoResolverExtensions
     /// console output or structured log entries.
     /// </summary>
     /// <param name="result">The merge result to describe.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="result"/> is <see langword="null"/>.</exception>
     /// <returns>A formatted, human-readable summary string.</returns>
     public static string ToDetailedSummary(this MergeResult result)
     {
+        ArgumentNullException.ThrowIfNull(result);
+
         var lines = new List<string>
         {
-            $"Merge Result [{result.Id[..8]}]  {result.ResolvedAt:u}",
-            $"  Total      : {result.TotalConflicts}",
-            $"  Resolved   : {result.ResolvedCount}",
-            $"  Unresolved : {result.UnresolvedCount}",
-            $"  Blocking   : {(result.HasBlockingConflicts ? "YES — deployment blocked" : "none")}",
+            $"Merge Result [{result.Id[..8]}] {result.ResolvedAt:u}",
+            $" Total : {result.TotalConflicts}",
+            $" Resolved : {result.ResolvedCount}",
+            $" Unresolved : {result.UnresolvedCount}",
+            $" Blocking : {(result.HasBlockingConflicts ? "YES — deployment blocked" : "none")}",
         };
 
         if (result.Attempts.Count > 0)
         {
             lines.Add(string.Empty);
-            lines.Add("  Attempts:");
+            lines.Add(" Attempts:");
             foreach (var attempt in result.Attempts)
-                lines.Add($"    {attempt}");
+                lines.Add($" {attempt}");
         }
 
         if (result.UnresolvedConflicts.Count > 0)
         {
             lines.Add(string.Empty);
-            lines.Add("  Requires manual review:");
+            lines.Add(" Requires manual review:");
             foreach (var conflict in result.UnresolvedConflicts)
-                lines.Add($"    {conflict}");
+                lines.Add($" {conflict}");
         }
 
         return string.Join(Environment.NewLine, lines);
@@ -82,10 +91,13 @@ public static class AutoResolverExtensions
     /// making it straightforward to prioritise manual triage by category.
     /// </summary>
     /// <param name="result">The merge result whose unresolved conflicts to group.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="result"/> is <see langword="null"/>.</exception>
     /// <returns>A dictionary keyed by <see cref="ConflictType"/>.</returns>
     public static IReadOnlyDictionary<ConflictType, List<ConflictInfo>> GroupUnresolvedByType(
         this MergeResult result)
     {
+        ArgumentNullException.ThrowIfNull(result);
+
         return result.UnresolvedConflicts
             .GroupBy(c => c.ConflictType)
             .ToDictionary(g => g.Key, g => g.ToList());
@@ -96,6 +108,12 @@ public static class AutoResolverExtensions
     /// any manual intervention (fully resolved and no blocking conflicts remain).
     /// </summary>
     /// <param name="result">The merge result to evaluate.</param>
-    public static bool IsSafeToMerge(this MergeResult result) =>
-        result.IsFullyResolved && !result.HasBlockingConflicts;
+    /// <exception cref="ArgumentNullException"><paramref name="result"/> is <see langword="null"/>.</exception>
+    /// <returns><c>true</c> if safe to merge; otherwise, <c>false</c>.</returns>
+    public static bool IsSafeToMerge(this MergeResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+
+        return result.IsFullyResolved && !result.HasBlockingConflicts;
+    }
 }
