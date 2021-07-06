@@ -12,13 +12,11 @@ public static class MigrationFileExtensions
     /// Determines if this migration file is a migration class (not a designer file).
     /// </summary>
     /// <param name="migrationFile">The migration file to check.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="migrationFile"/> is <see langword="null"/>.</exception>
     /// <returns>True if this is a migration class file; otherwise false.</returns>
     public static bool IsMigrationClass(this MigrationFile migrationFile)
     {
-        if (migrationFile == null)
-        {
-            throw new ArgumentNullException(nameof(migrationFile));
-        }
+        ArgumentNullException.ThrowIfNull(migrationFile);
 
         return !migrationFile.IsDesigner && migrationFile.FileName.EndsWith(".cs");
     }
@@ -27,49 +25,34 @@ public static class MigrationFileExtensions
     /// Gets the migration name from the filename (e.g., "20240101000000_AddUserTable").
     /// </summary>
     /// <param name="migrationFile">The migration file.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="migrationFile"/> is <see langword="null"/>.</exception>
     /// <returns>The migration name without the timestamp prefix.</returns>
     public static string GetMigrationName(this MigrationFile migrationFile)
     {
-        if (migrationFile == null)
-        {
-            throw new ArgumentNullException(nameof(migrationFile));
-        }
+        ArgumentNullException.ThrowIfNull(migrationFile);
 
         var migrationId = migrationFile.ExtractMigrationId();
-        if (string.IsNullOrEmpty(migrationId))
-        {
-            return string.Empty;
-        }
-
-        // Migration ID format: "20240101000000_AddUserTable"
-        // Extract everything after the timestamp (14 digits)
-        if (migrationId.Length > 14)
-        {
-            return migrationId[14..];
-        }
-
-        return migrationId;
+        return string.IsNullOrEmpty(migrationId)
+            ? string.Empty
+            : migrationId.Length > 14
+                ? migrationId[14..]
+                : migrationId;
     }
 
     /// <summary>
     /// Gets the timestamp portion of the migration ID (e.g., "20240101000000").
     /// </summary>
     /// <param name="migrationFile">The migration file.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="migrationFile"/> is <see langword="null"/>.</exception>
     /// <returns>The timestamp string or empty if not available.</returns>
     public static string GetMigrationTimestamp(this MigrationFile migrationFile)
     {
-        if (migrationFile == null)
-        {
-            throw new ArgumentNullException(nameof(migrationFile));
-        }
+        ArgumentNullException.ThrowIfNull(migrationFile);
 
         var migrationId = migrationFile.ExtractMigrationId();
-        if (string.IsNullOrEmpty(migrationId) || migrationId.Length < 14)
-        {
-            return string.Empty;
-        }
-
-        return migrationId[..14];
+        return string.IsNullOrEmpty(migrationId) || migrationId.Length < 14
+            ? string.Empty
+            : migrationId[..14];
     }
 
     /// <summary>
@@ -77,13 +60,11 @@ public static class MigrationFileExtensions
     /// </summary>
     /// <param name="migrationFile">The migration file.</param>
     /// <param name="includeContext">Whether to include DbContext name in the output.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="migrationFile"/> is <see langword="null"/>.</exception>
     /// <returns>Formatted display string.</returns>
     public static string GetFormattedDisplay(this MigrationFile migrationFile, bool includeContext = true)
     {
-        if (migrationFile == null)
-        {
-            throw new ArgumentNullException(nameof(migrationFile));
-        }
+        ArgumentNullException.ThrowIfNull(migrationFile);
 
         var migrationName = migrationFile.GetMigrationName();
         var timestamp = migrationFile.GetMigrationTimestamp();
