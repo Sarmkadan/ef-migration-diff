@@ -14,8 +14,11 @@ public static class MigrationDiffExtensions
     /// </summary>
     /// <param name="diff">The migration diff instance.</param>
     /// <returns>The total count of all migrations.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="diff"/> is null.</exception>
     public static int GetTotalMigrations(this MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+
         return diff.OnlyInSource.Count +
                diff.OnlyInTarget.Count +
                diff.InBoth.Count;
@@ -26,8 +29,11 @@ public static class MigrationDiffExtensions
     /// </summary>
     /// <param name="diff">The migration diff instance.</param>
     /// <returns>The count of migrations that need attention.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="diff"/> is null.</exception>
     public static int GetMigrationsNeedingAttention(this MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+
         return diff.OnlyInSource.Count + diff.OnlyInTarget.Count;
     }
 
@@ -36,8 +42,11 @@ public static class MigrationDiffExtensions
     /// </summary>
     /// <param name="diff">The migration diff instance.</param>
     /// <returns>True if migrations need attention, otherwise false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="diff"/> is null.</exception>
     public static bool HasMigrationsNeedingAttention(this MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+
         return diff.GetMigrationsNeedingAttention() > 0;
     }
 
@@ -46,8 +55,11 @@ public static class MigrationDiffExtensions
     /// </summary>
     /// <param name="diff">The migration diff instance.</param>
     /// <returns>The percentage (0-100) of common migrations, or 0 if no migrations exist.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="diff"/> is null.</exception>
     public static double GetCommonMigrationPercentage(this MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+
         var total = diff.GetTotalMigrations();
         if (total == 0)
         {
@@ -62,8 +74,11 @@ public static class MigrationDiffExtensions
     /// </summary>
     /// <param name="diff">The migration diff instance.</param>
     /// <returns>A combined list of all schema changes.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="diff"/> is null.</exception>
     public static List<SchemaChange> GetAllSchemaChanges(this MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+
         var allChanges = new List<SchemaChange>();
         allChanges.AddRange(diff.SourceSchemaChanges);
         allChanges.AddRange(diff.TargetSchemaChanges);
@@ -75,26 +90,41 @@ public static class MigrationDiffExtensions
     /// </summary>
     /// <param name="diff">The migration diff instance.</param>
     /// <returns>The most recent timestamp string, or null if no migrations exist.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="diff"/> is null.</exception>
     public static string? GetMostRecentMigrationTimestamp(this MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+
         string? mostRecent = null;
 
         if (diff.OnlyInSource.Count > 0)
         {
             var sourceTimestamp = diff.OnlyInSource.Max(m => m.Timestamp);
-            mostRecent = mostRecent == null ? sourceTimestamp : string.Compare(sourceTimestamp, mostRecent, StringComparison.Ordinal) > 0 ? sourceTimestamp : mostRecent;
+            mostRecent = mostRecent is null
+                ? sourceTimestamp
+                : string.Compare(sourceTimestamp, mostRecent, StringComparison.Ordinal) > 0
+                    ? sourceTimestamp
+                    : mostRecent;
         }
 
         if (diff.OnlyInTarget.Count > 0)
         {
             var targetTimestamp = diff.OnlyInTarget.Max(m => m.Timestamp);
-            mostRecent = mostRecent == null ? targetTimestamp : string.Compare(targetTimestamp, mostRecent, StringComparison.Ordinal) > 0 ? targetTimestamp : mostRecent;
+            mostRecent = mostRecent is null
+                ? targetTimestamp
+                : string.Compare(targetTimestamp, mostRecent, StringComparison.Ordinal) > 0
+                    ? targetTimestamp
+                    : mostRecent;
         }
 
         if (diff.InBoth.Count > 0)
         {
             var commonTimestamp = diff.InBoth.Max(m => m.Timestamp);
-            mostRecent = mostRecent == null ? commonTimestamp : string.Compare(commonTimestamp, mostRecent, StringComparison.Ordinal) > 0 ? commonTimestamp : mostRecent;
+            mostRecent = mostRecent is null
+                ? commonTimestamp
+                : string.Compare(commonTimestamp, mostRecent, StringComparison.Ordinal) > 0
+                    ? commonTimestamp
+                    : mostRecent;
         }
 
         return mostRecent;
@@ -105,8 +135,11 @@ public static class MigrationDiffExtensions
     /// </summary>
     /// <param name="diff">The migration diff instance.</param>
     /// <returns>True if destructive changes exist, otherwise false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="diff"/> is null.</exception>
     public static bool HasDestructiveChanges(this MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+
         return diff.GetDestructiveChanges().Count > 0;
     }
 
@@ -115,8 +148,11 @@ public static class MigrationDiffExtensions
     /// </summary>
     /// <param name="diff">The migration diff instance.</param>
     /// <returns>A formatted summary string.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="diff"/> is null.</exception>
     public static string GetFormattedSummary(this MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+
         return $"""
 Migration Diff Summary:
 ====================
@@ -125,20 +161,20 @@ Target Branch: {diff.TargetBranchId}
 Result: {diff.GetResultDescription()}
 
 Migrations:
-  - Only in Source: {diff.OnlyInSource.Count}
-  - Only in Target: {diff.OnlyInTarget.Count}
-  - Common: {diff.InBoth.Count}
-  - Total: {diff.GetTotalMigrations()}
+- Only in Source: {diff.OnlyInSource.Count}
+- Only in Target: {diff.OnlyInTarget.Count}
+- Common: {diff.InBoth.Count}
+- Total: {diff.GetTotalMigrations()}
 
 Schema Changes:
-  - Source: {diff.SourceSchemaChanges.Count}
-  - Target: {diff.TargetSchemaChanges.Count}
-  - Total: {diff.GetTotalSchemaChanges()}
+- Source: {diff.SourceSchemaChanges.Count}
+- Target: {diff.TargetSchemaChanges.Count}
+- Total: {diff.GetTotalSchemaChanges()}
 
 Conflicts:
-  - Total: {diff.Conflicts.Count}
-  - Blocking: {diff.GetBlockingConflicts()}
-  - Destructive: {diff.GetDestructiveChanges().Count}
+- Total: {diff.Conflicts.Count}
+- Blocking: {diff.GetBlockingConflicts()}
+- Destructive: {diff.GetDestructiveChanges().Count}
 
 Common Migration Percentage: {diff.GetCommonMigrationPercentage():F2}%
 Most Recent Migration: {diff.GetMostRecentMigrationTimestamp() ?? "N/A"}
