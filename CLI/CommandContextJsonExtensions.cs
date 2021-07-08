@@ -1,6 +1,8 @@
 #nullable enable
 
+using System;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace EfMigrationDiff.CLI;
 
@@ -9,10 +11,11 @@ namespace EfMigrationDiff.CLI;
 /// </summary>
 public static class CommandContextJsonExtensions
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.General)
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false
+        WriteIndented = false,
+        ReferenceHandler = ReferenceHandler.IgnoreCycles
     };
 
     /// <summary>
@@ -21,12 +24,10 @@ public static class CommandContextJsonExtensions
     /// <param name="value">The CommandContext to serialize.</param>
     /// <param name="indented">Whether to format the JSON with indentation for readability.</param>
     /// <returns>A JSON string representation of the CommandContext.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     public static string ToJson(this CommandContext value, bool indented = false)
     {
-        if (value is null)
-        {
-            throw new ArgumentNullException(nameof(value));
-        }
+        ArgumentNullException.ThrowIfNull(value);
 
         var options = new JsonSerializerOptions(_jsonSerializerOptions)
         {
@@ -41,21 +42,17 @@ public static class CommandContextJsonExtensions
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
     /// <returns>The deserialized CommandContext, or null if the JSON is null or empty.</returns>
-    public static CommandContext? FromJson(string json)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
+    public static CommandContext? FromJson(string? json)
     {
+        ArgumentNullException.ThrowIfNull(json);
+
         if (string.IsNullOrWhiteSpace(json))
         {
             return null;
         }
 
-        try
-        {
-            return JsonSerializer.Deserialize<CommandContext>(json, _jsonSerializerOptions);
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
+        return JsonSerializer.Deserialize<CommandContext>(json, _jsonSerializerOptions);
     }
 
     /// <summary>
@@ -64,9 +61,12 @@ public static class CommandContextJsonExtensions
     /// <param name="json">The JSON string to deserialize.</param>
     /// <param name="value">The deserialized CommandContext, or null if deserialization fails.</param>
     /// <returns>True if deserialization succeeds; otherwise, false.</returns>
-    public static bool TryFromJson(string json, out CommandContext? value)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
+    public static bool TryFromJson(string? json, out CommandContext? value)
     {
         value = null;
+
+        ArgumentNullException.ThrowIfNull(json);
 
         if (string.IsNullOrWhiteSpace(json))
         {
