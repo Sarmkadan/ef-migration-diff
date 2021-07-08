@@ -6,7 +6,7 @@ using EfMigrationDiff.Models;
 namespace EfMigrationDiff.Models;
 
 /// <summary>
-/// Provides useful extension methods for the Migration class to enhance functionality
+/// Provides useful extension methods for the <see cref="Migration"/> class to enhance functionality
 /// and simplify common operations when working with EF Core migrations.
 /// </summary>
 public static class MigrationExtensions
@@ -16,9 +16,12 @@ public static class MigrationExtensions
     /// potentially cause data loss or break existing functionality.
     /// </summary>
     /// <param name="migration">The migration to check</param>
+    /// <exception cref="ArgumentNullException"><paramref name="migration"/> is <see langword="null"/></exception>
     /// <returns>True if the migration contains destructive operations; otherwise false</returns>
     public static bool HasDestructiveChanges(this Migration migration)
     {
+        ArgumentNullException.ThrowIfNull(migration);
+
         if (migration.SchemaChanges == null || migration.SchemaChanges.Count == 0)
             return false;
 
@@ -30,9 +33,12 @@ public static class MigrationExtensions
     /// </summary>
     /// <param name="migration">The migration to analyze</param>
     /// <param name="includeDetails">Whether to include detailed information about each change</param>
+    /// <exception cref="ArgumentNullException"><paramref name="migration"/> is <see langword="null"/></exception>
     /// <returns>Formatted string containing change summary</returns>
     public static string GetSchemaChangesSummary(this Migration migration, bool includeDetails = false)
     {
+        ArgumentNullException.ThrowIfNull(migration);
+
         if (migration.SchemaChanges == null || migration.SchemaChanges.Count == 0)
             return "No schema changes detected.";
 
@@ -65,17 +71,22 @@ public static class MigrationExtensions
     /// </summary>
     /// <param name="migration">The migration to check for conflicts</param>
     /// <param name="otherMigrations">Collection of other migrations to compare against</param>
+    /// <exception cref="ArgumentNullException"><paramref name="migration"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentNullException"><paramref name="otherMigrations"/> is <see langword="null"/></exception>
     /// <returns>List of detected conflicts; empty if no conflicts found</returns>
     public static List<ConflictInfo> FindConflictsWith(this Migration migration, IEnumerable<Migration> otherMigrations)
     {
+        ArgumentNullException.ThrowIfNull(migration);
+        ArgumentNullException.ThrowIfNull(otherMigrations);
+
         var conflicts = new List<ConflictInfo>();
 
-        if (migration.SchemaChanges == null || migration.DetectedConflicts == null)
+        if (migration.SchemaChanges == null)
             return conflicts;
 
         foreach (var otherMigration in otherMigrations)
         {
-            if (otherMigration.SchemaChanges == null || migration.Id == otherMigration.Id)
+            if (otherMigration?.SchemaChanges == null || migration.Id == otherMigration.Id)
                 continue;
 
             // Check for conflicts between schema changes
@@ -106,11 +117,13 @@ public static class MigrationExtensions
     /// </summary>
     /// <param name="migration">The original migration to transform</param>
     /// <param name="transform">Function that takes the original content and returns modified content</param>
+    /// <exception cref="ArgumentNullException"><paramref name="migration"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentNullException"><paramref name="transform"/> is <see langword="null"/></exception>
     /// <returns>A new migration with transformed content</returns>
     public static Migration TransformContent(this Migration migration, Func<string, string> transform)
     {
-        if (transform == null)
-            throw new ArgumentNullException(nameof(transform));
+        ArgumentNullException.ThrowIfNull(migration);
+        ArgumentNullException.ThrowIfNull(transform);
 
         var newMigration = migration.Clone();
         newMigration.Content = transform(migration.Content);
