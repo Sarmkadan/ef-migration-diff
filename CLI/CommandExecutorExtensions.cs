@@ -3,27 +3,23 @@
 namespace EfMigrationDiff.CLI;
 
 /// <summary>
-/// Extension methods for CommandExecutor providing convenient utility operations.
+/// Extension methods for <see cref="CommandExecutor"/> providing convenient utility operations
+/// for command execution, validation, and result handling.
 /// </summary>
 public static class CommandExecutorExtensions
 {
     /// <summary>
     /// Checks if a command with the given name is registered.
     /// </summary>
-    /// <param name="executor">The command executor instance.</param>
-    /// <param name="commandName">Name of the command to check.</param>
-    /// <returns>True if the command is registered; otherwise, false.</returns>
+    /// <param name="executor">The command executor instance. Cannot be <see langword="null"/>.</param>
+    /// <param name="commandName">Name of the command to check. Cannot be <see langword="null"/> or whitespace.</param>
+    /// <returns><see langword="true"/> if the command is registered; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="executor"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="commandName"/> is <see langword="null"/>, empty, or consists only of whitespace.</exception>
     public static bool IsCommandRegistered(this CommandExecutor executor, string commandName)
     {
-        if (executor is null)
-        {
-            throw new ArgumentNullException(nameof(executor));
-        }
-
-        if (string.IsNullOrWhiteSpace(commandName))
-        {
-            throw new ArgumentException("Command name cannot be null or whitespace.", nameof(commandName));
-        }
+        ArgumentNullException.ThrowIfNull(executor);
+        ArgumentException.ThrowIfNullOrWhiteSpace(commandName);
 
         return executor.GetRegisteredCommandNames()
             .Contains(commandName.ToLowerInvariant());
@@ -32,11 +28,12 @@ public static class CommandExecutorExtensions
     /// <summary>
     /// Executes a command and returns the result. If the command fails, throws an exception.
     /// </summary>
-    /// <param name="executor">The command executor instance.</param>
-    /// <param name="commandName">Name of the command to execute.</param>
-    /// <param name="args">Command arguments.</param>
-    /// <param name="serviceProvider">Service provider for dependency injection.</param>
+    /// <param name="executor">The command executor instance. Cannot be <see langword="null"/>.</param>
+    /// <param name="commandName">Name of the command to execute. Cannot be <see langword="null"/> or empty.</param>
+    /// <param name="args">Command arguments. Can be empty but not <see langword="null"/>.</param>
+    /// <param name="serviceProvider">Service provider for dependency injection. Cannot be <see langword="null"/>.</param>
     /// <returns>The command result.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if any parameter is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown if the command execution fails.</exception>
     public static async Task<CommandResult> ExecuteOrThrowAsync(
         this CommandExecutor executor,
@@ -44,10 +41,10 @@ public static class CommandExecutorExtensions
         string[] args,
         IServiceProvider serviceProvider)
     {
-        if (executor is null)
-        {
-            throw new ArgumentNullException(nameof(executor));
-        }
+        ArgumentNullException.ThrowIfNull(executor);
+        ArgumentNullException.ThrowIfNull(commandName);
+        ArgumentNullException.ThrowIfNull(args);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
 
         var result = await executor.ExecuteAsync(commandName, args, serviceProvider);
 
@@ -64,22 +61,23 @@ public static class CommandExecutorExtensions
     /// Executes a command with the given arguments and returns the data payload.
     /// </summary>
     /// <typeparam name="T">Type of the data payload.</typeparam>
-    /// <param name="executor">The command executor instance.</param>
-    /// <param name="commandName">Name of the command to execute.</param>
-    /// <param name="args">Command arguments.</param>
-    /// <param name="serviceProvider">Service provider for dependency injection.</param>
+    /// <param name="executor">The command executor instance. Cannot be <see langword="null"/>.</param>
+    /// <param name="commandName">Name of the command to execute. Cannot be <see langword="null"/> or empty.</param>
+    /// <param name="args">Command arguments. Can be empty but not <see langword="null"/>.</param>
+    /// <param name="serviceProvider">Service provider for dependency injection. Cannot be <see langword="null"/>.</param>
     /// <returns>The data payload from the command result.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if the command fails or data is not of type T.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if any parameter is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the command fails or data is not of type <typeparamref name="T"/>.</exception>
     public static async Task<T> ExecuteAndGetDataAsync<T>(
         this CommandExecutor executor,
         string commandName,
         string[] args,
         IServiceProvider serviceProvider)
     {
-        if (executor is null)
-        {
-            throw new ArgumentNullException(nameof(executor));
-        }
+        ArgumentNullException.ThrowIfNull(executor);
+        ArgumentNullException.ThrowIfNull(commandName);
+        ArgumentNullException.ThrowIfNull(args);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
 
         var result = await executor.ExecuteAsync(commandName, args, serviceProvider);
 
@@ -100,22 +98,24 @@ public static class CommandExecutorExtensions
 
     /// <summary>
     /// Executes a command and returns the result. If the command fails, returns the error result.
+    /// This method provides a safe execution path that never throws exceptions.
     /// </summary>
-    /// <param name="executor">The command executor instance.</param>
-    /// <param name="commandName">Name of the command to execute.</param>
-    /// <param name="args">Command arguments.</param>
-    /// <param name="serviceProvider">Service provider for dependency injection.</param>
+    /// <param name="executor">The command executor instance. Cannot be <see langword="null"/>.</param>
+    /// <param name="commandName">Name of the command to execute. Cannot be <see langword="null"/> or empty.</param>
+    /// <param name="args">Command arguments. Can be empty but not <see langword="null"/>.</param>
+    /// <param name="serviceProvider">Service provider for dependency injection. Cannot be <see langword="null"/>.</param>
     /// <returns>The command result, successful or failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if any parameter is <see langword="null"/>.</exception>
     public static async Task<CommandResult> ExecuteWithFallbackAsync(
         this CommandExecutor executor,
         string commandName,
         string[] args,
         IServiceProvider serviceProvider)
     {
-        if (executor is null)
-        {
-            throw new ArgumentNullException(nameof(executor));
-        }
+        ArgumentNullException.ThrowIfNull(executor);
+        ArgumentNullException.ThrowIfNull(commandName);
+        ArgumentNullException.ThrowIfNull(args);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
 
         return await executor.ExecuteAsync(commandName, args, serviceProvider);
     }
