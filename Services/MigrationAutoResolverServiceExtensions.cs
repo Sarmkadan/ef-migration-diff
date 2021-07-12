@@ -15,11 +15,13 @@ public static class MigrationAutoResolverServiceExtensions
     /// </summary>
     /// <param name="service">The auto-resolver service instance.</param>
     /// <param name="conflictType">The conflict type to skip.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="service"/> is <see langword="null"/>.</exception>
     /// <returns>The service instance for method chaining.</returns>
     public static MigrationAutoResolverService ConfigureSkipStrategy(
         this MigrationAutoResolverService service,
         ConflictType conflictType)
     {
+        ArgumentNullException.ThrowIfNull(service);
         service.ConfigureStrategy(conflictType, MergeStrategy.Skip);
         return service;
     }
@@ -29,11 +31,13 @@ public static class MigrationAutoResolverServiceExtensions
     /// </summary>
     /// <param name="service">The auto-resolver service instance.</param>
     /// <param name="conflictType">The conflict type to resolve with first-wins.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="service"/> is <see langword="null"/>.</exception>
     /// <returns>The service instance for method chaining.</returns>
     public static MigrationAutoResolverService ConfigureFirstWinsStrategy(
         this MigrationAutoResolverService service,
         ConflictType conflictType)
     {
+        ArgumentNullException.ThrowIfNull(service);
         service.ConfigureStrategy(conflictType, MergeStrategy.FirstWins);
         return service;
     }
@@ -43,11 +47,13 @@ public static class MigrationAutoResolverServiceExtensions
     /// </summary>
     /// <param name="service">The auto-resolver service instance.</param>
     /// <param name="conflictType">The conflict type to resolve with last-wins.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="service"/> is <see langword="null"/>.</exception>
     /// <returns>The service instance for method chaining.</returns>
     public static MigrationAutoResolverService ConfigureLastWinsStrategy(
         this MigrationAutoResolverService service,
         ConflictType conflictType)
     {
+        ArgumentNullException.ThrowIfNull(service);
         service.ConfigureStrategy(conflictType, MergeStrategy.LastWins);
         return service;
     }
@@ -57,11 +63,13 @@ public static class MigrationAutoResolverServiceExtensions
     /// </summary>
     /// <param name="service">The auto-resolver service instance.</param>
     /// <param name="conflictType">The conflict type to resolve with combine strategy.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="service"/> is <see langword="null"/>.</exception>
     /// <returns>The service instance for method chaining.</returns>
     public static MigrationAutoResolverService ConfigureCombineStrategy(
         this MigrationAutoResolverService service,
         ConflictType conflictType)
     {
+        ArgumentNullException.ThrowIfNull(service);
         service.ConfigureStrategy(conflictType, MergeStrategy.Combine);
         return service;
     }
@@ -72,12 +80,16 @@ public static class MigrationAutoResolverServiceExtensions
     /// <param name="service">The auto-resolver service instance.</param>
     /// <param name="conflicts">The collection of conflicts to resolve.</param>
     /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="service"/> or <paramref name="conflicts"/> is <see langword="null"/>.</exception>
     /// <returns>True if all conflicts were resolved; otherwise false.</returns>
     public static async Task<bool> TryResolveAllAsync(
         this MigrationAutoResolverService service,
         IEnumerable<ConflictInfo> conflicts,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(service);
+        ArgumentNullException.ThrowIfNull(conflicts);
+
         var result = await service.ResolveAsync(conflicts, cancellationToken);
         return !result.HasBlockingConflicts && result.UnresolvedCount == 0;
     }
@@ -87,11 +99,13 @@ public static class MigrationAutoResolverServiceExtensions
     /// </summary>
     /// <param name="service">The auto-resolver service instance.</param>
     /// <param name="conflictType">The conflict type to query.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="service"/> is <see langword="null"/>.</exception>
     /// <returns>The configured strategy, or the default strategy for the conflict type.</returns>
     public static MergeStrategy GetConfiguredStrategy(
         this MigrationAutoResolverService service,
         ConflictType conflictType)
     {
+        ArgumentNullException.ThrowIfNull(service);
         return service.GetStrategy(conflictType) ?? GetDefaultStrategy(conflictType);
     }
 
@@ -99,22 +113,22 @@ public static class MigrationAutoResolverServiceExtensions
     /// Resets all strategies to their default values.
     /// </summary>
     /// <param name="service">The auto-resolver service instance.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="service"/> is <see langword="null"/>.</exception>
     /// <returns>The service instance for method chaining.</returns>
     public static MigrationAutoResolverService ResetToDefaults(
         this MigrationAutoResolverService service)
     {
-        // Rebuild the default strategy map
-        var loggerField = typeof(MigrationAutoResolverService)
-            .GetField("_logger", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-        var logger = loggerField?.GetValue(service) as ILogger<MigrationAutoResolverService>;
+        ArgumentNullException.ThrowIfNull(service);
 
+        // Use reflection to access private fields and reset to defaults
         var strategyMapField = typeof(MigrationAutoResolverService)
             .GetField("_strategyMap", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
 
-        var newStrategyMap = BuildDefaultStrategyMap();
-        strategyMapField?.SetValue(service, newStrategyMap);
+        ArgumentNullException.ThrowIfNull(strategyMapField);
 
-        logger?.LogInformation("Auto-resolver strategies reset to defaults.");
+        var newStrategyMap = BuildDefaultStrategyMap();
+        strategyMapField.SetValue(service, newStrategyMap);
+
         return service;
     }
 
@@ -132,6 +146,7 @@ public static class MigrationAutoResolverServiceExtensions
     /// <summary>
     /// Builds the default strategy map (copied from MigrationAutoResolverService for extension use).
     /// </summary>
+    /// <returns>A dictionary mapping conflict types to their default merge strategies.</returns>
     private static Dictionary<ConflictType, MergeStrategy> BuildDefaultStrategyMap() =>
         new()
         {
@@ -152,10 +167,12 @@ public static class MigrationAutoResolverServiceExtensions
     /// Creates a new <see cref="MigrationAutoResolverService"/> with the specified logger factory.
     /// </summary>
     /// <param name="loggerFactory">The logger factory to use.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="loggerFactory"/> is <see langword="null"/>.</exception>
     /// <returns>A new instance of <see cref="MigrationAutoResolverService"/>.</returns>
     public static MigrationAutoResolverService CreateWithLogger(
         ILoggerFactory loggerFactory)
     {
+        ArgumentNullException.ThrowIfNull(loggerFactory);
         return new MigrationAutoResolverService(loggerFactory.CreateLogger<MigrationAutoResolverService>());
     }
 }
