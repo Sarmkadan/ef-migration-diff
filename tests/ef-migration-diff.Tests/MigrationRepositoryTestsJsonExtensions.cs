@@ -10,6 +10,9 @@ namespace EfMigrationDiff.Tests;
 /// </summary>
 public static class MigrationRepositoryTestsJsonExtensions
 {
+    /// <summary>
+    /// A shared instance of <see cref="JsonSerializerOptions"/> for serializing and deserializing <see cref="MigrationRepositoryTests"/> instances.
+    /// </summary>
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
