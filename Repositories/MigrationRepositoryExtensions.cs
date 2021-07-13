@@ -18,22 +18,13 @@ public static class MigrationRepositoryExtensions
     /// <param name="repository">The repository instance</param>
     /// <param name="migrations">Collection of migrations to add</param>
     /// <returns>Count of successfully added migrations</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="repository"/> or <paramref name="migrations"/> is <see langword="null"/></exception>
     public static int AddRange(this MigrationRepository repository, IEnumerable<Migration> migrations)
     {
-        if (repository is null)
-            throw new ArgumentNullException(nameof(repository));
+        ArgumentNullException.ThrowIfNull(repository);
+        ArgumentNullException.ThrowIfNull(migrations);
 
-        if (migrations is null)
-            throw new ArgumentNullException(nameof(migrations));
-
-        int count = 0;
-        foreach (var migration in migrations)
-        {
-            repository.Add(migration);
-            count++;
-        }
-
-        return count;
+        return migrations.Count(migration => { repository.Add(migration); return true; });
     }
 
     /// <summary>
@@ -42,10 +33,10 @@ public static class MigrationRepositoryExtensions
     /// <param name="repository">The repository instance</param>
     /// <param name="statuses">Statuses to filter by</param>
     /// <returns>Filtered list of migrations</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="repository"/> is <see langword="null"/></exception>
     public static List<Migration> GetByStatuses(this MigrationRepository repository, params MigrationStatus[] statuses)
     {
-        if (repository is null)
-            throw new ArgumentNullException(nameof(repository));
+        ArgumentNullException.ThrowIfNull(repository);
 
         if (statuses is null || statuses.Length == 0)
             return [];
@@ -65,10 +56,11 @@ public static class MigrationRepositoryExtensions
     /// <param name="repository">The repository instance</param>
     /// <param name="namePattern">Pattern to match (e.g., "%Init%", "Create_%")</param>
     /// <returns>Matching migrations</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="repository"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentException"><paramref name="namePattern"/> is empty or whitespace</exception>
     public static List<Migration> SearchByNamePattern(this MigrationRepository repository, string namePattern)
     {
-        if (repository is null)
-            throw new ArgumentNullException(nameof(repository));
+        ArgumentNullException.ThrowIfNull(repository);
 
         if (string.IsNullOrWhiteSpace(namePattern))
             return [];
@@ -96,10 +88,10 @@ public static class MigrationRepositoryExtensions
     /// <param name="repository">The repository instance</param>
     /// <param name="status">Status to filter by</param>
     /// <returns>Count of migrations with the specified status</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="repository"/> is <see langword="null"/></exception>
     public static int CountByStatus(this MigrationRepository repository, MigrationStatus status)
     {
-        if (repository is null)
-            throw new ArgumentNullException(nameof(repository));
+        ArgumentNullException.ThrowIfNull(repository);
 
         lock (repository.GetSyncLock())
         {
@@ -112,19 +104,19 @@ public static class MigrationRepositoryExtensions
     /// </summary>
     /// <param name="repository">The repository instance</param>
     /// <returns>The synchronization lock object</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="repository"/> is <see langword="null"/></exception>
+    /// <exception cref="InvalidOperationException">Sync lock field not found in MigrationRepository</exception>
     private static object GetSyncLock(this MigrationRepository repository)
     {
-        if (repository is null)
-            throw new ArgumentNullException(nameof(repository));
+        ArgumentNullException.ThrowIfNull(repository);
 
         // Using reflection to access the private _syncLock field
         var field = typeof(MigrationRepository).GetField("_syncLock",
-            System.Reflection.BindingFlags.NonPublic |
-            System.Reflection.BindingFlags.Instance);
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
         if (field is null)
             throw new InvalidOperationException("Sync lock field not found in MigrationRepository");
 
-        return (object)field.GetValue(repository)!;
+        return field.GetValue(repository)!;
     }
 }
