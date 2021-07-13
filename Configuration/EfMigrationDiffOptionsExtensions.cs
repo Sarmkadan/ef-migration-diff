@@ -1,9 +1,7 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace EfMigrationDiff.Configuration;
 
@@ -16,13 +14,11 @@ public static class EfMigrationDiffOptionsExtensions
     /// Ensures that all required paths exist. Creates directories if they don't exist.
     /// </summary>
     /// <param name="options">The options instance.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
     /// <returns>The same options instance for method chaining.</returns>
     public static EfMigrationDiffOptions EnsurePathsExist(this EfMigrationDiffOptions options)
     {
-        if (options == null)
-        {
-            throw new ArgumentNullException(nameof(options));
-        }
+        ArgumentNullException.ThrowIfNull(options);
 
         // Ensure repository path exists
         if (!string.IsNullOrWhiteSpace(options.RepositoryPath) && !Directory.Exists(options.RepositoryPath))
@@ -64,13 +60,12 @@ public static class EfMigrationDiffOptionsExtensions
     /// </summary>
     /// <param name="options">The options instance.</param>
     /// <param name="format">The report format (text, json, or html).</param>
+    /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="format"/> is <see langword="null"/>, empty, or consists only of whitespace.</exception>
     /// <returns>The same options instance for method chaining.</returns>
     public static EfMigrationDiffOptions WithReportFormat(this EfMigrationDiffOptions options, string format)
     {
-        if (options == null)
-        {
-            throw new ArgumentNullException(nameof(options));
-        }
+        ArgumentNullException.ThrowIfNull(options);
 
         if (string.IsNullOrWhiteSpace(format))
         {
@@ -86,13 +81,11 @@ public static class EfMigrationDiffOptionsExtensions
     /// </summary>
     /// <param name="options">The options instance.</param>
     /// <param name="contextNames">The DbContext names to analyze.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
     /// <returns>The same options instance for method chaining.</returns>
     public static EfMigrationDiffOptions WithDbContexts(this EfMigrationDiffOptions options, params string[] contextNames)
     {
-        if (options == null)
-        {
-            throw new ArgumentNullException(nameof(options));
-        }
+        ArgumentNullException.ThrowIfNull(options);
 
         options.DbContextNames = contextNames ?? Array.Empty<string>();
         return options;
@@ -104,23 +97,17 @@ public static class EfMigrationDiffOptionsExtensions
     /// <param name="options">The options instance.</param>
     /// <param name="sourceBranch">The source branch name.</param>
     /// <param name="targetBranch">The target branch name.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="sourceBranch"/> or <paramref name="targetBranch"/> is <see langword="null"/>, empty, or consists only of whitespace.</exception>
     /// <returns>The same options instance for method chaining.</returns>
-    public static EfMigrationDiffOptions WithBranches(this EfMigrationDiffOptions options, string sourceBranch, string targetBranch)
+    public static EfMigrationDiffOptions WithBranches(
+        this EfMigrationDiffOptions options,
+        string sourceBranch,
+        string targetBranch)
     {
-        if (options == null)
-        {
-            throw new ArgumentNullException(nameof(options));
-        }
-
-        if (string.IsNullOrWhiteSpace(sourceBranch))
-        {
-            throw new ArgumentException("Source branch cannot be null or empty.", nameof(sourceBranch));
-        }
-
-        if (string.IsNullOrWhiteSpace(targetBranch))
-        {
-            throw new ArgumentException("Target branch cannot be null or empty.", nameof(targetBranch));
-        }
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentException.ThrowIfNullOrEmpty(sourceBranch);
+        ArgumentException.ThrowIfNullOrEmpty(targetBranch);
 
         options.SourceBranch = sourceBranch;
         options.TargetBranch = targetBranch;
