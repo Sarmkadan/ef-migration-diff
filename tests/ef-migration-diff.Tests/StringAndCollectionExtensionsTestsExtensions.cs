@@ -6,15 +6,15 @@ using System.Reflection;
 namespace EfMigrationDiff.Tests
 {
     /// <summary>
-    /// Provides extension methods to run and manage tests for <see cref="StringAndCollectionExtensionsTests"/>.
-    /// This class contains helper methods for executing test methods in bulk and collecting test metadata.
+    /// Provides extension methods for executing and managing test methods in <see cref="StringAndCollectionExtensionsTests"/>.
+    /// This class enables bulk execution of test methods and collection of test metadata.
     /// </summary>
     public static class StringAndCollectionExtensionsTestsExtensions
     {
         /// <summary>
-        /// Runs all string conversion tests (ToPascalCase, ToSnakeCase, Truncate) on the test instance.
+        /// Invokes all string conversion test methods (ToPascalCase, ToSnakeCase, Truncate) on the test instance.
         /// </summary>
-        /// <param name="testInstance">The test instance containing the methods to invoke.</param>
+        /// <param name="testInstance">The test instance containing the string conversion test methods to execute.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="testInstance"/> is null.</exception>
         public static void RunAllStringConversionTests(this StringAndCollectionExtensionsTests testInstance)
         {
@@ -32,9 +32,9 @@ namespace EfMigrationDiff.Tests
         }
 
         /// <summary>
-        /// Runs all collection batching tests (Batch) on the test instance.
+        /// Invokes all collection batching test methods (Batch) on the test instance.
         /// </summary>
-        /// <param name="testInstance">The test instance containing the methods to invoke.</param>
+        /// <param name="testInstance">The test instance containing the collection batching test methods to execute.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="testInstance"/> is null.</exception>
         public static void RunAllCollectionBatchingTests(this StringAndCollectionExtensionsTests testInstance)
         {
@@ -52,10 +52,10 @@ namespace EfMigrationDiff.Tests
         }
 
         /// <summary>
-        /// Gets the names of all public instance methods in <see cref="StringAndCollectionExtensionsTests"/>.
+        /// Retrieves the names of all public instance methods in <see cref="StringAndCollectionExtensionsTests"/>.
         /// </summary>
-        /// <param name="testInstance">The test instance (unused, required for extension method syntax).</param>
-        /// <returns>A list of method names.</returns>
+        /// <param name="testInstance">The test instance (required for extension method syntax, not used in implementation).</param>
+        /// <returns>A list of method names as strings.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="testInstance"/> is null.</exception>
         public static List<string> GetAllTestNames(this StringAndCollectionExtensionsTests testInstance)
         {
@@ -68,14 +68,14 @@ namespace EfMigrationDiff.Tests
         }
 
         /// <summary>
-        /// Invokes all public instance methods on the test instance and returns true if all succeed.
+        /// Executes all public instance methods on the test instance and returns true if all succeed.
         /// </summary>
         /// <param name="testInstance">The test instance containing the methods to invoke.</param>
-        /// <returns>True if all tests pass; otherwise, false.</returns>
+        /// <returns>True if all tests pass successfully; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="testInstance"/> is null.</exception>
         /// <remarks>
-        /// This method catches exceptions and logs them to the console, allowing execution to continue
-        /// through all methods even if some fail. This is useful for bulk test execution scenarios.
+        /// This method catches exceptions during test execution, logs failure details to the console,
+        /// and continues executing remaining tests. This allows bulk test execution with detailed failure reporting.
         /// </remarks>
         public static bool AssertAllTestsPass(this StringAndCollectionExtensionsTests testInstance)
         {
