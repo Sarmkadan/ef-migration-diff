@@ -8,6 +8,9 @@ namespace EfMigrationDiff.Models;
 /// </summary>
 public static class MigrationGraphNodeJsonExtensions
 {
+	/// <summary>
+	/// The default JSON serializer options used for serialization and deserialization.
+	/// </summary>
 	private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
 	{
 		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
