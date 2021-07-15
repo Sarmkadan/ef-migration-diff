@@ -5,7 +5,8 @@ using System.Text.Json.Serialization;
 namespace EfMigrationDiff.Services;
 
 /// <summary>
-/// Provides JSON serialization and deserialization extensions for <see cref="MigrationAutoResolverService"/>.
+/// Provides extension methods for JSON serialization and deserialization of
+/// <see cref="MigrationAutoResolverService"/> instances.
 /// </summary>
 public static class MigrationAutoResolverServiceJsonExtensions
 {
@@ -24,12 +25,14 @@ public static class MigrationAutoResolverServiceJsonExtensions
 	};
 
 	/// <summary>
-	/// Serializes the <see cref="MigrationAutoResolverService"/> instance to a JSON string.
+	/// Serializes the supplied <see cref="MigrationAutoResolverService"/> instance to a JSON string.
 	/// </summary>
-	/// <param name="value">The service instance to serialize.</param>
-	/// <param name="indented">Whether to format the JSON with indentation for readability.</param>
-	/// <returns>A JSON string representation of the service.</returns>
-	/// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
+	/// <param name="value">The service instance to serialize. Must not be <c>null</c>.</param>
+	/// <param name="indented">
+	/// If <c>true</c>, the output JSON will be formatted with indentation for readability; otherwise it will be compact.
+	/// </param>
+	/// <returns>A JSON string representing the supplied service instance.</returns>
+	/// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <c>null</c>.</exception>
 	public static string ToJson(this MigrationAutoResolverService value, bool indented = false)
 	{
 		ArgumentNullException.ThrowIfNull(value);
@@ -37,11 +40,13 @@ public static class MigrationAutoResolverServiceJsonExtensions
 	}
 
 	/// <summary>
-	/// Deserializes a JSON string to a <see cref="MigrationAutoResolverService"/> instance.
+	/// Deserializes a JSON string into a <see cref="MigrationAutoResolverService"/> instance.
 	/// </summary>
-	/// <param name="json">The JSON string to deserialize.</param>
-	/// <returns>The deserialized service instance, or <see langword="null"/> if deserialization fails.</returns>
-	/// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is <see langword="null"/>.</exception>
+	/// <param name="json">The JSON string to deserialize. Must not be <c>null</c>.</param>
+	/// <returns>
+	/// The deserialized <see cref="MigrationAutoResolverService"/> instance, or <c>null</c> if the JSON does not represent a valid object.
+	/// </returns>
+	/// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is <c>null</c>.</exception>
 	public static MigrationAutoResolverService? FromJson(string json)
 	{
 		ArgumentNullException.ThrowIfNull(json);
@@ -49,12 +54,15 @@ public static class MigrationAutoResolverServiceJsonExtensions
 	}
 
 	/// <summary>
-	/// Attempts to deserialize a JSON string to a <see cref="MigrationAutoResolverService"/> instance.
+	/// Attempts to deserialize a JSON string into a <see cref="MigrationAutoResolverService"/> instance,
+	/// suppressing any <see cref="JsonException"/> that may occur.
 	/// </summary>
-	/// <param name="json">The JSON string to deserialize.</param>
-	/// <param name="value">Receives the deserialized service instance if successful; otherwise, <see langword="null"/>.</param>
-	/// <returns><see langword="true"/> if deserialization succeeds; otherwise, <see langword="false"/>.</returns>
-	/// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is <see langword="null"/>.</exception>
+	/// <param name="json">The JSON string to deserialize. Must not be <c>null</c>.</param>
+	/// <param name="value">
+	/// When this method returns, contains the deserialized instance if the operation succeeded; otherwise <c>null</c>.
+	/// </param>
+	/// <returns><c>true</c> if deserialization succeeded; otherwise <c>false</c>.</returns>
+	/// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is <c>null</c>.</exception>
 	public static bool TryFromJson(string json, out MigrationAutoResolverService? value)
 	{
 		ArgumentNullException.ThrowIfNull(json);
