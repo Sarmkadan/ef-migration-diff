@@ -1,43 +1,23 @@
 // ... existing content ...
 
-## VisualDiffOutputTestsExtensions
+## MigrationDiffExtensions
 
-The `VisualDiffOutputTestsExtensions` class provides a set of extension methods for testing and asserting the output of visual diff operations. These methods allow you to create test data for schema diff results, three-way diff results, merge conflict regions, and merge resolution plans, as well as assert the expected behavior of these data structures.
+The `MigrationDiffExtensions` class provides a set of extension methods for working with migration data. These methods allow you to analyze and summarize migration information, such as the total number of migrations, migrations needing attention, and schema changes.
 
 Here's an example of how to use these extension methods:
 
 ```csharp
-var baseline = SchemaDiffResult.CreateDiffResult(
-    new[] { "Table1", "Table2" },
-    new[] { "AddedColumn", "RemovedColumn" }
-);
+var migrationDiff = new[] { /* some migration data */ };
+var totalMigrations = MigrationDiffExtensions.GetTotalMigrations(migrationDiff);
+var migrationsNeedingAttention = MigrationDiffExtensions.GetMigrationsNeedingAttention(migrationDiff);
+var hasDestructiveChanges = MigrationDiffExtensions.HasDestructiveChanges(migrationDiff);
 
-var source = ThreeWayDiffResult.CreateThreeWayDiff(
-    baseline,
-    new[] { "AddedColumn2" },
-    new[] { "RemovedColumn2" }
-);
+Console.WriteLine($"Total Migrations: {totalMigrations}");
+Console.WriteLine($"Migrations Needing Attention: {migrationsNeedingAttention}");
+Console.WriteLine($"Has Destructive Changes: {hasDestructiveChanges}");
 
-var conflictRegion = MergeConflictRegion.CreateConflictRegion(
-    "Table1",
-    new[] { "Column1", "Column2" }
-);
-
-var resolutionPlan = MergeResolutionPlan.CreateResolutionPlan(
-    conflictRegion,
-    MergeResolutionStrategy.AcceptSource
-);
-
-baseline.ShouldHaveChanges();
-source.ShouldHaveChanges();
-conflictRegion.ShouldNotBeNull();
-resolutionPlan.ShouldNotBeNull();
-
-var totalChanges = baseline.TotalChanges();
-var hasChanges = baseline.HasChanges();
-var resolvedCount = baseline.CountResolvedWithStrategy(MergeResolutionStrategy.AcceptSource);
-
-Assert.True(totalChanges > 0);
-Assert.True(hasChanges);
-Assert.True(resolvedCount == 0);
+var summary = MigrationDiffExtensions.GetFormattedSummary(migrationDiff);
+Console.WriteLine(summary);
 ```
+
+These extension methods can be used to gain insights into migration data and make it easier to work with migration information in your application.
