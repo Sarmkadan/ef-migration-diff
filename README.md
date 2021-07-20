@@ -99,3 +99,25 @@ if (!success)
 ```
 
 This example demonstrates configuring a resolver with a combination of strategies, setting up logging, resolving conflicts, and handling fallback scenarios.
+
+## VisualDiffOutputTests
+
+The `VisualDiffOutputTests` class provides a set of test methods for verifying the correctness of visual diff output. It includes tests for computing diff with identical changes, source-only changes, target-only changes, destructive changes, and empty inputs. These tests can be used to ensure that the visual diff output is accurate and reliable.
+
+Here's an example of how to use these test methods:
+
+```csharp
+var visualDiffOutput = new VisualDiffOutput();
+visualDiffOutput.ComputeDiff(new[] { /* some migration data */ }, new[] { /* some migration data */ });
+
+visualDiffOutput.ComputeDiff_WithIdenticalChanges_ReturnsIdenticalResult();
+visualDiffOutput.ComputeDiff_WithSourceOnlyChange_PopulatesSourceOnlyList();
+visualDiffOutput.ComputeDiff_WithTargetOnlyChange_PopulatesTargetOnlyList();
+visualDiffOutput.ComputeDiff_WithDestructiveChange_ReportsDestructive();
+visualDiffOutput.ComputeDiff_WithEmptyInputs_ReturnsIdentical();
+visualDiffOutput.AcceptSource_BuildsPlanWithAllSourceResolutions();
+visualDiffOutput.AutoMerge_WithTriviallyResolvableConflicts_ResolvesAll();
+```
+
+These test methods can be used to ensure that the visual diff output is accurate and reliable, and to catch any regressions or bugs that may be introduced in the future.
+```
