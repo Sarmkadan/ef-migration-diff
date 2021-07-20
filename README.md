@@ -1,4 +1,6 @@
-// ... existing content ...
+## EfMigrationDiff
+
+A library for analyzing and comparing database migrations in .NET applications.
 
 ## EfMigrationDiffException
 
@@ -48,4 +50,29 @@ Console.WriteLine(summary);
 ```
 
 These extension methods can be used to gain insights into migration data and make it easier to work with migration information in your application.
+
+## MigrationDiffServiceExtensions
+
+The `MigrationDiffServiceExtensions` class provides extension methods for analyzing migration differences and generating reports. It includes methods for checking destructive changes, generating quick and conflict reports, finding common migration names, and determining if migrations can be merged safely.
+
+Example usage:
+
+```csharp
+var migrationDiff = new[] { /* some migration data */ };
+var migrations1 = new[] { "Migration1", "Migration2" };
+var migrations2 = new[] { "Migration2", "Migration3" };
+
+bool hasDestructive = MigrationDiffServiceExtensions.HasDestructiveChanges(migrationDiff);
+string quickReport = MigrationDiffServiceExtensions.GenerateQuickReport(migrationDiff);
+List<string> commonMigrations = MigrationDiffServiceExtensions.GetCommonMigrationNames(migrations1, migrations2);
+string conflictReport = MigrationDiffServiceExtensions.GenerateConflictReport(migrationDiff);
+bool canMerge = MigrationDiffServiceExtensions.CanMergeSafely(migrationDiff);
+
+Console.WriteLine($"Has Destructive Changes: {hasDestructive}");
+Console.WriteLine($"Quick Report:\n{quickReport}");
+Console.WriteLine($"Common Migrations: {string.Join(", ", commonMigrations)}");
+Console.WriteLine($"Conflict Report:\n{conflictReport}");
+Console.WriteLine($"Can Merge Safely: {canMerge}");
 ```
+
+These methods help streamline migration analysis by providing actionable insights and reports for different scenarios.
