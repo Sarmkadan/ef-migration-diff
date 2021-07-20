@@ -76,3 +76,26 @@ Console.WriteLine($"Can Merge Safely: {canMerge}");
 ```
 
 These methods help streamline migration analysis by providing actionable insights and reports for different scenarios.
+
+## MigrationAutoResolverServiceExtensions
+
+The `MigrationAutoResolverServiceExtensions` class provides configuration and resolution capabilities for automated migration conflict resolution. It supports strategy-based conflict resolution patterns like skip, first-wins, last-wins, and combine strategies. The service can be configured with custom logging and reset to default settings.
+
+Example usage:
+```csharp
+var resolver = MigrationAutoResolverServiceExtensions.ConfigureFirstWinsStrategy()
+    .CreateWithLogger(new ConsoleLogger())
+    .ConfigureCombineStrategy();
+
+bool success = await resolver.TryResolveAllAsync(migrationConflicts);
+var currentStrategy = resolver.GetConfiguredStrategy();
+Console.WriteLine($"Current strategy: {currentStrategy.Name}");
+
+if (!success)
+{
+    resolver.ResetToDefaults();
+    // Re-attempt resolution with default settings
+}
+```
+
+This example demonstrates configuring a resolver with a combination of strategies, setting up logging, resolving conflicts, and handling fallback scenarios.
