@@ -150,3 +150,24 @@ detector.DetectChanges_WithCaseSensitiveTableNames_PreservesCase();
 ```
 
 These test methods can be used to ensure that the schema change detection is accurate and reliable, and to catch any regressions or bugs that may be introduced in the future.
+
+## IntegrationTests
+
+The `IntegrationTests` class provides a set of integration tests for verifying the correctness of the migration diff process. It includes tests for parsing and comparing migrations, generating reports, and detecting conflicts.
+
+Here's an example of how to use these tests:
+
+```csharp
+var tests = new IntegrationTests();
+tests.EndToEnd_ParseParseCompareAndReport_CompletesSuccessfully();
+tests.FullWorkflow_MultipleDbContexts_HandlesCorrectly();
+tests.ConcurrentMigrationProcessing_MultipleThreadsProcessDifferentMigrations_AllProcessed();
+tests.ReportGeneration_WithDifferentFormats_AllFormatsProduceConsistentData();
+tests.SchemaChangeDetectionPipeline_ComplexMigration_DetectsAllOperations();
+tests.ConflictDetection_WithTableNameConflict_IdentifiesConflict();
+tests.MigrationValidation_WithValidAndInvalidMigrations_IdentifiesInvalidOnes();
+tests.MultipleDbContextComparison_IndependentContexts_ProcessesWithoutInterference();
+tests.ReadmeExample_BasicComparison_WorksAsDocumented();
+```
+
+These tests can be used to ensure that the migration diff process is accurate and reliable, and to catch any regressions or bugs that may be introduced in the future.
