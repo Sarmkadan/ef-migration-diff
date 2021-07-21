@@ -171,3 +171,45 @@ tests.ReadmeExample_BasicComparison_WorksAsDocumented();
 ```
 
 These tests can be used to ensure that the migration diff process is accurate and reliable, and to catch any regressions or bugs that may be introduced in the future.
+
+
+## MigrationRepositoryTests
+
+The `MigrationRepositoryTests` class provides a set of unit tests for the `MigrationRepository` class, which manages storage and retrieval of migration data. It includes tests for adding, retrieving, updating, and deleting migrations, as well as handling concurrent operations and edge cases.
+
+Here's an example of how to use the `MigrationRepository` class:
+
+```csharp
+// Create a repository instance
+var repository = new MigrationRepository();
+
+// Add migrations
+var migration1 = new Migration("20240101000000_InitialCreate", "DbContext1", MigrationStatus.Pending);
+var migration2 = new Migration("20240102000000_AddUserTable", "DbContext1", MigrationStatus.Applied);
+
+repository.Add(migration1);
+repository.Add(migration2);
+
+// Retrieve migrations
+var retrieved1 = repository.GetById("20240101000000_InitialCreate");
+var migrationsForContext = repository.GetByDbContext("DbContext1");
+var pendingMigrations = repository.GetByStatus(MigrationStatus.Pending);
+
+// Update a migration
+if (retrieved1 != null)
+{
+    retrieved1.Status = MigrationStatus.Applied;
+    repository.Update(retrieved1);
+}
+
+// Delete a migration
+var wasDeleted = repository.Delete("20240102000000_AddUserTable");
+
+// Get all migrations
+var allMigrations = repository.GetAll();
+
+// Clear all migrations
+repository.Clear();
+```
+
+The `MigrationRepository` class provides thread-safe storage for migration data and is useful for testing migration-related functionality or managing migrations in memory during development.
