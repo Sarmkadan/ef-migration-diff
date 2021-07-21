@@ -120,4 +120,33 @@ visualDiffOutput.AutoMerge_WithTriviallyResolvableConflicts_ResolvesAll();
 ```
 
 These test methods can be used to ensure that the visual diff output is accurate and reliable, and to catch any regressions or bugs that may be introduced in the future.
+
+## SchemaChangeDetectorExtendedTests
+
+The `SchemaChangeDetectorExtendedTests` class provides a set of test methods for verifying the correctness of schema change detection. It includes tests for detecting changes with drop table, alter table, add column, drop column, create index, multiple different operations, empty content, unrelated content, create table only, drop table, drop column, add column non-nullable, add column nullable, rename table operation, extracting table name from create table, and case sensitive table names.
+
+Here's an example of how to use these test methods:
+
+```csharp
+var detector = new SchemaChangeDetector();
+var changes = detector.DetectChanges(new[] { /* some migration data */ });
+
+detector.DetectChanges_WithDropTableContent_DetectsOneDropTableChange();
+detector.DetectChanges_WithAlterTableContent_DetectsAlterTableChange();
+detector.DetectChanges_WithAddColumnContent_DetectsAddColumnChange();
+detector.DetectChanges_WithDropColumnContent_DetectsDropColumnChange();
+detector.DetectChanges_WithCreateIndexContent_DetectsCreateIndexChange();
+detector.DetectChanges_WithMultipleDifferentOperations_DetectsAllChanges();
+detector.DetectChanges_WithEmptyContent_ReturnsEmptyList();
+detector.DetectChanges_WithUnrelatedContent_ReturnsEmptyList();
+detector.IsMigrationSafe_WithCreateTableOnly_ReturnsTrue();
+detector.IsMigrationSafe_WithDropTable_ReturnsFalse();
+detector.IsMigrationSafe_WithDropColumn_ReturnsFalse();
+detector.IsMigrationSafe_WithAddColumnNonNullable_ReturnsFalse();
+detector.IsMigrationSafe_WithAddColumnNullable_ReturnsTrue();
+detector.DetectChanges_WithRenameTableOperation_DetectsRenameChange();
+detector.DetectChanges_ExtractsTableNameFromCreateTable();
+detector.DetectChanges_WithCaseSensitiveTableNames_PreservesCase();
 ```
+
+These test methods can be used to ensure that the schema change detection is accurate and reliable, and to catch any regressions or bugs that may be introduced in the future.
