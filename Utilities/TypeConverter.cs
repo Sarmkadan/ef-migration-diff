@@ -29,28 +29,28 @@ public static class TypeConverter
 
             // Handle numeric conversions
             if (typeof(T) == typeof(int))
-                return (T)(object)Convert.ToInt32(value);
+                return (T)(object)Convert.ToInt32(value, System.Globalization.CultureInfo.InvariantCulture);
 
             if (typeof(T) == typeof(long))
-                return (T)(object)Convert.ToInt64(value);
+                return (T)(object)Convert.ToInt64(value, System.Globalization.CultureInfo.InvariantCulture);
 
             if (typeof(T) == typeof(double))
-                return (T)(object)Convert.ToDouble(value);
+                return (T)(object)Convert.ToDouble(value, System.Globalization.CultureInfo.InvariantCulture);
 
             if (typeof(T) == typeof(decimal))
-                return (T)(object)Convert.ToDecimal(value);
+                return (T)(object)Convert.ToDecimal(value, System.Globalization.CultureInfo.InvariantCulture);
 
             // Handle boolean conversion
             if (typeof(T) == typeof(bool))
             {
                 if (value is string strVal)
                     return (T)(object)(strVal.Equals("true", StringComparison.OrdinalIgnoreCase) || strVal == "1");
-                return (T)(object)Convert.ToBoolean(value);
+                return (T)(object)Convert.ToBoolean(value, System.Globalization.CultureInfo.InvariantCulture);
             }
 
             // Handle date/time conversions
             if (typeof(T) == typeof(DateTime))
-                return (T)(object)Convert.ToDateTime(value);
+                return (T)(object)Convert.ToDateTime(value, System.Globalization.CultureInfo.InvariantCulture);
 
             // Handle Guid
             if (typeof(T) == typeof(Guid))

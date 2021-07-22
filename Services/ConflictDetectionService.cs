@@ -32,6 +32,9 @@ public class ConflictDetectionService
     /// </returns>
     public List<ConflictInfo> DetectConflicts(List<SchemaChange> sourceChanges, List<SchemaChange> targetChanges)
     {
+        ArgumentNullException.ThrowIfNull(sourceChanges);
+        ArgumentNullException.ThrowIfNull(targetChanges);
+
         var conflicts = new List<ConflictInfo>();
 
         // Check for conflicting table operations

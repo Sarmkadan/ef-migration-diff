@@ -101,6 +101,12 @@ public class DataTableHelper
     {
         var sb = new System.Text.StringBuilder();
 
+        if (data.Count == 0)
+        {
+            sb.AppendLine($"{keyHeader} : {valueHeader}");
+            return sb.ToString();
+        }
+
         var maxKeyLength = Math.Max(keyHeader.Length, data.Keys.Max(k => k.Length));
         var maxValueLength = Math.Max(valueHeader.Length, data.Values.Max(v => (v?.ToString() ?? string.Empty).Length));
 
@@ -147,8 +153,8 @@ public class DataTableHelper
         if (total == 0)
             return string.Empty;
 
-        var percentage = (double)current / total;
-        var filledWidth = (int)(width * percentage);
+        var percentage = Math.Clamp((double)current / total, 0.0, 1.0);
+        var filledWidth = Math.Clamp((int)(width * percentage), 0, width);
 
         var bar = new string('█', filledWidth) + new string('░', width - filledWidth);
         var percentDisplay = Math.Round(percentage * 100).ToString("N0");

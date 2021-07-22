@@ -149,7 +149,6 @@ public class MigrationParserService
         var migrationFiles = Directory.GetFiles(directoryPath, "*.cs")
                                       .Where(f => !f.EndsWith(".Designer.cs"))
                                       .ToList();
-    // ... (rest remains)
 
         foreach (var filePath in migrationFiles)
         {
@@ -274,7 +273,7 @@ public class MigrationParserService
         if (string.IsNullOrEmpty(migrationId) || migrationId.Length < 14)
             return 0;
 
-        if (long.TryParse(migrationId[..14], out var timestamp))
+        if (long.TryParse(migrationId[..14], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var timestamp))
         {
             return (int)(timestamp % int.MaxValue);
         }
