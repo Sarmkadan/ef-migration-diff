@@ -151,6 +151,73 @@ detector.DetectChanges_WithCaseSensitiveTableNames_PreservesCase();
 
 These test methods can be used to ensure that the schema change detection is accurate and reliable, and to catch any regressions or bugs that may be introduced in the future.
 
+## MigrationDiffServiceTests
+
+The `MigrationDiffServiceTests` class provides unit tests for the `MigrationDiffService` class, which compares Entity Framework Core migrations between branches. It tests various scenarios including null branch validation, identical migrations, migrations present in only one branch, schema changes, and conflict detection.
+
+Here's an example of how to use the `MigrationDiffService` class:
+
+```csharp
+// Create required services
+var repository = new MigrationRepository();
+var conflictDetector = new ConflictDetectionService();
+var schemaDetector = new SchemaChangeDetectorService();
+var logger = NullLogger<MigrationDiffService>.Instance;
+
+// Create the service
+var migrationDiffService = new MigrationDiffService(
+    repository,
+    conflictDetector,
+    schemaDetector,
+    logger
+);
+
+// Add some migrations to the repository
+repository.Add(new Migration("20240115093044", "InitialCreate", "AppDbContext")
+{
+    Content = "migrationBuilder.CreateTable(...)"
+});
+
+repository.Add(new Migration("20240115093045", "AddUsersTable", "AppDbContext")
+{
+    Content = "migrationBuilder.CreateTable(name: \"Users\")
+});
+
+// Define source and target branches
+var sourceBranch = new BranchInfo("feature/new-users", "abc123def");
+sourceBranch.AddMigration("20240115093044");
+sourceBranch.AddMigration("20240115093045");
+
+var targetBranch = new BranchInfo("main", "def456abc");
+targetBranch.AddMigration("20240115093044");
+
+// Compare branches
+var result = migrationDiffService.CompareBranches(sourceBranch, targetBranch);
+
+// Analyze the results
+Console.WriteLine($"Migrations in both branches: {result.InBoth.Count}");
+Console.WriteLine($"Migrations only in source: {result.OnlyInSource.Count}");
+Console.WriteLine($"Migrations only in target: {result.OnlyInTarget.Count}");
+Console.WriteLine($"Schema changes in source: {result.SourceSchemaChanges.Count}");
+Console.WriteLine($"Conflicts detected: {result.Conflicts.Count}");
+
+// Access detailed information
+foreach (var migration in result.InBoth)
+{
+    Console.WriteLine($"Common migration: {migration.Id} - {migration.Name}");
+}
+
+foreach (var migration in result.OnlyInSource)
+{
+    Console.WriteLine($"Migration only in source: {migration.Id} - {migration.Name}");
+}
+
+foreach (var change in result.SourceSchemaChanges)
+{
+    Console.WriteLine($"Schema change detected: {change.ChangeType} on table {change.TableName}");
+}
+```
+
 ## IntegrationTests
 
 The `IntegrationTests` class provides a set of integration tests for verifying the correctness of the migration diff process. It includes tests for parsing and comparing migrations, generating reports, and detecting conflicts.
