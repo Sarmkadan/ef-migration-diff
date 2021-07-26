@@ -173,4 +173,50 @@ Assert.Empty(noConflicts);
 These tests ensure that the conflict detection service correctly identifies conflicts between migration schema changes and returns appropriate severity levels.
 
 
+## ReportGenerationServiceTests
 
+The `ReportGenerationServiceTests` class provides unit tests for the `ReportGenerationService` class, which generates comprehensive reports comparing Entity Framework Core migrations. It tests various output formats (text, JSON, HTML) and includes detailed summaries of migration differences, conflicts, schema changes, and destructive operations.
+
+Here's an example of how to use the `ReportGenerationService` class:
+
+```csharp
+// Create a report generation service instance
+var reportService = new ReportGenerationService();
+
+// Generate a text report with conflicts
+var textReport = reportService.GenerateTextReport_WithDiffContainingConflicts_IncludesConflictSummary(
+    new List<MigrationDiff> { /* your migration diffs with conflicts */ },
+    new ReportOptions { Format = ReportFormat.Text, IncludeTimestamp = true }
+);
+Console.WriteLine(textReport);
+
+// Generate a JSON report with multiple migrations
+var jsonReport = reportService.GenerateJsonReport_WithMultipleMigrations_IncludesMigrationSummary(
+    new List<MigrationDiff> { /* your migration diffs */ },
+    new ReportOptions { Format = ReportFormat.Json, IncludeSchemaChanges = true }
+);
+Console.WriteLine(jsonReport);
+
+// Generate an HTML report with schema changes
+var htmlReport = reportService.GenerateHtmlReport_WithSchemaChanges_IncludesSchemaChangeSummary(
+    new List<MigrationDiff> { /* your migration diffs */ },
+    new ReportOptions { Format = ReportFormat.Html, IncludeDestructiveChanges = true }
+);
+Console.WriteLine(htmlReport);
+
+// Generate a clean comparison report with no issues
+var cleanReport = reportService.GenerateTextReport_WithNoIssues_ReportsCleanComparison(
+    new List<MigrationDiff> { /* your clean migration diffs */ },
+    new ReportOptions { Format = ReportFormat.Text }
+);
+Assert.Contains("No issues found", cleanReport);
+
+// Generate a conflict summary
+var conflictSummary = reportService.GenerateConflictSummary_WithConflicts_IncludesAllConflictDetails(
+    new List<MigrationDiff> { /* your migration diffs with conflicts */ },
+    new ConflictSummaryOptions { IncludeSeverity = true, GroupByType = true }
+);
+Console.WriteLine(conflictSummary);
+```
+
+These tests ensure that migration comparison reports are generated correctly across all supported formats and include all relevant information about differences, conflicts, and schema changes.
