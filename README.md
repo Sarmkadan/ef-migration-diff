@@ -220,3 +220,97 @@ Console.WriteLine(conflictSummary);
 ```
 
 These tests ensure that migration comparison reports are generated correctly across all supported formats and include all relevant information about differences, conflicts, and schema changes.
+
+## MigrationDependencyGraphTests
+
+The `MigrationDependencyGraphTests` class provides unit tests for the `MigrationDependencyGraph` class, which builds and analyzes dependency graphs between Entity Framework Core migrations. It tests various scenarios including graph construction, topological ordering, cycle detection, and impact analysis for rollback operations.
+
+Here's an example of how to use the `MigrationDependencyGraph` class:
+
+```csharp
+// Create a graph instance
+var graph = new MigrationDependencyGraph();
+
+// Build a graph with empty list of migrations
+var emptyGraph = graph.Build(new List<MigrationInfo>());
+Assert.Empty(emptyGraph.Nodes);
+
+// Build a graph with a single migration
+var singleMigration = new MigrationInfo("20240115093045", "CreateUsersTable", "ApplicationDbContext");
+var singleNodeGraph = graph.Build(new List<MigrationInfo> { singleMigration });
+Assert.Single(singleNodeGraph.Nodes);
+Assert.Equal("20240115093045", singleNodeGraph.Nodes.First().MigrationId);
+
+// Build a graph with two migrations that have a sequential dependency
+var migration1 = new MigrationInfo("20240115093045", "CreateUsersTable", "ApplicationDbContext");
+var migration2 = new MigrationInfo("20240115093046", "AddEmailToUsers", "ApplicationDbContext");
+migration2.AddDependency("20240115093045"); // migration2 depends on migration1
+
+var sequentialGraph = graph.Build(new List<MigrationInfo> { migration1, migration2 });
+Assert.Equal(2, sequentialGraph.Nodes.Count);
+Assert.Single(sequentialGraph.Edges);
+Assert.Equal("20240115093045", sequentialGraph.Edges.First().Source);
+Assert.Equal("20240115093046", sequentialGraph.Edges.First().Target);
+
+// Build a graph where migrations touch the same table
+var tableA = new MigrationInfo("20240115093045", "CreateUsersTable", "ApplicationDbContext");
+tableA.AddTableDependency("Users");
+
+var tableB = new MigrationInfo("20240115093046", "AddEmailToUsers", "ApplicationDbContext");
+tableB.AddTableDependency("Users");
+
+var sharedTableGraph = graph.Build(new List<MigrationInfo> { tableA, tableB });
+Assert.Equal(2, sharedTableGraph.Nodes.Count);
+Assert.Single(sharedTableGraph.TableEdges);
+Assert.Equal("Users", sharedTableGraph.TableEdges.First().TableName);
+
+// Get topological order of migrations in a linear chain
+var linearChainGraph = graph.Build(new List<MigrationInfo> { migration1, migration2 });
+var topologicalOrder = linearChainGraph.GetTopologicalOrder();
+Assert.Equal(2, topologicalOrder.Count);
+Assert.Equal("20240115093045", topologicalOrder[0]);
+Assert.Equal("20240115093046", topologicalOrder[1]);
+
+// Detect cycles in an acyclic graph
+var acyclicGraph = graph.Build(new List<MigrationInfo> { migration1, migration2 });
+Assert.False(acyclicGraph.HasCycles());
+
+// Get ancestors of a migration
+var ancestors = linearChainGraph.GetAncestors("20240115093046");
+Assert.Single(ancestors);
+Assert.Equal("20240115093045", ancestors.First());
+
+// Get descendants of a migration
+var descendants = linearChainGraph.GetDescendants("20240115093045");
+Assert.Single(descendants);
+Assert.Equal("20240115093046", descendants.First());
+
+// Get rollback impact (includes target and all descendants)
+var rollbackImpact = linearChainGraph.GetRollbackImpact("20240115093045");
+Assert.Equal(2, rollbackImpact.Count);
+
+// Render graph as text
+var textOutput = linearChainGraph.RenderText();
+Assert.NotEmpty(textOutput);
+
+// Add an edge with unknown node (should throw)
+var unknownGraph = new MigrationDependencyGraph();
+Assert.Throws<ArgumentException>(() => unknownGraph.AddEdge("unknown-id", "20240115093045"));
+
+// Get topological order with cyclic graph
+var cyclicMigration1 = new MigrationInfo("m1", "Migration1", "DbContext");
+var cyclicMigration2 = new MigrationInfo("m2", "Migration2", "DbContext");
+cyclicMigration1.AddDependency("m2");
+cyclicMigration2.AddDependency("m1");
+
+var cyclicGraph = new MigrationDependencyGraph();
+cyclicGraph.AddNode(cyclicMigration1);
+cyclicGraph.AddNode(cyclicMigration2);
+cyclicGraph.AddEdge("m1", "m2");
+cyclicGraph.AddEdge("m2", "m1");
+
+var cyclicOrder = cyclicGraph.GetTopologicalOrder();
+Assert.Empty(cyclicOrder);
+```
+
+These tests ensure that migration dependency graphs are correctly constructed and analyzed, enabling safe migration execution and rollback operations.
