@@ -99,3 +99,78 @@ Assert.True(commandWasInvoked);
 These tests ensure that migration changes are properly detected, conflicts are identified, and migrations can be safely executed.
 
 
+
+## ConflictDetectionServiceTests
+
+The `ConflictDetectionServiceTests` class provides unit tests for the `ConflictDetectionService` class, which detects conflicts between Entity Framework Core migration schema changes. It tests various scenarios including table conflicts, column conflicts, index conflicts, and safe migration execution.
+
+Here's an example of how to use the `ConflictDetectionService` class:
+
+```csharp
+// Create a conflict detection service instance
+var conflictDetectionService = new ConflictDetectionService(NullLogger<ConflictDetectionService>.Instance);
+
+// Test detecting no conflicts when there are no changes
+var noChangesConflicts = conflictDetectionService.DetectConflicts(new List<SchemaChange>(), new List<SchemaChange>());
+Assert.Empty(noChangesConflicts);
+
+// Test detecting table conflicts when same table is created and dropped
+var tableConflictChanges = new List<SchemaChange>
+{
+    new SchemaChange("m1", SqlChangeType.CreateTable, "CREATE TABLE Users") { TableName = "Users" }
+};
+var targetTableConflictChanges = new List<SchemaChange>
+{
+    new SchemaChange("m2", SqlChangeType.DropTable, "DROP TABLE Users") { TableName = "Users" }
+};
+var tableConflicts = conflictDetectionService.DetectConflicts(tableConflictChanges, targetTableConflictChanges);
+Assert.Single(tableConflicts);
+Assert.Equal(ConflictType.TableConflict, tableConflicts.First().ConflictType);
+Assert.Equal(ConflictSeverity.Error, tableConflicts.First().Severity);
+
+// Test detecting column conflicts when same column is added and dropped
+var columnConflictChanges = new List<SchemaChange>
+{
+    new SchemaChange("m1", SqlChangeType.AddColumn, "ALTER TABLE Users ADD Name") { TableName = "Users", ColumnName = "Name" }
+};
+var targetColumnConflictChanges = new List<SchemaChange>
+{
+    new SchemaChange("m2", SqlChangeType.DropColumn, "ALTER TABLE Users DROP COLUMN Name") { TableName = "Users", ColumnName = "Name" }
+};
+var columnConflicts = conflictDetectionService.DetectConflicts(columnConflictChanges, targetColumnConflictChanges);
+Assert.Single(columnConflicts);
+Assert.Equal(ConflictType.ColumnConflict, columnConflicts.First().ConflictType);
+
+// Test detecting index conflicts when same index is created and dropped
+var indexConflictChanges = new List<SchemaChange>
+{
+    new SchemaChange("m1", SqlChangeType.CreateIndex, "CREATE INDEX Idx_Users_Name ON Users(Name)") { TableName = "Users" }
+};
+indexConflictChanges.First().AddMetadata("IndexName", "Idx_Users_Name");
+var targetIndexConflictChanges = new List<SchemaChange>
+{
+    new SchemaChange("m2", SqlChangeType.DropIndex, "DROP INDEX Idx_Users_Name ON Users") { TableName = "Users" }
+};
+targetIndexConflictChanges.First().AddMetadata("IndexName", "Idx_Users_Name");
+var indexConflicts = conflictDetectionService.DetectConflicts(indexConflictChanges, targetIndexConflictChanges);
+Assert.Single(indexConflicts);
+Assert.Equal(ConflictType.IndexConflict, indexConflicts.First().ConflictType);
+Assert.Equal(ConflictSeverity.Warning, indexConflicts.First().Severity);
+
+// Test that non-conflicting changes return empty list
+var nonConflictingChanges = new List<SchemaChange>
+{
+    new SchemaChange("m1", SqlChangeType.CreateTable, "CREATE TABLE Users") { TableName = "Users" }
+};
+var targetNonConflictingChanges = new List<SchemaChange>
+{
+    new SchemaChange("m2", SqlChangeType.CreateTable, "CREATE TABLE Products") { TableName = "Products" }
+};
+var noConflicts = conflictDetectionService.DetectConflicts(nonConflictingChanges, targetNonConflictingChanges);
+Assert.Empty(noConflicts);
+```
+
+These tests ensure that the conflict detection service correctly identifies conflicts between migration schema changes and returns appropriate severity levels.
+
+
+
