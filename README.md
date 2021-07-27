@@ -234,6 +234,95 @@ var graph = new MigrationDependencyGraph();
 // Build a graph with empty list of migrations
 var emptyGraph = graph.Build(new List<MigrationInfo>());
 Assert.Empty(emptyGraph.Nodes);
+```
+
+These tests ensure that migration dependency graphs are correctly constructed and analyzed, enabling safe migration execution and rollback operations.
+
+## AutoMergeSuggestionsTests
+
+The `AutoMergeSuggestionsTests` class provides unit tests for the `MigrationAutoResolverService` class, which automatically resolves merge conflicts between Entity Framework Core migrations. It tests various conflict resolution strategies including automatic resolution for index and constraint conflicts, and manual resolution requirements for table and column conflicts.
+
+Here's an example of how to use the `MigrationAutoResolverService` class:
+
+```csharp
+// Create an auto-merge resolver service instance
+var autoResolver = new MigrationAutoResolverService(NullLogger<MigrationAutoResolverService>.Instance);
+
+// Configure custom strategy for specific conflict type
+autoResolver.ConfigureStrategy(ConflictType.NameConflict, MergeStrategy.LastWins);
+
+// Get the default strategy for a conflict type
+var defaultStrategy = autoResolver.GetStrategy(ConflictType.IndexConflict);
+// Returns: MergeStrategy.Skip
+
+var unregisteredStrategy = autoResolver.GetStrategy(ConflictType.TableConflict);
+// Returns: null (no default strategy)
+
+// Resolve conflicts with no conflicts (returns empty result)
+var noConflictsResult = await autoResolver.ResolveAsync(Enumerable.Empty<ConflictInfo>());
+Console.WriteLine(noConflictsResult.TotalConflicts); // 0
+Console.WriteLine(noConflictsResult.IsFullyResolved); // true
+
+// Resolve an index conflict (auto-resolves via Skip strategy)
+var indexConflict = new ConflictInfo("mig_src", "mig_tgt", ConflictType.IndexConflict)
+{
+    Severity = ConflictSeverity.Warning,
+    Description = "Duplicate index on Users table"
+};
+var indexResult = await autoResolver.ResolveAsync(new[] { indexConflict });
+Console.WriteLine(indexResult.ResolvedCount); // 1
+Console.WriteLine(indexResult.UnresolvedCount); // 0
+
+// Resolve a constraint conflict (auto-resolves via Combine strategy)
+var constraintConflict = new ConflictInfo("mig_src", "mig_tgt", ConflictType.ConstraintConflict)
+{
+    Severity = ConflictSeverity.Warning,
+    Description = "Constraint added on both branches"
+};
+constraintConflict.AddDetail("SourceSql", "ADD CONSTRAINT FK_Orders_Users ...");
+constraintConflict.AddDetail("TargetSql", "ADD CONSTRAINT FK_Products_Users ...");
+var constraintResult = await autoResolver.ResolveAsync(new[] { constraintConflict });
+Console.WriteLine(constraintResult.ResolvedCount); // 1
+
+// Resolve a column conflict (leaves unresolved - requires manual resolution)
+var columnConflict = new ConflictInfo("mig_src", "mig_tgt", ConflictType.ColumnConflict)
+{
+    Severity = ConflictSeverity.Error,
+    Description = "Column definition conflict"
+};
+var columnResult = await autoResolver.ResolveAsync(new[] { columnConflict });
+Console.WriteLine(columnResult.ResolvedCount); // 0
+Console.WriteLine(columnResult.UnresolvedConflicts.Count); // 1
+
+// Resolve mixed conflicts (partially resolves)
+var mixedConflicts = new[]
+{
+    new ConflictInfo("mig1", "mig2", ConflictType.IndexConflict)
+    {
+        Severity = ConflictSeverity.Warning,
+        Description = "Duplicate index"
+    },
+    new ConflictInfo("mig3", "mig4", ConflictType.TableConflict)
+    {
+        Severity = ConflictSeverity.Critical,
+        Description = "Table conflict"
+    }
+};
+var mixedResult = await autoResolver.ResolveAsync(mixedConflicts);
+Console.WriteLine(mixedResult.ResolvedCount); // 1
+Console.WriteLine(mixedResult.UnresolvedConflicts.Count); // 1
+Console.WriteLine(mixedResult.IsFullyResolved); // false
+```
+
+These tests ensure that the auto-merge resolver correctly identifies and applies appropriate strategies for different conflict types, providing automatic resolution where safe and flagging conflicts that require manual intervention.
+
+```csharp
+// Create a graph instance
+var graph = new MigrationDependencyGraph();
+
+// Build a graph with empty list of migrations
+var emptyGraph = graph.Build(new List<MigrationInfo>());
+Assert.Empty(emptyGraph.Nodes);
 
 // Build a graph with a single migration
 var singleMigration = new MigrationInfo("20240115093045", "CreateUsersTable", "ApplicationDbContext");
