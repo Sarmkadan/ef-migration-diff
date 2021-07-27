@@ -404,9 +404,67 @@ Assert.Empty(cyclicOrder);
 
 These tests ensure that migration dependency graphs are correctly constructed and analyzed, enabling safe migration execution and rollback operations.
 
-## CollectionExtensions
+## PathExtensions
 
-The `CollectionExtensions` class provides a set of extension methods for `IEnumerable<T>` that offer LINQ-style operations with null-safety and convenience utilities. These methods help simplify collection handling in scenarios where you need to safely work with potentially null collections, batch operations, or transform data structures.
+The `PathExtensions` class provides a set of extension methods for file and directory path operations, offering cross-platform path handling, normalization, and manipulation utilities. These methods help simplify path manipulation scenarios when working with file system operations across different operating systems.
+
+Here's an example of how to use the `PathExtensions` class:
+
+```csharp
+// Normalize Windows-style paths to use forward slashes
+var windowsPath = "C:\\Users\\test\\Documents\\file.txt";
+var normalizedPath = windowsPath.NormalizePath();
+Console.WriteLine(normalizedPath); // "C:/Users/test/Documents/file.txt"
+
+// Convert relative paths to absolute paths
+var relativePath = "src/Models/User.cs";
+var absolutePath = relativePath.ToAbsolutePath("/home/project");
+Console.WriteLine(absolutePath); // "/home/project/src/Models/User.cs"
+
+// Convert absolute paths to relative paths
+var fullPath = "/home/project/src/Models/User.cs";
+var relativeFromProject = fullPath.ToRelativePath("/home/project");
+Console.WriteLine(relativeFromProject); // "src/Models/User.cs"
+
+// Check if a path is under a specific directory
+var testPath = "/home/project/src/Models/User.cs";
+var isUnderSrc = testPath.IsUnderDirectory("/home/project/src");
+Console.WriteLine(isUnderSrc); // true
+
+// Ensure directory paths end with separator
+var dirPath = "/home/project/src";
+var pathWithSeparator = dirPath.EnsureTrailingSeparator();
+Console.WriteLine(pathWithSeparator); // "/home/project/src/"
+
+// Remove trailing separators
+var pathWithTrailing = "/home/project/src/";
+var pathWithoutSeparator = pathWithTrailing.RemoveTrailingSeparator();
+Console.WriteLine(pathWithoutSeparator); // "/home/project/src"
+
+// Get common directory from multiple paths
+var paths = new[] {
+    "/home/project/src/Models/User.cs",
+    "/home/project/src/Models/Product.cs",
+    "/home/project/src/Models/Order.cs"
+};
+var commonDir = paths.GetCommonDirectory();
+Console.WriteLine(commonDir); // "/home/project/src/Models"
+
+// Safely combine path segments
+var combinedPath = PathExtensions.CombinePathSafely("home", null, "project", "", "src");
+Console.WriteLine(combinedPath); // "home/project/src"
+
+// Get safe filename by removing invalid characters
+var unsafeFilename = "file:with*invalid|chars.txt";
+var safeFilename = unsafeFilename.GetSafeFileName();
+Console.WriteLine(safeFilename); // "filewithinvalidcharstxt"
+
+// Check if a path looks like a directory
+var filePath = "/home/project/file.txt";
+var dirPath2 = "/home/project/src/";
+Console.WriteLine(filePath.LooksLikeDirectory()); // false
+Console.WriteLine(dirPath2.LooksLikeDirectory()); // true
+```
 
 Here's an example of how to use the `CollectionExtensions` class:
 
