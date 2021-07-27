@@ -403,3 +403,82 @@ Assert.Empty(cyclicOrder);
 ```
 
 These tests ensure that migration dependency graphs are correctly constructed and analyzed, enabling safe migration execution and rollback operations.
+
+## CollectionExtensions
+
+The `CollectionExtensions` class provides a set of extension methods for `IEnumerable<T>` that offer LINQ-style operations with null-safety and convenience utilities. These methods help simplify collection handling in scenarios where you need to safely work with potentially null collections, batch operations, or transform data structures.
+
+Here's an example of how to use the `CollectionExtensions` class:
+
+```csharp
+// Sample data: a list of users and their roles
+var users = new List<(string Name, string Role)>
+{
+    ("Alice", "Admin"),
+    ("Bob", "User"),
+    ("Charlie", "User"),
+    ("Diana", "Admin")
+};
+
+// Check if collection is null or empty
+bool isEmpty = users.IsNullOrEmpty(); // false
+
+// Return empty collection if null, otherwise return the collection
+var maybeNullCollection = (IEnumerable<int>?)null;
+var safeCollection = maybeNullCollection.OrEmpty(); // empty collection
+
+// Get distinct users by role
+var distinctRoles = users.DistinctBy(u => u.Role);
+foreach (var user in distinctRoles)
+{
+    Console.WriteLine($"Role: {user.Role}");
+}
+
+// Batch users into groups of 2
+var batches = users.Batch(2);
+foreach (var batch in batches)
+{
+    Console.WriteLine($"Batch: {string.Join(", ", batch.Select(u => u.Name))}");
+}
+
+// Perform action on each item and continue with the collection
+users.ForEach(u => Console.WriteLine($"Processing: {u.Name}"));
+
+// Chunk users into groups of 2 (returns List<List<T>>)
+var chunks = users.Chunk(2);
+foreach (var chunk in chunks)
+{
+    Console.WriteLine($"Chunk: {string.Join(", ", chunk.Select(u => u.Name))}");
+}
+
+// Convert to dictionary using role as key
+var userDict = users.ToDict(u => u.Role);
+Console.WriteLine(userDict["Admin"].Name); // Alice
+
+// Group by role
+var usersByRole = users.GroupByDict(u => u.Role);
+foreach (var kvp in usersByRole)
+{
+    Console.WriteLine($"{kvp.Key}: {string.Join(", ", kvp.Value.Select(u => u.Name))}");
+}
+
+// Filter conditionally (predicate can be null)
+var filtered = users.WhereIf(u => u.Role == "Admin");
+
+// Get first item or null if collection is empty
+var firstOrNull = users.FirstOrNull(); // Alice
+
+// Flatten a collection of collections
+var nestedLists = new List<List<int>>
+{
+    new List<int> { 1, 2 },
+    new List<int> { 3, 4 }
+};
+var flattened = nestedLists.Flatten(); // 1, 2, 3, 4
+
+// Take specified count safely
+var firstTwo = users.TakeSafe(2); // Alice, Bob
+
+// Skip last N items
+var skipLastOne = users.SkipLast(1); // Alice, Bob, Charlie
+```
