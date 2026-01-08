@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # ef-migration-diff CLI tool
+  ef-migration-diff:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ef-migration-diff
+    volumes:
+      - .:/workspace
+      - /workspace/.cache
+    environment:
+      - EFMIGDIFF_CACHE_ENABLED=true
+      - EFMIGDIFF_CACHE_TTL=3600
+      - EFMIGDIFF_LOG_LEVEL=Information
+    working_dir: /workspace
+    command: --help
+
+  # SQL Server for testing migrations
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver-test
+    environment:
+      SA_PASSWORD: "TestPassword123!"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "SA", "-P", "TestPassword123!", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # PostgreSQL for testing migrations
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-test
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # MySQL for testing migrations
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-test
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: testdb
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  sqlserver-data:
+  postgres-data:
+  mysql-data:
+
+networks:
+  default:
+    name: ef-migration-diff-network
