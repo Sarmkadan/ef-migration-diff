@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -73,7 +74,7 @@ public class MigrationRepository
         lock (_syncLock)
         {
             var existing = _migrations.FirstOrDefault(m => m.Id == migration.Id);
-            if (existing == null)
+            if (existing is null)
                 throw new KeyNotFoundException($"Migration with ID {migration.Id} not found");
 
             _migrations.Remove(existing);
@@ -89,7 +90,7 @@ public class MigrationRepository
         lock (_syncLock)
         {
             var migration = _migrations.FirstOrDefault(m => m.Id == id);
-            if (migration == null)
+            if (migration is null)
                 return false;
 
             return _migrations.Remove(migration);
