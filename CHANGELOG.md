@@ -7,12 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned Features
-- Redis support for distributed caching
-- Support for multiple DbContexts in monorepos
-- Enhanced plugin system with version management
-- Real-time monitoring with WebSocket support
-- Integration with CI/CD platforms (Jenkins, GitLab, Bitbucket)
+---
+
+## [2.0.0] - 2025-08-09
+
+### Added
+- Add schema comparison tool with visual diff and merge editor
+- Docker support with multi-stage builds
+- Health check endpoints (/health, /health/ready)
+- Integration test suite with xUnit
+- Migration guide from v1.x
+
+### Changed
+- Upgraded to .NET 10.0
+- Modern C# features (records, primary constructors)
+- Improved API consistency
+
+### Fixed
+- Various edge cases found through testing
 
 ---
 
