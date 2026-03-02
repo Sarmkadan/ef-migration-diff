@@ -69,12 +69,20 @@ public class SchemaChangeDetectorService
         var addColumnMatch = Regex.Match(line, @"AddColumn\s*\([^)]*name:\s*""([^""]+)""[^)]*\)\s*on\s+""([^""]+)""", RegexOptions.IgnoreCase);
         if (addColumnMatch.Success)
         {
-            return new SchemaChange(migrationId, SqlChangeType.AddColumn, line)
+            var change = new SchemaChange(migrationId, SqlChangeType.AddColumn, line)
             {
                 ColumnName = addColumnMatch.Groups[1].Value,
                 TableName = addColumnMatch.Groups[2].Value,
                 LineNumber = lineNumber
             };
+
+            // Hotfix: describe what was wrong - Previously, default values were not extracted, leading to missed conflicts.
+            var defaultValueMatch = Regex.Match(line, @"defaultValue(?:Sql)?:\s*(.+?)(?:,|$|\))", RegexOptions.IgnoreCase);
+            if (defaultValueMatch.Success)
+            {
+                change.DefaultValue = defaultValueMatch.Groups[1].Value.Trim().TrimEnd(',');
+            }
+            return change;
         }
 
         // Extract DROP COLUMN
@@ -93,12 +101,20 @@ public class SchemaChangeDetectorService
         var modifyColumnMatch = Regex.Match(line, @"AlterColumn\s*\([^)]*name:\s*""([^""]+)""[^)]*\)\s*on\s+""([^""]+)""", RegexOptions.IgnoreCase);
         if (modifyColumnMatch.Success)
         {
-            return new SchemaChange(migrationId, SqlChangeType.ModifyColumn, line)
+            var change = new SchemaChange(migrationId, SqlChangeType.ModifyColumn, line)
             {
                 ColumnName = modifyColumnMatch.Groups[1].Value,
                 TableName = modifyColumnMatch.Groups[2].Value,
                 LineNumber = lineNumber
             };
+
+            // Hotfix: describe what was wrong - Previously, default values were not extracted, leading to missed conflicts.
+            var defaultValueMatch = Regex.Match(line, @"defaultValue(?:Sql)?:\s*(.+?)(?:,|$|\))", RegexOptions.IgnoreCase);
+            if (defaultValueMatch.Success)
+            {
+                change.DefaultValue = defaultValueMatch.Groups[1].Value.Trim().TrimEnd(',');
+            }
+            return change;
         }
 
         // Extract CREATE INDEX

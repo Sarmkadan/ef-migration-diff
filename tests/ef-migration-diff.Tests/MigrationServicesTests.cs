@@ -76,6 +76,55 @@ public class MigrationServicesTests
 
         // Assert
         conflicts.Should().Contain(c => c.ConflictType == ConflictType.NameConflict);
+        }
+
+        [Fact]
+        public void DetectConflicts_WhenSameColumnModifiedWithDifferentDefaultValue_ReturnsColumnConflict()
+        {
+        // Arrange - two branches modify the same column but with different default values
+        var sourceMigration = new Migration("mig_src", "ModifyColumnWithDefault", "AppDbContext")
+        {
+            Content = @"migrationBuilder.AlterColumn<string>(name: ""Status"", table: ""Orders"", nullable: false, defaultValue: ""Pending"");"
+        };
+        var targetMigration = new Migration("mig_tgt", "ModifyColumnWithDifferentDefault", "AppDbContext")
+        {
+            Content = @"migrationBuilder.AlterColumn<string>(name: ""Status"", table: ""Orders"", nullable: false, defaultValue: ""Approved"");"
+        };
+
+        var sourceChanges = _detector.DetectChanges(sourceMigration);
+        var targetChanges = _detector.DetectChanges(targetMigration);
+
+        // Act
+        var conflicts = _conflictDetector.DetectConflicts(sourceChanges, targetChanges);
+
+        // Assert
+        conflicts.Should().ContainSingle();
+        conflicts[0].ConflictType.Should().Be(ConflictType.ColumnConflict);
+        conflicts[0].Description.Should().Contain("Status");
+        conflicts[0].Description.Should().Contain("conflicting operations");
+        }
+
+        [Fact]
+        public void DetectConflicts_WhenSameColumnModifiedWithSameDefaultValue_ReturnsNoConflicts()
+        {
+        // Arrange - two branches modify the same column with the same default values
+        var sourceMigration = new Migration("mig_src", "ModifyColumnWithSameDefault", "AppDbContext")
+        {
+            Content = @"migrationBuilder.AlterColumn<string>(name: ""Status"", table: ""Orders"", nullable: false, defaultValue: ""Pending"");"
+        };
+        var targetMigration = new Migration("mig_tgt", "ModifyColumnWithSameDefault", "AppDbContext")
+        {
+            Content = @"migrationBuilder.AlterColumn<string>(name: ""Status"", table: ""Orders"", nullable: false, defaultValue: ""Pending"");"
+        };
+
+        var sourceChanges = _detector.DetectChanges(sourceMigration);
+        var targetChanges = _detector.DetectChanges(targetMigration);
+
+        // Act
+        var conflicts = _conflictDetector.DetectConflicts(sourceChanges, targetChanges);
+
+        // Assert
+        conflicts.Should().BeEmpty();
     }
 
     [Fact]
