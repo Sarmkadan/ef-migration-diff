@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -35,7 +36,7 @@ public class BackgroundTaskQueue : IDisposable
     /// </summary>
     public async ValueTask EnqueueAsync(BackgroundTask task)
     {
-        if (task == null)
+        if (task is null)
             throw new ArgumentNullException(nameof(task));
 
         await _queue.Writer.WriteAsync(task, _cancellationTokenSource.Token);

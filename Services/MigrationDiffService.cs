@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -111,7 +112,7 @@ public class MigrationDiffService
         foreach (var migrationId in branch.MigrationIds)
         {
             var migration = _migrationRepository.GetById(migrationId);
-            if (migration != null)
+            if (migration is not null)
             {
                 migrations.Add(migration);
             }
