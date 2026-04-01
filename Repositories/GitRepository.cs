@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -32,7 +33,7 @@ public class GitRepository
                 return false;
 
             _repository = new Repository(_repositoryPath);
-            return _repository != null;
+            return _repository is not null;
         }
         catch
         {
@@ -53,7 +54,7 @@ public class GitRepository
     /// </summary>
     public List<BranchInfo> GetAllBranches()
     {
-        if (_repository == null)
+        if (_repository is null)
             return [];
 
         var branches = new List<BranchInfo>();
@@ -62,7 +63,7 @@ public class GitRepository
         {
             foreach (var branch in _repository.Branches)
             {
-                if (branch.Tip != null)
+                if (branch.Tip is not null)
                 {
                     branches.Add(new BranchInfo(branch.FriendlyName, branch.Tip.Sha)
                     {
@@ -87,13 +88,13 @@ public class GitRepository
     /// </summary>
     public BranchInfo? GetBranch(string branchName)
     {
-        if (_repository == null)
+        if (_repository is null)
             return null;
 
         try
         {
             var branch = _repository.Branches[branchName];
-            if (branch?.Tip != null)
+            if (branch?.Tip is not null)
             {
                 return new BranchInfo(branch.FriendlyName, branch.Tip.Sha)
                 {
@@ -117,7 +118,7 @@ public class GitRepository
     /// </summary>
     public string? GetCurrentBranch()
     {
-        if (_repository == null)
+        if (_repository is null)
             return null;
 
         try
@@ -135,7 +136,7 @@ public class GitRepository
     /// </summary>
     public List<string> GetCommitsBetween(string sourceBranch, string targetBranch)
     {
-        if (_repository == null)
+        if (_repository is null)
             return [];
 
         var commits = new List<string>();
@@ -146,7 +147,7 @@ public class GitRepository
             var sourceCommit = _repository.Branches[sourceBranch]?.Tip;
             var targetCommit = _repository.Branches[targetBranch]?.Tip;
 
-            if (sourceCommit != null && targetCommit != null)
+            if (sourceCommit is not null && targetCommit is not null)
             {
                 var range = _repository.Commits.QueryBy(filter)
                                               .Where(c => !_repository.Commits.QueryBy(new CommitFilter
@@ -172,7 +173,7 @@ public class GitRepository
     /// </summary>
     public List<string> GetChangedFiles(string sourceBranch, string targetBranch, string? pathFilter = null)
     {
-        if (_repository == null)
+        if (_repository is null)
             return [];
 
         var changedFiles = new List<string>();
@@ -182,7 +183,7 @@ public class GitRepository
             var sourceCommit = _repository.Branches[sourceBranch]?.Tip;
             var targetCommit = _repository.Branches[targetBranch]?.Tip;
 
-            if (sourceCommit != null && targetCommit != null)
+            if (sourceCommit is not null && targetCommit is not null)
             {
                 var compareResult = _repository.Diff.Compare<TreeChanges>(sourceCommit.Tree, targetCommit.Tree);
 
@@ -190,7 +191,7 @@ public class GitRepository
                 {
                     var path = change.Path;
 
-                    if (pathFilter != null && !path.Contains(pathFilter, StringComparison.OrdinalIgnoreCase))
+                    if (pathFilter is not null && !path.Contains(pathFilter, StringComparison.OrdinalIgnoreCase))
                         continue;
 
                     if (!changedFiles.Contains(path))
@@ -211,13 +212,13 @@ public class GitRepository
     /// </summary>
     public string? GetFileContent(string commitSha, string filePath)
     {
-        if (_repository == null)
+        if (_repository is null)
             return null;
 
         try
         {
             var commit = _repository.Lookup<Commit>(commitSha);
-            if (commit == null)
+            if (commit is null)
                 return null;
 
             var blob = commit.Tree[filePath]?.Target as Blob;
@@ -234,7 +235,7 @@ public class GitRepository
     /// </summary>
     public bool IsClean()
     {
-        if (_repository == null)
+        if (_repository is null)
             return false;
 
         try

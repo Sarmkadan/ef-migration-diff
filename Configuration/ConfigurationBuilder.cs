@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -176,10 +177,10 @@ public class ServiceProvider : IServiceProvider
     {
         if (_services.TryGetValue(serviceType, out var descriptor))
         {
-            if (descriptor.Instance != null)
+            if (descriptor.Instance is not null)
                 return descriptor.Instance;
 
-            if (descriptor.Factory != null)
+            if (descriptor.Factory is not null)
             {
                 return descriptor.Factory.DynamicInvoke(this);
             }

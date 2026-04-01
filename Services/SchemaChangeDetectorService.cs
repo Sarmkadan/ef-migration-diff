@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -28,7 +29,7 @@ public class SchemaChangeDetectorService
                 continue;
 
             var change = ParseLine(migration.Id, line, i + 1);
-            if (change != null)
+            if (change is not null)
             {
                 changes.Add(change);
             }

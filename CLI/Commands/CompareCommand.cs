@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -59,10 +60,10 @@ public class CompareCommand : ICommand
         var source = gitRepo.GetBranch(sourceBranch);
         var target = gitRepo.GetBranch(targetBranch);
 
-        if (source == null)
+        if (source is null)
             return CommandResult.Error($"Source branch not found: {sourceBranch}");
 
-        if (target == null)
+        if (target is null)
             return CommandResult.Error($"Target branch not found: {targetBranch}");
 
         // Perform comparison

@@ -19,6 +19,10 @@ max_line_length = 120
 # Code style rules
 dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false
+csharp_style_var_for_built_in_types = false
+csharp_style_var_when_type_is_apparent = true
+csharp_style_var_elsewhere = true
+csharp_style_namespace_declarations = block_scoped
 
 # Indentation preferences
 csharp_indent_case_contents = true

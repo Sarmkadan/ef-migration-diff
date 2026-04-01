@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -71,7 +72,7 @@ public class ConsoleLogger : ILogger
     {
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"[ERROR] {message}");
-        if (exception != null)
+        if (exception is not null)
             Console.WriteLine($"  Exception: {exception.Message}");
         Console.ResetColor();
     }
@@ -96,7 +97,7 @@ public class FileLogger : ILogger
     public void LogError(string message, Exception? exception = null)
     {
         WriteLog("ERROR", message);
-        if (exception != null)
+        if (exception is not null)
             WriteLog("ERROR", $"  Exception: {exception.Message}\n{exception.StackTrace}");
     }
 
