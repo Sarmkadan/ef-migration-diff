@@ -75,8 +75,10 @@ public class PluginSystem
     }
 
     /// <summary>
-    /// Gets a loaded plugin by name.
+    /// Gets a loaded plugin by its registered name.
     /// </summary>
+    /// <param name="name">The <see cref="IPlugin.Name"/> value of the plugin to retrieve.</param>
+    /// <returns>The plugin instance if found; otherwise <c>null</c>.</returns>
     public IPlugin? GetPlugin(string name)
     {
         return _loadedPlugins.TryGetValue(name, out var plugin) ? plugin : null;
@@ -91,8 +93,13 @@ public class PluginSystem
     }
 
     /// <summary>
-    /// Executes a hook on all plugins that implement it.
+    /// Executes a named hook method on all loaded plugins that implement it.
+    /// Uses reflection to locate the method by name. If the hook method returns a <see cref="Task"/>,
+    /// it is awaited. Errors in individual plugin hooks are logged but do not stop execution
+    /// of subsequent plugins.
     /// </summary>
+    /// <param name="hookName">The exact method name to invoke on each plugin (case-sensitive).</param>
+    /// <param name="args">Arguments to pass to the hook method.</param>
     public async Task ExecuteHookAsync(string hookName, params object[] args)
     {
         foreach (var plugin in _loadedPlugins.Values)
