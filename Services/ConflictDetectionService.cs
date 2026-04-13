@@ -17,8 +17,17 @@ public class ConflictDetectionService
     private const int MaxColumnNameLength = 128;
 
     /// <summary>
-    /// Detects conflicts between two sets of schema changes.
+    /// Detects conflicts between two sets of schema changes by analyzing table, column,
+    /// index, and naming conflicts. Each conflict is returned with severity and metadata
+    /// describing the nature of the incompatibility.
     /// </summary>
+    /// <param name="sourceChanges">Schema changes from the source (base) branch.</param>
+    /// <param name="targetChanges">Schema changes from the target (feature) branch.</param>
+    /// <returns>
+    /// A list of <see cref="ConflictInfo"/> objects describing each detected conflict,
+    /// including type, severity, affected elements, and resolution metadata.
+    /// Returns an empty list when no conflicts are found.
+    /// </returns>
     public List<ConflictInfo> DetectConflicts(List<SchemaChange> sourceChanges, List<SchemaChange> targetChanges)
     {
         var conflicts = new List<ConflictInfo>();
@@ -231,16 +240,23 @@ public class ConflictDetectionService
     }
 
     /// <summary>
-    /// Validates if the table name length is within EF limits.
+    /// Validates if the table name length is within Entity Framework identifier limits.
+    /// Checks for null/whitespace and enforces the maximum length of 128 characters,
+    /// which corresponds to SQL Server's identifier length constraint.
     /// </summary>
+    /// <param name="tableName">The table name to validate.</param>
+    /// <returns><c>true</c> if the name is non-empty and within the allowed length; otherwise <c>false</c>.</returns>
     public bool IsValidTableName(string tableName)
     {
         return !string.IsNullOrWhiteSpace(tableName) && tableName.Length <= MaxTableNameLength;
     }
 
     /// <summary>
-    /// Validates if the column name length is within EF limits.
+    /// Validates if the column name length is within Entity Framework identifier limits.
+    /// Enforces the maximum length of 128 characters for column identifiers.
     /// </summary>
+    /// <param name="columnName">The column name to validate.</param>
+    /// <returns><c>true</c> if the name is non-empty and within the allowed length; otherwise <c>false</c>.</returns>
     public bool IsValidColumnName(string columnName)
     {
         return !string.IsNullOrWhiteSpace(columnName) && columnName.Length <= MaxColumnNameLength;
