@@ -404,6 +404,63 @@ Assert.Empty(cyclicOrder);
 
 These tests ensure that migration dependency graphs are correctly constructed and analyzed, enabling safe migration execution and rollback operations.
 
+## AutoResolverExtensions
+
+The `AutoResolverExtensions` class provides extension methods for the `MigrationAutoResolverService` that simplify common tasks when working with migration merge results and conflict collections. It offers utilities for filtering resolvable conflicts, generating human-readable summaries, grouping unresolved conflicts by type, and evaluating whether a merge result is safe to proceed with deployment.
+
+Here's an example of how to use the `AutoResolverExtensions` class:
+
+```csharp
+// Setup dependency injection
+var services = new ServiceCollection();
+services.AddMigrationAutoResolver(); // Registers MigrationAutoResolverService
+
+var serviceProvider = services.BuildServiceProvider();
+var resolver = serviceProvider.GetRequiredService<MigrationAutoResolverService>();
+
+// Simulate resolving conflicts
+var conflicts = new List<ConflictInfo>
+{
+    new ConflictInfo("migration_a", "migration_b", ConflictType.IndexConflict)
+    {
+        Severity = ConflictSeverity.Warning,
+        Description = "Duplicate index on Users table"
+    },
+    new ConflictInfo("migration_a", "migration_b", ConflictType.ConstraintConflict)
+    {
+        Severity = ConflictSeverity.Warning,
+        Description = "Constraint added on both branches"
+    },
+    new ConflictInfo("migration_c", "migration_d", ConflictType.TableConflict)
+    {
+        Severity = ConflictSeverity.Error,
+        Description = "Table conflict requiring manual resolution"
+    }
+};
+
+// Get auto-resolvable candidates (non-error severity, not yet resolved)
+var resolvable = conflicts.GetAutoResolvableCandidates();
+Console.WriteLine($"Auto-resolvable conflicts: {resolvable.Count()}"); // 2
+
+// Resolve conflicts using the service
+var mergeResult = await resolver.ResolveAsync(conflicts);
+
+// Generate a detailed summary for logging
+var summary = mergeResult.ToDetailedSummary();
+Console.WriteLine(summary);
+
+// Group unresolved conflicts by type for prioritization
+var unresolvedByType = mergeResult.GroupUnresolvedByType();
+foreach (var kvp in unresolvedByType)
+{
+    Console.WriteLine($"{kvp.Key}: {kvp.Value.Count} conflicts");
+}
+
+// Check if safe to merge (fully resolved and no blocking conflicts)
+var isSafe = mergeResult.IsSafeToMerge();
+Console.WriteLine($"Safe to merge: {isSafe}");
+```
+
 ## PathExtensions
 
 The `PathExtensions` class provides a set of extension methods for file and directory path operations, offering cross-platform path handling, normalization, and manipulation utilities. These methods help simplify path manipulation scenarios when working with file system operations across different operating systems.
