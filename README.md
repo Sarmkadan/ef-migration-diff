@@ -2,9 +2,9 @@
 
 **Compare Entity Framework migrations between branches - detect conflicts, preview schema changes**
 
+[![Build](https://github.com/sarmkadan/ef-migration-diff/actions/workflows/build.yml/badge.svg)](https://github.com/sarmkadan/ef-migration-diff/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![.NET](https://img.shields.io/badge/.NET-10-blue)](https://dotnet.microsoft.com)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/Sarmkadan/ef-migration-diff)
+[![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 
 ## Table of Contents
 
