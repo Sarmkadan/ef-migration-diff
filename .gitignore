@@ -52,6 +52,7 @@ TestResults/
 .env
 .env.local
 appsettings.local.json
+appsettings.Development.json
 
 # OS
 .DS_Store
@@ -60,3 +61,10 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# NuGet packages folder
+packages/
+
+# IDE settings
+.idea/
+*.DotSettings.user

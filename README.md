@@ -42,37 +42,37 @@ When multiple developers work on the same codebase, parallel database migrations
 
 ## Key Features
 
-### 🔍 Migration Comparison
+### Migration Comparison
 - Compare migrations between two Git branches
 - Detect conflicting migration names and dependencies
 - Identify orphaned migration references
 - Analyze migration file content differences
 
-### 📊 Schema Change Detection
+### Schema Change Detection
 - Extract and compare schema change operations
 - Preview before/after schema state
 - Categorize changes by type (CREATE, ALTER, DROP)
 - Detect breaking changes and data loss scenarios
 
-### 📝 Multiple Output Formats
+### Multiple Output Formats
 - **JSON**: Machine-readable format for automation
 - **CSV**: Spreadsheet-friendly format for analysis
 - **HTML**: Interactive reports for stakeholders
 - **Console**: Quick summary output for CLI usage
 
-### 🔧 Integration Features
+### Integration Features
 - Git repository integration for automatic branch checkout
 - DbContext discovery and metadata extraction
 - Custom migration folder support
 - Plugin system for extensibility
 
-### ⚡ Performance
+### Performance
 - Caching layer for repeated comparisons
 - Background task queue for long-running operations
 - Streaming report generation for large datasets
 - Optimized reflection-based DbContext scanning
 
-### 🛡️ Robust Processing
+### Robust Processing
 - Comprehensive error handling and recovery
 - Validation middleware for input safety
 - Request logging for debugging
