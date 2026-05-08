@@ -14,7 +14,7 @@ We welcome contributions to `ef-migration-diff`! Please follow these guidelines 
 
 ```bash
 # Clone and build
-git clone https://github.com/YOUR_USERNAME/ef-migration-diff.git
+git clone https://github.com/sarmkadan/ef-migration-diff.git
 cd ef-migration-diff
 dotnet restore
 dotnet build
@@ -32,7 +32,7 @@ dotnet test --collect:"XPlat Code Coverage"
 - Fork the repository on GitHub.
 - Clone your fork locally:
   ```bash
-  git clone https://github.com/YOUR_USERNAME/ef-migration-diff.git
+  git clone https://github.com/<your-username>/ef-migration-diff.git
   ```
 
 ### 2. Create a Branch
