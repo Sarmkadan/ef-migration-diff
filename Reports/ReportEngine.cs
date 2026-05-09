@@ -55,14 +55,19 @@ public class ReportEngine
                 result = diff.Result.ToString(),
                 conflictCount = diff.Conflicts.Count,
                 schemaChanges = diff.GetTotalSchemaChanges(),
-                migrationCount = diff.SourceMigrations.Count + diff.TargetMigrations.Count
+                migrationCount = diff.OnlyInSource.Count + diff.OnlyInTarget.Count + diff.InBoth.Count
             },
             conflicts = diff.Conflicts,
-            schemaChanges = diff.SchemaChanges,
+            schemaChanges = new
+            {
+                source = diff.SourceSchemaChanges,
+                target = diff.TargetSchemaChanges
+            },
             migrations = new
             {
-                source = diff.SourceMigrations,
-                target = diff.TargetMigrations
+                source = diff.OnlyInSource,
+                target = diff.OnlyInTarget,
+                common = diff.InBoth
             }
         };
 
@@ -74,14 +79,26 @@ public class ReportEngine
     /// </summary>
     public string GenerateCsvReport(MigrationDiff diff)
     {
-        var changes = diff.SchemaChanges
-            .SelectMany(kv => kv.Value.Select(sc => new
+        var changes = diff.SourceSchemaChanges
+            .Select(sc => new
             {
-                MigrationName = kv.Key,
-                ChangeType = sc.Type,
-                ObjectName = sc.ObjectName,
-                ObjectType = sc.ObjectType,
-                Impact = sc.ImpactLevel
+                Side = "Source",
+                MigrationName = sc.MigrationId,
+                ChangeType = sc.ChangeType,
+                TableName = sc.TableName,
+                ColumnName = sc.ColumnName,
+                Description = sc.GetDescription(),
+                Destructive = sc.IsDestructive()
+            })
+            .Concat(diff.TargetSchemaChanges.Select(sc => new
+            {
+                Side = "Target",
+                MigrationName = sc.MigrationId,
+                ChangeType = sc.ChangeType,
+                TableName = sc.TableName,
+                ColumnName = sc.ColumnName,
+                Description = sc.GetDescription(),
+                Destructive = sc.IsDestructive()
             }));
 
         return _csvFormatter.Format(changes);
@@ -111,22 +128,19 @@ public class ReportEngine
             sb.AppendLine("CONFLICTS:");
             foreach (var conflict in diff.Conflicts)
             {
-                sb.AppendLine($"  • {conflict.Type}: {conflict.SourceFile} ↔ {conflict.TargetFile}");
+                sb.AppendLine($"  • [{conflict.Severity}] {conflict.GetTitle()}: {conflict.FirstMigrationId} ↔ {conflict.SecondMigrationId}");
             }
             sb.AppendLine();
         }
 
         // Schema Changes
-        if (diff.SchemaChanges.Any())
+        var allChanges = diff.SourceSchemaChanges.Concat(diff.TargetSchemaChanges).ToList();
+        if (allChanges.Any())
         {
             sb.AppendLine("SCHEMA CHANGES:");
-            foreach (var migration in diff.SchemaChanges.Keys)
+            foreach (var change in allChanges)
             {
-                sb.AppendLine($"  Migration: {migration}");
-                foreach (var change in diff.SchemaChanges[migration])
-                {
-                    sb.AppendLine($"    - {change.Type} on {change.ObjectName} ({change.ObjectType})");
-                }
+                sb.AppendLine($"  - {change.GetDescription()} [Migration: {change.MigrationId}]");
             }
             sb.AppendLine();
         }
@@ -157,26 +171,26 @@ public class ReportEngine
             bodyContent.AppendLine(_htmlFormatter.CreateHeading("Conflicts", 2));
             var conflictData = diff.Conflicts.Select(c => new
             {
-                Type = c.Type.ToString(),
-                Source = c.SourceFile,
-                Target = c.TargetFile,
-                Blocking = c.IsBlockingConflict ? "Yes" : "No"
+                Type     = c.ConflictType.ToString(),
+                Source   = c.FirstMigrationId,
+                Target   = c.SecondMigrationId,
+                Blocking = c.IsBlocking() ? "Yes" : "No"
             });
             bodyContent.AppendLine(_htmlFormatter.GenerateTable(conflictData));
         }
 
         // Schema Changes section
-        if (diff.SchemaChanges.Any())
+        var allSchemaChanges = diff.SourceSchemaChanges.Concat(diff.TargetSchemaChanges).ToList();
+        if (allSchemaChanges.Any())
         {
             bodyContent.AppendLine(_htmlFormatter.CreateHeading("Schema Changes", 2));
-            var changeData = diff.SchemaChanges
-                .SelectMany(kv => kv.Value.Select(sc => new
-                {
-                    Migration = kv.Key,
-                    Type = sc.Type,
-                    Object = sc.ObjectName,
-                    ObjectType = sc.ObjectType
-                }));
+            var changeData = allSchemaChanges.Select(sc => new
+            {
+                Migration   = sc.MigrationId,
+                Description = sc.GetDescription(),
+                Table       = sc.TableName,
+                Destructive = sc.IsDestructive() ? "Yes" : "No"
+            });
             bodyContent.AppendLine(_htmlFormatter.GenerateTable(changeData));
         }
 

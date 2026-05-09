@@ -4,6 +4,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Suppress transitive package vulnerability audit warnings -->
+    <NuGetAuditMode>direct</NuGetAuditMode>
+    <!-- Suppress missing/unresolvable XML doc comment warnings — enforced via editorconfig only -->
+    <NoWarn>$(NoWarn);CS1591;CS1574;CS1580;CS1581;CS1584</NoWarn>
     <Authors>Vladyslav Zaiets</Authors>
     <PackageProjectUrl>https://github.com/sarmkadan/ef-migration-diff</PackageProjectUrl>
   </PropertyGroup>

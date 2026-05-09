@@ -1,8 +1,8 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =====================================================================
-#nullable enable=======
+// =============================================================================
+#nullable enable
 
 using EfMigrationDiff.Models;
 
@@ -14,8 +14,11 @@ namespace EfMigrationDiff.Analysis;
 /// </summary>
 public sealed class ConflictResolutionEngine
 {
-    private readonly Dictionary<ConflictType, Func<ConflictInfo, ResolutionStrategy>> _strategies = new();
+    private readonly Dictionary<EfMigrationDiff.Models.ConflictType, Func<ConflictInfo, ResolutionStrategy>> _strategies = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConflictResolutionEngine"/> class.
+    /// </summary>
     public ConflictResolutionEngine()
     {
         InitializeDefaultStrategies();
@@ -26,22 +29,22 @@ public sealed class ConflictResolutionEngine
     /// </summary>
     private void InitializeDefaultStrategies()
     {
-        _strategies[ConflictType.ColumnRename] = conflict => new ResolutionStrategy
+        _strategies[EfMigrationDiff.Models.ConflictType.TableConflict] = conflict => new ResolutionStrategy
         {
             Type = ResolutionType.Manual,
-            Description = "Manually merge the rename operations",
+            Description = "Manually review and merge the conflicting table operations",
             Priority = 2
         };
 
-        _strategies[ConflictType.ColumnDrop] = conflict => new ResolutionStrategy
+        _strategies[EfMigrationDiff.Models.ConflictType.ColumnConflict] = conflict => new ResolutionStrategy
         {
             Type = ResolutionType.Review,
-            Description = "Review and test the column drop carefully to prevent data loss",
+            Description = "Review and test the conflicting column changes carefully to prevent data loss",
             Priority = 3,
             IsHighRisk = true
         };
 
-        _strategies[ConflictType.IndexConflict] = conflict => new ResolutionStrategy
+        _strategies[EfMigrationDiff.Models.ConflictType.IndexConflict] = conflict => new ResolutionStrategy
         {
             Type = ResolutionType.Automatic,
             Description = "Can be safely merged - index operations are usually idempotent",
@@ -57,12 +60,12 @@ public sealed class ConflictResolutionEngine
         var resolution = new ConflictResolution
         {
             ConflictId = conflict.Id,
-            ConflictType = conflict.Type,
+            ConflictType = conflict.ConflictType,
             AnalyzedAt = DateTime.UtcNow
         };
 
         // Determine conflict type and get strategy
-        if (_strategies.TryGetValue(conflict.Type, out var strategyFunc))
+        if (_strategies.TryGetValue(conflict.ConflictType, out var strategyFunc))
         {
             resolution.RecommendedStrategy = strategyFunc(conflict);
         }
@@ -125,11 +128,11 @@ public sealed class ConflictResolutionEngine
     private ConflictSeverity AnalyzeSeverity(ConflictInfo conflict)
     {
         // Check for data loss potential
-        if (conflict.Type == ConflictType.ColumnDrop)
+        if (conflict.ConflictType == EfMigrationDiff.Models.ConflictType.ColumnConflict)
             return ConflictSeverity.Critical;
 
         // Check for blocking conflicts
-        if (conflict.IsBlocking)
+        if (conflict.IsBlocking())
             return ConflictSeverity.High;
 
         return ConflictSeverity.Medium;
@@ -142,26 +145,26 @@ public sealed class ConflictResolutionEngine
     {
         var recommendations = new List<string>();
 
-        switch (conflict.Type)
+        switch (conflict.ConflictType)
         {
-            case ConflictType.ColumnRename:
-                recommendations.Add("Verify column rename doesn't break existing data");
-                recommendations.Add("Update any stored procedures or views that reference the column");
-                recommendations.Add("Test application code that uses the renamed column");
+            case EfMigrationDiff.Models.ConflictType.TableConflict:
+                recommendations.Add("Review competing table changes side by side before merging");
+                recommendations.Add("Validate the final table definition against both branches");
+                recommendations.Add("Test any dependent queries or procedures after resolution");
                 break;
 
-            case ConflictType.ColumnDrop:
+            case EfMigrationDiff.Models.ConflictType.ColumnConflict:
                 recommendations.Add("Backup database before applying this migration");
-                recommendations.Add("Verify no application code depends on the dropped column");
-                recommendations.Add("Document the reason for column removal");
+                recommendations.Add("Verify no application code depends on the conflicting column definition");
+                recommendations.Add("Document the final column contract after resolution");
                 break;
 
-            case ConflictType.IndexConflict:
+            case EfMigrationDiff.Models.ConflictType.IndexConflict:
                 recommendations.Add("Verify index names don't conflict");
                 recommendations.Add("Consider merging index definitions if possible");
                 break;
 
-            case ConflictType.ConstraintViolation:
+            case EfMigrationDiff.Models.ConflictType.ConstraintConflict:
                 recommendations.Add("Review foreign key constraints");
                 recommendations.Add("Ensure referential integrity is maintained");
                 recommendations.Add("Check for circular dependencies");
@@ -181,7 +184,7 @@ public sealed class ConflictResolutionEngine
     /// <summary>
     /// Registers a custom resolution strategy for a conflict type.
     /// </summary>
-    public void RegisterStrategy(ConflictType type, Func<ConflictInfo, ResolutionStrategy> strategy)
+    public void RegisterStrategy(EfMigrationDiff.Models.ConflictType type, Func<ConflictInfo, ResolutionStrategy> strategy)
     {
         _strategies[type] = strategy;
     }
@@ -192,9 +195,24 @@ public sealed class ConflictResolutionEngine
 /// </summary>
 public class ResolutionStrategy
 {
+    /// <summary>
+    /// Gets or sets the recommended resolution type.
+    /// </summary>
     public ResolutionType Type { get; set; }
+
+    /// <summary>
+    /// Gets or sets the human-readable strategy description.
+    /// </summary>
     public string Description { get; set; } = string.Empty;
-    public int Priority { get; set; } // 1 = highest priority
+
+    /// <summary>
+    /// Gets or sets the strategy priority where lower values indicate higher priority.
+    /// </summary>
+    public int Priority { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the strategy carries elevated risk.
+    /// </summary>
     public bool IsHighRisk { get; set; }
 }
 
@@ -203,11 +221,34 @@ public class ResolutionStrategy
 /// </summary>
 public class ConflictResolution
 {
+    /// <summary>
+    /// Gets or sets the identifier of the analyzed conflict.
+    /// </summary>
     public string ConflictId { get; set; } = string.Empty;
-    public ConflictType ConflictType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the original conflict type.
+    /// </summary>
+    public EfMigrationDiff.Models.ConflictType ConflictType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the UTC timestamp when analysis completed.
+    /// </summary>
     public DateTime AnalyzedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the derived resolution severity.
+    /// </summary>
     public ConflictSeverity Severity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the recommended strategy.
+    /// </summary>
     public ResolutionStrategy RecommendedStrategy { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the generated recommendations.
+    /// </summary>
     public List<string> Recommendations { get; set; } = new();
 }
 
@@ -216,38 +257,86 @@ public class ConflictResolution
 /// </summary>
 public class ConflictResolutionReport
 {
+    /// <summary>
+    /// Gets or sets the UTC timestamp when the batch analysis completed.
+    /// </summary>
     public DateTime AnalyzedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the per-conflict resolution details.
+    /// </summary>
     public List<ConflictResolution> Resolutions { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the total number of analyzed conflicts.
+    /// </summary>
     public int TotalConflicts { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of critical conflicts.
+    /// </summary>
     public int CriticalCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of high-severity conflicts.
+    /// </summary>
     public int HighCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of conflicts that can be automatically resolved.
+    /// </summary>
     public int CanAutoResolve { get; set; }
 
+    /// <summary>
+    /// Gets a value indicating whether the batch can proceed without manual intervention.
+    /// </summary>
     public bool CanProceedWithoutManualIntervention =>
         !Resolutions.Any(r => r.RecommendedStrategy.Type == ResolutionType.Manual && r.Severity == ConflictSeverity.Critical);
 }
 
-public enum ConflictType
-{
-    ColumnRename,
-    ColumnDrop,
-    IndexConflict,
-    ConstraintViolation,
-    SchemaConflict,
-    Unknown
-}
-
+/// <summary>
+/// Severity levels used by the conflict resolution analysis.
+/// </summary>
 public enum ConflictSeverity
 {
+    /// <summary>
+    /// Low severity.
+    /// </summary>
     Low,
+
+    /// <summary>
+    /// Medium severity.
+    /// </summary>
     Medium,
+
+    /// <summary>
+    /// High severity.
+    /// </summary>
     High,
+
+    /// <summary>
+    /// Critical severity.
+    /// </summary>
     Critical
 }
 
+/// <summary>
+/// Resolution modes produced by the conflict analysis engine.
+/// </summary>
 public enum ResolutionType
 {
+    /// <summary>
+    /// The conflict can be resolved automatically.
+    /// </summary>
     Automatic,
+
+    /// <summary>
+    /// The conflict requires manual intervention.
+    /// </summary>
     Manual,
+
+    /// <summary>
+    /// The conflict requires explicit review before proceeding.
+    /// </summary>
     Review
 }

@@ -7,6 +7,7 @@
 using EfMigrationDiff.Configuration;
 using EfMigrationDiff.Models;
 using EfMigrationDiff.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace EfMigrationDiff.CLI.Commands;
 

@@ -4,11 +4,13 @@
 // CTO & Software Architect
 // =============================================================================
 
+using EfMigrationDiff.CLI.Commands;
 using EfMigrationDiff.Configuration;
 using EfMigrationDiff.Exceptions;
 using EfMigrationDiff.Repositories;
 using EfMigrationDiff.Services;
 using EfMigrationDiff.Utilities;
+using Microsoft.Extensions.DependencyInjection;
 
 var application = new MigrationDiffApplication();
 await application.RunAsync(args);
@@ -18,7 +20,7 @@ await application.RunAsync(args);
 /// </summary>
 internal class MigrationDiffApplication
 {
-    private readonly ServiceProvider _serviceProvider;
+    private readonly Microsoft.Extensions.DependencyInjection.ServiceProvider _serviceProvider;
     private readonly AppSettings _appSettings;
 
     public MigrationDiffApplication()
@@ -59,6 +61,21 @@ internal class MigrationDiffApplication
 
                 case "report":
                     await ReportCommand(args);
+                    break;
+
+                case "visual-diff":
+                case "visual":
+                    VisualDiffCommand(args);
+                    break;
+
+                case "graph":
+                case "dependency-graph":
+                    await DependencyGraphCommand(args);
+                    break;
+
+                case "auto-merge":
+                case "suggest":
+                    await AutoMergeCommand(args);
                     break;
 
                 case "--help":
@@ -236,18 +253,184 @@ internal class MigrationDiffApplication
         Console.ResetColor();
     }
 
+    /// <summary>
+    /// Handles the visual-diff command to generate HTML side-by-side or unified diff view.
+    /// </summary>
+    private void VisualDiffCommand(string[] args)
+    {
+        Console.WriteLine("\nGenerating visual diff...");
+
+        _appSettings.RepositoryPath = Environment.CurrentDirectory;
+
+        var sourceBranch = args.Length > 1 ? args[1] : _appSettings.SourceBranch;
+        var targetBranch = args.Length > 2 ? args[2] : _appSettings.TargetBranch;
+        var format       = args.Length > 3 ? args[3] : "sidebyside";
+
+        Console.WriteLine($"Source Branch: {sourceBranch}");
+        Console.WriteLine($"Target Branch: {targetBranch}");
+        Console.WriteLine($"Format:        {format}");
+
+        var pipeline  = _serviceProvider.GetService<EfMigrationDiff.Services.SchemaDiffPipelineService>()
+            ?? throw new InvalidOperationException("SchemaDiffPipelineService not registered");
+
+        var source = new EfMigrationDiff.Models.BranchInfo(sourceBranch, string.Empty);
+        var target = new EfMigrationDiff.Models.BranchInfo(targetBranch, string.Empty);
+
+        var result = pipeline.RunTwoWayDiff(source, target);
+
+        var html = format.Equals("unified", StringComparison.OrdinalIgnoreCase)
+            ? result.UnifiedHtml
+            : result.SideBySideHtml;
+
+        _appSettings.EnsureOutputDirectory();
+        var stamp      = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
+        var outputPath = Path.Combine(_appSettings.GetOutputDirectory(), $"visual-diff-{stamp}.html");
+        File.WriteAllText(outputPath, html, System.Text.Encoding.UTF8);
+
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine($"\n✓ Visual diff report written to: {outputPath}");
+        Console.ResetColor();
+
+        if (result.HasDestructiveChanges)
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("⚠️  Destructive schema changes detected — review before merging");
+            Console.ResetColor();
+            Environment.Exit(1);
+        }
+    }
+
+    /// <summary>
+    /// Handles the dependency-graph command to display migration dependency ordering.
+    /// </summary>
+    private async Task DependencyGraphCommand(string[] args)
+    {
+        Console.WriteLine("\nBuilding migration dependency graph...");
+
+        _appSettings.RepositoryPath = Environment.CurrentDirectory;
+        var migrationsPath = _appSettings.GetMigrationsDirectory();
+
+        var graphService = _serviceProvider.GetService<EfMigrationDiff.Services.MigrationDependencyGraphService>()
+            ?? throw new InvalidOperationException("MigrationDependencyGraphService not registered");
+
+        var parserService = _serviceProvider.GetService<MigrationParserService>()
+            ?? throw new InvalidOperationException("MigrationParserService not found");
+
+        var migrationFiles = Directory.Exists(migrationsPath)
+            ? Directory.GetFiles(migrationsPath, "*.cs")
+                .Where(f => !f.EndsWith(".Designer.cs", StringComparison.OrdinalIgnoreCase))
+                .ToList()
+            : new List<string>();
+
+        var migrations = migrationFiles
+            .Select(f =>
+            {
+                var mf = new EfMigrationDiff.Models.MigrationFile(f, "DefaultContext");
+                return parserService.ParseMigrationFile(mf);
+            })
+            .Where(m => m is not null)
+            .Cast<EfMigrationDiff.Models.Migration>()
+            .ToList();
+
+        var graph = graphService.Build(migrations);
+
+        Console.WriteLine($"\nMigrations: {graph.Nodes.Count}  |  Dependencies: {graph.Edges.Count}");
+
+        foreach (var order in graph.GetTopologicalOrder())
+        {
+            Console.WriteLine($"  {order.Sequence:D4}  {order.MigrationId}  →  {order.Name}");
+        }
+
+        if (graph.HasCycles)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("\n✗ Circular dependencies detected — merge will fail");
+            Console.ResetColor();
+            Environment.Exit(1);
+        }
+
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("\n✓ Dependency graph is acyclic — safe to apply");
+        Console.ResetColor();
+
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Handles the auto-merge command to suggest conflict resolution strategies.
+    /// </summary>
+    private async Task AutoMergeCommand(string[] args)
+    {
+        Console.WriteLine("\nAnalyzing conflicts for auto-merge suggestions...");
+
+        _appSettings.RepositoryPath = Environment.CurrentDirectory;
+
+        var sourceBranch = args.Length > 1 ? args[1] : _appSettings.SourceBranch;
+        var targetBranch = args.Length > 2 ? args[2] : _appSettings.TargetBranch;
+
+        Console.WriteLine($"Source Branch: {sourceBranch}");
+        Console.WriteLine($"Target Branch: {targetBranch}");
+
+        var gitRepo = new GitRepository(_appSettings.RepositoryPath);
+        if (!gitRepo.Initialize())
+            throw new GitRepositoryException("Failed to initialize git repository", _appSettings.RepositoryPath);
+
+        var source = gitRepo.GetBranch(sourceBranch);
+        var target = gitRepo.GetBranch(targetBranch);
+
+        if (source is null) throw new BranchNotFoundException(sourceBranch);
+        if (target is null) throw new BranchNotFoundException(targetBranch);
+
+        var diffService   = _serviceProvider.GetService<MigrationDiffService>()
+            ?? throw new InvalidOperationException("MigrationDiffService not found");
+
+        var resolverService = _serviceProvider.GetService<EfMigrationDiff.Services.MigrationAutoResolverService>()
+            ?? throw new InvalidOperationException("MigrationAutoResolverService not found");
+
+        var diff   = diffService.CompareBranches(source, target);
+        var result = await resolverService.ResolveAsync(diff.Conflicts);
+
+        Console.WriteLine($"\n{result.GetSummary()}");
+
+        foreach (var attempt in result.Attempts)
+        {
+            var color = attempt.Succeeded ? ConsoleColor.Green : ConsoleColor.Yellow;
+            Console.ForegroundColor = color;
+            Console.WriteLine($"  {attempt}");
+            Console.ResetColor();
+        }
+
+        if (result.UnresolvedConflicts.Count > 0)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"\n⚠️  {result.UnresolvedConflicts.Count} conflict(s) require manual review");
+            Console.ResetColor();
+        }
+
+        gitRepo.Dispose();
+
+        if (result.HasBlockingConflicts)
+            Environment.Exit(1);
+    }
+
     private void ShowUsage()
     {
         Console.WriteLine("\nUsage: ef-migration-diff <command> [options]");
         Console.WriteLine("\nCommands:");
-        Console.WriteLine("  compare <source-branch> <target-branch>  Compare migrations between branches");
-        Console.WriteLine("  validate                                 Validate all migration files");
-        Console.WriteLine("  report <format>                          Generate detailed report");
-        Console.WriteLine("  help                                     Show help information");
+        Console.WriteLine("  compare <source-branch> <target-branch>         Compare migrations between branches");
+        Console.WriteLine("  validate                                         Validate all migration files");
+        Console.WriteLine("  report <format>                                  Generate detailed report");
+        Console.WriteLine("  visual-diff <source> <target> [format]          Generate HTML visual diff report");
+        Console.WriteLine("  graph                                            Show migration dependency graph");
+        Console.WriteLine("  auto-merge <source-branch> <target-branch>      Suggest auto-merge resolutions");
+        Console.WriteLine("  help                                             Show help information");
         Console.WriteLine("\nExamples:");
         Console.WriteLine("  ef-migration-diff compare develop main");
         Console.WriteLine("  ef-migration-diff validate");
         Console.WriteLine("  ef-migration-diff report html");
+        Console.WriteLine("  ef-migration-diff visual-diff develop main unified");
+        Console.WriteLine("  ef-migration-diff graph");
+        Console.WriteLine("  ef-migration-diff auto-merge feature/users main");
     }
 
     private void ShowHelp()
@@ -261,10 +444,13 @@ internal class MigrationDiffApplication
         Console.WriteLine("  and detects conflicts, schema changes, and incompatibilities.\n");
 
         Console.WriteLine("COMMANDS:");
-        Console.WriteLine("  compare <src> <tgt>   Compare migrations between branches");
-        Console.WriteLine("  validate              Validate migration file structure");
-        Console.WriteLine("  report <fmt>          Generate reports (text/json/html)");
-        Console.WriteLine("  help                  Show this help message\n");
+        Console.WriteLine("  compare <src> <tgt>          Compare migrations between branches");
+        Console.WriteLine("  validate                     Validate migration file structure");
+        Console.WriteLine("  report <fmt>                 Generate reports (text/json/html)");
+        Console.WriteLine("  visual-diff <src> <tgt>      Generate HTML side-by-side or unified diff");
+        Console.WriteLine("  graph                        Display migration dependency graph");
+        Console.WriteLine("  auto-merge <src> <tgt>       Suggest and apply auto-merge resolutions");
+        Console.WriteLine("  help                         Show this help message\n");
 
         Console.WriteLine("OPTIONS:");
         Console.WriteLine("  --help, -h            Show help");
@@ -273,7 +459,10 @@ internal class MigrationDiffApplication
         Console.WriteLine("EXAMPLES:");
         Console.WriteLine("  ef-migration-diff compare develop main");
         Console.WriteLine("  ef-migration-diff validate");
-        Console.WriteLine("  ef-migration-diff report json\n");
+        Console.WriteLine("  ef-migration-diff report json");
+        Console.WriteLine("  ef-migration-diff visual-diff develop main sidebyside");
+        Console.WriteLine("  ef-migration-diff graph");
+        Console.WriteLine("  ef-migration-diff auto-merge feature/users main\n");
     }
 
     private void ShowVersion()

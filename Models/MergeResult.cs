@@ -81,13 +81,13 @@ public class MergeResult
     public bool IsFullyResolved => UnresolvedConflicts.Count == 0 && Attempts.All(a => a.Succeeded);
 
     /// <summary>Total number of conflicts that were processed.</summary>
-    public int TotalConflicts => Attempts.Count + UnresolvedConflicts.Count;
+    public int TotalConflicts => Attempts.Count;
 
     /// <summary>Number of conflicts that were successfully auto-resolved.</summary>
     public int ResolvedCount => Attempts.Count(a => a.Succeeded);
 
     /// <summary>Number of conflicts that could not be auto-resolved.</summary>
-    public int UnresolvedCount => UnresolvedConflicts.Count + Attempts.Count(a => !a.Succeeded);
+    public int UnresolvedCount => UnresolvedConflicts.Count;
 
     /// <summary>
     /// Whether any unresolved conflict is blocking and would prevent deployment.

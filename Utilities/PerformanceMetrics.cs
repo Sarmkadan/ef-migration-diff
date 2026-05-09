@@ -18,9 +18,9 @@ public class PerformanceMetrics
     /// <summary>
     /// Starts measuring an operation. Use with 'using' statement.
     /// </summary>
-    public PerformationTimer StartOperation(string operationName)
+    public PerformanceTimer StartOperation(string operationName)
     {
-        return new PerformationTimer(operationName, this);
+        return new PerformanceTimer(operationName, this);
     }
 
     /// <summary>
@@ -164,7 +164,7 @@ public class OperationMetrics
 /// <summary>
 /// Disposable timer for measuring operation duration.
 /// </summary>
-public class PerformationTimer : IDisposable
+public class PerformanceTimer : IDisposable
 {
     private readonly string _operationName;
     private readonly PerformanceMetrics _metrics;
