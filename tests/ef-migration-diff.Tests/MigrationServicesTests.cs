@@ -1,0 +1,104 @@
+// =============================================================================
+// Author: Vladyslav Zaiets | https://sarmkadan.com
+// CTO & Software Architect
+// =============================================================================
+
+using EfMigrationDiff.CLI;
+using EfMigrationDiff.Models;
+using EfMigrationDiff.Services;
+using FluentAssertions;
+using Moq;
+
+namespace EfMigrationDiff.Tests;
+
+public class MigrationServicesTests
+{
+    private readonly SchemaChangeDetectorService _detector = new();
+    private readonly ConflictDetectionService _conflictDetector = new();
+
+    [Fact]
+    public void DetectChanges_WithCreateTableContent_DetectsOneCreateTableChange()
+    {
+        // Arrange
+        var migration = new Migration("20240101120000", "CreateUsers", "AppDbContext")
+        {
+            Content = @"migrationBuilder.CreateTable(name: ""Users"","
+        };
+
+        // Act
+        var changes = _detector.DetectChanges(migration);
+
+        // Assert
+        changes.Should().ContainSingle();
+        changes[0].ChangeType.Should().Be(SqlChangeType.CreateTable);
+        changes[0].TableName.Should().Be("Users");
+    }
+
+    [Fact]
+    public void IsMigrationSafe_WithDropTableContent_ReturnsFalse()
+    {
+        // Arrange
+        var migration = new Migration("20240101120001", "DropLegacyTable", "AppDbContext")
+        {
+            Content = @"migrationBuilder.DropTable(name: ""LegacyData"","
+        };
+
+        // Act
+        var isSafe = _detector.IsMigrationSafe(migration);
+
+        // Assert
+        isSafe.Should().BeFalse();
+    }
+
+    [Fact]
+    public void DetectConflicts_WhenSameTableCreatedWithDifferentSchema_ReturnsNamingConflict()
+    {
+        // Arrange — two branches each create "Orders" but with diverged column definitions
+        var sourceChanges = new List<SchemaChange>
+        {
+            new SchemaChange("mig_src", SqlChangeType.CreateTable, @"CreateTable(name: ""Orders"", Id INT)")
+            {
+                TableName = "Orders"
+            }
+        };
+
+        var targetChanges = new List<SchemaChange>
+        {
+            new SchemaChange("mig_tgt", SqlChangeType.CreateTable, @"CreateTable(name: ""Orders"", Id BIGINT)")
+            {
+                TableName = "Orders"
+            }
+        };
+
+        // Act
+        var conflicts = _conflictDetector.DetectConflicts(sourceChanges, targetChanges);
+
+        // Assert
+        conflicts.Should().Contain(c => c.ConflictType == ConflictType.NameConflict);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithRegisteredMockedCommand_InvokesCommandExactlyOnce()
+    {
+        // Arrange
+        var mockCommand = new Mock<ICommand>();
+        mockCommand
+            .Setup(c => c.ExecuteAsync(It.IsAny<CommandContext>()))
+            .ReturnsAsync(CommandResult.Ok("executed"));
+
+        var mockServiceProvider = new Mock<IServiceProvider>();
+        var executor = new CommandExecutor();
+        executor.RegisterCommand("greet", mockCommand.Object);
+
+        // Act
+        var result = await executor.ExecuteAsync(
+            "greet",
+            Array.Empty<string>(),
+            mockServiceProvider.Object);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Message.Should().Be("executed");
+        mockCommand.Verify(c => c.ExecuteAsync(It.IsAny<CommandContext>()), Times.Once);
+    }
+}
