@@ -118,7 +118,7 @@ jobs:
 
       - name: Post PR comment
         if: ${{ (inputs.post-pr-comment == true || inputs.post-pr-comment == '') && github.event_name == 'pull_request' }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           GH_TOKEN: ${{ secrets.github-token || secrets.GITHUB_TOKEN || github.token }}
         with:
