@@ -1,9 +1,4 @@
 #nullable enable
-// =============================================================================
-// Author: Vladyslav Zaiets | https://sarmkadan.com
-// CTO & Software Architect
-// =============================================================================
-
 using EfMigrationDiff.Models;
 using EfMigrationDiff.Services;
 using Microsoft.Extensions.DependencyInjection;

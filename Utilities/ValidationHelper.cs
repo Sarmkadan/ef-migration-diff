@@ -1,9 +1,4 @@
 #nullable enable
-// =============================================================================
-// Author: Vladyslav Zaiets | https://sarmkadan.com
-// CTO & Software Architect
-// =============================================================================
-
 using System.Text.RegularExpressions;
 
 namespace EfMigrationDiff.Utilities;
