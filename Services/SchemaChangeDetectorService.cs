@@ -20,19 +20,35 @@ public class SchemaChangeDetectorService
     public List<SchemaChange> DetectChanges(Migration migration)
     {
         var changes = new List<SchemaChange>();
-        var lines = migration.Content.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
 
-        for (int i = 0; i < lines.Length; i++)
+        // Collapse multi-line method calls into single logical lines for regex matching
+        var normalised = System.Text.RegularExpressions.Regex.Replace(
+            migration.Content,
+            @"\r?\n\s*",
+            " ");
+
+        // Split on statement boundaries (each migrationBuilder call starts a new logical line)
+        var statements = System.Text.RegularExpressions.Regex.Split(
+            normalised,
+            @"(?=migrationBuilder\.)");
+
+        int lineNumber = 1;
+        foreach (var stmt in statements)
         {
-            var line = lines[i].Trim();
-            if (string.IsNullOrWhiteSpace(line))
+            var trimmed = stmt.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                lineNumber++;
                 continue;
+            }
 
-            var change = ParseLine(migration.Id, line, i + 1);
+            var change = ParseLine(migration.Id, trimmed, lineNumber);
             if (change is not null)
             {
                 changes.Add(change);
             }
+
+            lineNumber++;
         }
 
         return changes;
@@ -66,7 +82,7 @@ public class SchemaChangeDetectorService
         }
 
         // Extract ADD COLUMN
-        var addColumnMatch = Regex.Match(line, @"AddColumn\s*\([^)]*name:\s*""([^""]+)""[^)]*\)\s*on\s+""([^""]+)""", RegexOptions.IgnoreCase);
+        var addColumnMatch = Regex.Match(line, @"AddColumn\s*<[^>]+>\s*\([^)]*name:\s*""([^""]+)""[^)]*table:\s*""([^""]+)""", RegexOptions.IgnoreCase);
         if (addColumnMatch.Success)
         {
             var change = new SchemaChange(migrationId, SqlChangeType.AddColumn, line)
@@ -76,17 +92,23 @@ public class SchemaChangeDetectorService
                 LineNumber = lineNumber
             };
 
-            // Hotfix: describe what was wrong - Previously, default values were not extracted, leading to missed conflicts.
             var defaultValueMatch = Regex.Match(line, @"defaultValue(?:Sql)?:\s*(.+?)(?:,|$|\))", RegexOptions.IgnoreCase);
             if (defaultValueMatch.Success)
             {
                 change.DefaultValue = defaultValueMatch.Groups[1].Value.Trim().TrimEnd(',');
             }
+
+            var nullableMatch = Regex.Match(line, @"nullable:\s*(true|false)", RegexOptions.IgnoreCase);
+            if (nullableMatch.Success)
+            {
+                change.AddMetadata("Nullable", nullableMatch.Groups[1].Value);
+            }
+
             return change;
         }
 
         // Extract DROP COLUMN
-        var dropColumnMatch = Regex.Match(line, @"DropColumn\s*\([^)]*name:\s*""([^""]+)""[^)]*\)\s*on\s+""([^""]+)""", RegexOptions.IgnoreCase);
+        var dropColumnMatch = Regex.Match(line, @"DropColumn\s*\([^)]*name:\s*""([^""]+)""[^)]*table:\s*""([^""]+)""", RegexOptions.IgnoreCase);
         if (dropColumnMatch.Success)
         {
             return new SchemaChange(migrationId, SqlChangeType.DropColumn, line)
@@ -98,7 +120,7 @@ public class SchemaChangeDetectorService
         }
 
         // Extract ALTER COLUMN/MODIFY COLUMN
-        var modifyColumnMatch = Regex.Match(line, @"AlterColumn\s*\([^)]*name:\s*""([^""]+)""[^)]*\)\s*on\s+""([^""]+)""", RegexOptions.IgnoreCase);
+        var modifyColumnMatch = Regex.Match(line, @"AlterColumn\s*<[^>]+>\s*\([^)]*name:\s*""([^""]+)""[^)]*table:\s*""([^""]+)""", RegexOptions.IgnoreCase);
         if (modifyColumnMatch.Success)
         {
             var change = new SchemaChange(migrationId, SqlChangeType.ModifyColumn, line)
@@ -108,12 +130,12 @@ public class SchemaChangeDetectorService
                 LineNumber = lineNumber
             };
 
-            // Hotfix: describe what was wrong - Previously, default values were not extracted, leading to missed conflicts.
             var defaultValueMatch = Regex.Match(line, @"defaultValue(?:Sql)?:\s*(.+?)(?:,|$|\))", RegexOptions.IgnoreCase);
             if (defaultValueMatch.Success)
             {
                 change.DefaultValue = defaultValueMatch.Groups[1].Value.Trim().TrimEnd(',');
             }
+
             return change;
         }
 
@@ -141,6 +163,29 @@ public class SchemaChangeDetectorService
             };
             change.AddMetadata("IndexName", dropIndexMatch.Groups[1].Value);
             return change;
+        }
+
+        // Extract ALTER TABLE
+        var alterTableMatch = Regex.Match(line, @"AlterTable\s*\(\s*name:\s*""([^""]+)""", RegexOptions.IgnoreCase);
+        if (alterTableMatch.Success)
+        {
+            return new SchemaChange(migrationId, SqlChangeType.AlterTable, line)
+            {
+                TableName = alterTableMatch.Groups[1].Value,
+                LineNumber = lineNumber
+            };
+        }
+
+        // Extract RENAME TABLE
+        var renameTableMatch = Regex.Match(line, @"RenameTable\s*\([^)]*name:\s*""([^""]+)""[^)]*newName:\s*""([^""]+)""", RegexOptions.IgnoreCase);
+        if (renameTableMatch.Success)
+        {
+            return new SchemaChange(migrationId, SqlChangeType.Rename, line)
+            {
+                OldValue = renameTableMatch.Groups[1].Value,
+                NewValue = renameTableMatch.Groups[2].Value,
+                LineNumber = lineNumber
+            };
         }
 
         // Extract ADD FOREIGN KEY
@@ -248,11 +293,26 @@ public class SchemaChangeDetectorService
     }
 
     /// <summary>
-    /// Checks if a migration is safe (no destructive operations).
+    /// Checks if a migration is safe (no destructive operations or non-nullable column additions).
     /// </summary>
     public bool IsMigrationSafe(Migration migration)
     {
-        return CountDestructiveChanges(migration) == 0;
+        if (CountDestructiveChanges(migration) > 0)
+            return false;
+
+        // Adding a non-nullable column to an existing table is a breaking change
+        var changes = DetectChanges(migration);
+        foreach (var change in changes)
+        {
+            if (change.ChangeType == SqlChangeType.AddColumn &&
+                change.GetMetadata("Nullable") is string nullable &&
+                nullable.Equals("false", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
