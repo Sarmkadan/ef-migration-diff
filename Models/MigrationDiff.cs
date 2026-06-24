@@ -1,4 +1,6 @@
 #nullable enable
+using EfMigrationDiff.Models;
+
 namespace EfMigrationDiff.Models;
 
 /// <summary>
@@ -35,6 +37,7 @@ public class MigrationDiff
     /// <summary>
     /// Validates the diff has required properties.
     /// </summary>
+    /// <returns>True if valid, otherwise false.</returns>
     public bool IsValid()
     {
         return !string.IsNullOrWhiteSpace(SourceBranchId) &&
@@ -45,6 +48,7 @@ public class MigrationDiff
     /// <summary>
     /// Adds a migration that exists only in the source branch.
     /// </summary>
+    /// <param name="migration">The migration to add.</param>
     public void AddSourceOnlyMigration(Migration migration)
     {
         OnlyInSource.Add(migration);
@@ -54,6 +58,7 @@ public class MigrationDiff
     /// <summary>
     /// Adds a migration that exists only in the target branch.
     /// </summary>
+    /// <param name="migration">The migration to add.</param>
     public void AddTargetOnlyMigration(Migration migration)
     {
         OnlyInTarget.Add(migration);
@@ -63,6 +68,7 @@ public class MigrationDiff
     /// <summary>
     /// Adds a migration that exists in both branches.
     /// </summary>
+    /// <param name="migration">The migration to add.</param>
     public void AddCommonMigration(Migration migration)
     {
         InBoth.Add(migration);
@@ -71,6 +77,7 @@ public class MigrationDiff
     /// <summary>
     /// Adds a detected conflict to the diff.
     /// </summary>
+    /// <param name="conflict">The conflict to add.</param>
     public void AddConflict(ConflictInfo conflict)
     {
         if (conflict.IsValid())
@@ -83,6 +90,7 @@ public class MigrationDiff
     /// <summary>
     /// Gets the total number of schema changes.
     /// </summary>
+    /// <returns>The total count of schema changes.</returns>
     public int GetTotalSchemaChanges()
     {
         return SourceSchemaChanges.Count + TargetSchemaChanges.Count;
@@ -91,6 +99,7 @@ public class MigrationDiff
     /// <summary>
     /// Gets the number of blocking conflicts.
     /// </summary>
+    /// <returns>The count of blocking conflicts.</returns>
     public int GetBlockingConflicts()
     {
         return Conflicts.Count(c => c.IsBlocking());
@@ -99,6 +108,7 @@ public class MigrationDiff
     /// <summary>
     /// Checks if this diff has any conflicts.
     /// </summary>
+    /// <returns>True if conflicts exist, otherwise false.</returns>
     public bool HasConflicts()
     {
         return Conflicts.Count > 0;
@@ -107,6 +117,7 @@ public class MigrationDiff
     /// <summary>
     /// Checks if this diff has any blocking conflicts.
     /// </summary>
+    /// <returns>True if blocking conflicts exist, otherwise false.</returns>
     public bool HasBlockingConflicts()
     {
         return GetBlockingConflicts() > 0;
@@ -115,6 +126,7 @@ public class MigrationDiff
     /// <summary>
     /// Gets all destructive changes across both branches.
     /// </summary>
+    /// <returns>A list of destructive schema changes.</returns>
     public List<SchemaChange> GetDestructiveChanges()
     {
         var all = new List<SchemaChange>();
@@ -126,6 +138,7 @@ public class MigrationDiff
     /// <summary>
     /// Gets migrations that have conflicts.
     /// </summary>
+    /// <returns>A list of conflicting migration identifiers.</returns>
     public List<string> GetConflictingMigrations()
     {
         var conflicting = new HashSet<string>();
@@ -180,6 +193,7 @@ public class MigrationDiff
     /// <summary>
     /// Gets a human-readable description of the diff result.
     /// </summary>
+    /// <returns>A string description of the comparison result.</returns>
     public string GetResultDescription()
     {
         return Result switch
