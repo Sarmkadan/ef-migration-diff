@@ -198,14 +198,24 @@ public class ConflictDetectionService
     /// </summary>
     private bool OperationsConflict(SqlChangeType operation1, SqlChangeType operation2)
     {
-        // Drop and Create of same object conflict
+        // Drop and Create of same object conflict (Tables)
         if ((operation1 == SqlChangeType.DropTable && operation2 == SqlChangeType.CreateTable) ||
             (operation1 == SqlChangeType.CreateTable && operation2 == SqlChangeType.DropTable))
             return true;
 
-        // Drop and Modify conflict
+        // Drop and Modify conflict (Tables)
         if ((operation1 == SqlChangeType.DropTable && operation2 == SqlChangeType.AlterTable) ||
             (operation1 == SqlChangeType.AlterTable && operation2 == SqlChangeType.DropTable))
+            return true;
+
+        // Drop and Add conflict (Columns)
+        if ((operation1 == SqlChangeType.DropColumn && operation2 == SqlChangeType.AddColumn) ||
+            (operation1 == SqlChangeType.AddColumn && operation2 == SqlChangeType.DropColumn))
+            return true;
+
+        // Create and Drop conflict (Indexes)
+        if ((operation1 == SqlChangeType.DropIndex && operation2 == SqlChangeType.CreateIndex) ||
+            (operation1 == SqlChangeType.CreateIndex && operation2 == SqlChangeType.DropIndex))
             return true;
 
         // Drop and Drop is harmless (idempotent)
