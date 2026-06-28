@@ -42,6 +42,16 @@ ef-migration-diff graph
 ef-migration-diff auto-merge main feature/add-users
 ```
 
+## Examples
+
+For more practical usage, including programmatic access and DI integration, check the [examples](examples) directory:
+
+- [BasicUsage.cs](examples/BasicUsage.cs): Simple setup and migration comparison.
+- [AdvancedUsage.cs](examples/AdvancedUsage.cs): Custom configuration and error handling.
+- [IntegrationExample.cs](examples/IntegrationExample.cs): Dependency injection setup for ASP.NET applications.
+- [basic-comparison.cs](examples/basic-comparison.cs): Git branch comparison.
+- [conflict-detection.cs](examples/conflict-detection.cs): Detailed conflict analysis.
+
 ## Configuration
 
 The application can be configured via `appsettings.json` or environment variables to customize output paths, default comparison labels, or plugin behavior.
