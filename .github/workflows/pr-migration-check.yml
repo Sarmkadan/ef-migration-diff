@@ -69,7 +69,7 @@ jobs:
           dotnet-version: ${{ inputs.dotnet-version || '8.0.x' }}
 
       - name: Cache .NET tools
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.dotnet/tools
           key: dotnet-tools-ef-migration-diff-${{ runner.os }}-v1
