@@ -52,9 +52,16 @@ For more practical usage, including programmatic access and DI integration, chec
 - [basic-comparison.cs](examples/basic-comparison.cs): Git branch comparison.
 - [conflict-detection.cs](examples/conflict-detection.cs): Detailed conflict analysis.
 
-## Configuration
+## Docker
 
-The application can be configured via `appsettings.json` or environment variables to customize output paths, default comparison labels, or plugin behavior.
+To run the tool using Docker, you can use the provided `docker-compose.yml` file:
+
+```bash
+# Build and run the tool
+docker-compose run --rm ef-migration-diff compare main feature/add-users
+```
+
+The Docker image includes `git` and the necessary dependencies to run the tool against your local repository.
 
 ## License
 
