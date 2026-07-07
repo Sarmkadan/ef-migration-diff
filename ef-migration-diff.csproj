@@ -25,6 +25,7 @@
   <ItemGroup>
     <Compile Remove="examples/**/*.cs" />
     <Compile Remove="tests/**/*.cs" />
+    <Compile Remove="ef-migration-diff.Benchmarks/**/*.cs" />
   </ItemGroup>
 
   <ItemGroup>
