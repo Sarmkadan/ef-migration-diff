@@ -66,6 +66,47 @@ Console.WriteLine(newMigration.ToString()); // "AddEmailToUsers (20240115093046)
 
 The `MigrationFile` class represents an Entity Framework Core migration file, storing metadata and content about a migration. It provides properties for file system information (file path, size, timestamps), migration identification (migration ID, context name), and content management (content loading, hashing, validation). This class is used throughout the ef-migration-diff library for parsing, comparing, and analyzing EF Core migrations.
 
+## MergeAttempt
+
+The `MergeAttempt` class records the outcome of a single automated conflict resolution attempt during migration merging. It captures the conflict identifier, type, strategy applied, success status, and any failure reasons or merged content. This class is used by the `MergeResult` class to track individual resolution attempts within a batch merge operation.
+
+Here's an example of how to use the `MergeAttempt` class:
+
+```csharp
+// Create a merge attempt for a column conflict
+var attempt = new MergeAttempt
+{
+    ConflictId = "conf-20240615-001",
+    ConflictType = ConflictType.ColumnConflict,
+    StrategyApplied = MergeStrategy.LastWins,
+    Succeeded = true,
+    MergedContent = "migrationBuilder.AddColumn<int>(\"Age\", \"Users\");",
+    AttemptedAt = DateTime.UtcNow
+};
+
+// Check if the attempt succeeded
+Console.WriteLine($"Attempt succeeded: {attempt.Succeeded}"); // true
+
+// Access the strategy that was applied
+Console.WriteLine($"Strategy: {attempt.StrategyApplied}"); // LastWins
+
+// Get the human-readable description
+Console.WriteLine(attempt.ToString()); // "[OK] ColumnConflict — resolved via LastWins"
+
+// Create a failed attempt for demonstration
+var failedAttempt = new MergeAttempt
+{
+    ConflictId = "conf-20240615-002",
+    ConflictType = ConflictType.TableConflict,
+    StrategyApplied = MergeStrategy.Combine,
+    Succeeded = false,
+    FailureReason = "Incompatible schema changes detected",
+    AttemptedAt = DateTime.UtcNow
+};
+
+Console.WriteLine(failedAttempt.ToString()); // "[FAIL] TableConflict — Incompatible schema changes detected"
+```
+
 Here's an example of how to use the `MigrationFile` class:
 
 ```csharp
