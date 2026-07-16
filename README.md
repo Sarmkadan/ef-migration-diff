@@ -1,8 +1,8 @@
 // ... existing content ...
 
-## TypeConverter
+## ValidationHelper
 
-The `TypeConverter` class provides utility methods for converting values between different types safely. It handles null values, type mismatches, and common conversions gracefully.
+The `ValidationHelper` class provides utility methods for validating and sanitizing various types of input data, ensuring that it conforms to expected formats and patterns. This includes checks for migration timestamps, IDs, table and column names, file paths, and more. It's useful for preprocessing and validating data before using it in the application.
 
 Here's a realistic usage example based on the class's public members:
 
@@ -13,57 +13,30 @@ class Program
 {
     static void Main()
     {
-        // Convert a string to an integer
-        int? intValue = TypeConverter.ConvertTo<int>("123");
-        Console.WriteLine(intValue); // Output: 123
+        // Validate a migration timestamp
+        bool isValidTimestamp = ValidationHelper.IsValidMigrationTimestamp("20220101123456");
+        Console.WriteLine(isValidTimestamp); // Output: True
 
-        // Try to convert an invalid string to an integer
-        if (TypeConverter.TryConvertTo<int>("abc", out int? failedIntValue))
-        {
-            Console.WriteLine(failedIntValue);
-        }
-        else
-        {
-            Console.WriteLine("Conversion failed");
-        }
+        // Validate a migration ID
+        bool isValidMigrationId = ValidationHelper.IsValidMigrationId("20220101123456");
+        Console.WriteLine(isValidMigrationId); // Output: True
 
-        // Convert a string to an enum
-        MyEnum? enumValue = TypeConverter.StringToEnum<MyEnum>("Value1");
-        Console.WriteLine(enumValue); // Output: Value1
+        // Validate a table name
+        bool isValidTableName = ValidationHelper.IsValidTableName("[MyTable]");
+        Console.WriteLine(isValidTableName); // Output: True
 
-        // Convert an enum to a string
-        string enumString = TypeConverter.EnumToString(MyEnum.Value2);
-        Console.WriteLine(enumString); // Output: Value2
+        // Sanitize input to prevent SQL injection
+        string sanitizedInput = ValidationHelper.SanitizeInput("SELECT * FROM users");
+        Console.WriteLine(sanitizedInput); // Output: 
 
-        // Convert an object to a dictionary
-        var obj = new { Foo = "bar", Baz = 123 };
-        var dict = TypeConverter.ObjectToDictionary(obj);
-        Console.WriteLine(dict["Foo"]); // Output: bar
+        // Validate an email address
+        bool isValidEmail = ValidationHelper.IsValidEmail("user@example.com");
+        Console.WriteLine(isValidEmail); // Output: True
 
-        // Convert a dictionary to an object
-        var newObj = TypeConverter.DictionaryToObject<MyObject>(dict);
-        Console.WriteLine(newObj.Foo); // Output: bar
-
-        // Perform a generic conversion
-        object? convertedValue = TypeConverter.ConvertTo("123", typeof(int));
-        Console.WriteLine(convertedValue); // Output: 123
-
-        // Check if a conversion is possible
-        bool canConvert = TypeConverter.CanConvertTo<int>("123");
-        Console.WriteLine(canConvert); // Output: True
+        // Check if a string is alphanumeric
+        bool isAlphanumeric = ValidationHelper.IsAlphanumeric("HelloWorld123");
+        Console.WriteLine(isAlphanumeric); // Output: True
     }
 }
-
-public enum MyEnum { Value1, Value2 }
-
-public class MyObject
-{
-    public string Foo { get; set; }
-    public int Baz { get; set; }
-}
 ```
-
-The `TypeConverter` class exposes several public members for type conversions, including `ConvertTo`, `TryConvertTo`, `StringToEnum`, `EnumToString`, `ObjectToDictionary`, `DictionaryToObject`, `ConvertTo`, and `CanConvertTo`.
-
-```csharp
 // ... rest of file content ...
