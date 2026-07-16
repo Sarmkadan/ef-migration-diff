@@ -1,78 +1,43 @@
 // ... existing content ...
 
-## ValidationHelper
+## HtmlFormatter
 
-The `ValidationHelper` class provides utility methods for validating and sanitizing various types of input data, ensuring that it conforms to expected formats and patterns. This includes checks for migration timestamps, IDs, table and column names, file paths, and more. It's useful for preprocessing and validating data before using it in the application.
+The `HtmlFormatter` class provides a set of methods for generating styled HTML documents and tables. It allows for customizable styling, tables, and structured document generation.
 
 Here's a realistic usage example based on the class's public members:
 
 ```csharp
-using EfMigrationDiff.Utilities;
+using EfMigrationDiff.Formatters;
 
 class Program
 {
     static void Main()
     {
-        // Validate a migration timestamp
-        bool isValidTimestamp = ValidationHelper.IsValidMigrationTimestamp("20220101123456");
-        Console.WriteLine(isValidTimestamp); // Output: True
+        // Create a new HTML document with a title and body content
+        var htmlFormatter = new HtmlFormatter();
+        var document = htmlFormatter.CreateDocument("My Document", "This is the body content.");
+        System.Console.WriteLine(document);
 
-        // Validate a migration ID
-        bool isValidMigrationId = ValidationHelper.IsValidMigrationId("20220101123456");
-        Console.WriteLine(isValidMigrationId); // Output: True
+        // Generate an HTML table from a collection of objects
+        var items = new[] { new { Name = "John", Age = 30 }, new { Name = "Jane", Age = 25 } };
+        var table = htmlFormatter.GenerateTable(items);
+        System.Console.WriteLine(table);
 
-        // Validate a table name
-        bool isValidTableName = ValidationHelper.IsValidTableName("[MyTable]");
-        Console.WriteLine(isValidTableName); // Output: True
+        // Create a heading element
+        var heading = htmlFormatter.CreateHeading("My Heading", 2);
+        System.Console.WriteLine(heading);
 
-        // Sanitize input to prevent SQL injection
-        string sanitizedInput = ValidationHelper.SanitizeInput("SELECT * FROM users");
-        Console.WriteLine(sanitizedInput); // Output: 
+        // Create a paragraph element
+        var paragraph = htmlFormatter.CreateParagraph("This is a paragraph of text.");
+        System.Console.WriteLine(paragraph);
 
-        // Validate an email address
-        bool isValidEmail = ValidationHelper.IsValidEmail("user@example.com");
-        Console.WriteLine(isValidEmail); // Output: True
+        // Create an alert/notification box
+        var alert = htmlFormatter.CreateAlert("This is an alert message.");
+        System.Console.WriteLine(alert);
 
-        // Check if a string is alphanumeric
-        bool isAlphanumeric = ValidationHelper.IsAlphanumeric("HelloWorld123");
-        Console.WriteLine(isAlphanumeric); // Output: True
-    }
-}
-```
-
-## PerformanceMetrics
-
-`PerformanceMetrics` records timing, memory usage, and execution counts for named operations. It provides methods to start a measurement, retrieve per‑operation statistics, generate a human‑readable report, and clear all collected data.
-
-```csharp
-using EfMigrationDiff.Utilities;
-
-class Program
-{
-    static void Main()
-    {
-        var metrics = new PerformanceMetrics();
-
-        // Measure an operation named "LoadData"
-        using (metrics.StartOperation("LoadData"))
-        {
-            // Simulated work
-            System.Threading.Thread.Sleep(150);
-        }
-
-        // Get metrics for the specific operation
-        var loadMetrics = metrics.GetMetrics("LoadData");
-        if (loadMetrics != null)
-        {
-            System.Console.WriteLine(
-                $"LoadData executed {loadMetrics.Count} time(s), total {loadMetrics.TotalDuration.TotalMilliseconds:F2}ms");
-        }
-
-        // Generate a full report of all recorded operations
-        System.Console.WriteLine(metrics.GenerateReport());
-
-        // Remove all recorded metrics
-        metrics.Clear();
+        // HTML-encode a string to prevent XSS
+        var encodedString = htmlFormatter.HtmlEncode("<script>alert('XSS')</script>");
+        System.Console.WriteLine(encodedString);
     }
 }
 ```
