@@ -671,6 +671,94 @@ var skipLastOne = users.SkipLast(1); // Alice, Bob, Charlie
 ```
 
 
+## ReflectionExtensions
+
+The `ReflectionExtensions` class provides a collection of extension methods for working with .NET reflection, enabling type inspection, property and method access, interface checking, and object manipulation at runtime. These utilities simplify common reflection scenarios when working with dynamic types, DTOs, or POCOs.
+
+Here's an example of how to use the `ReflectionExtensions` class:
+
+```csharp
+// Define a sample interface and implementation
+public interface IEntity
+{
+    int Id { get; set; }
+}
+
+public class User : IEntity
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public DateTime CreatedDate { get; set; }
+    public bool IsActive { get; set; }
+    
+    public void Greet() => Console.WriteLine("Hello!");
+    public int CalculateBirthYear() => DateTime.Now.Year - Age;
+}
+
+// Usage examples
+var user = new User { Id = 1, Name = "Alice", Age = 30, IsActive = true };
+
+// Get public properties of a type
+var properties = typeof(User).GetPublicProperties();
+Console.WriteLine($"User has {properties.Count()} public properties");
+// Output: User has 5 public properties
+
+// Get public methods of a type
+var methods = typeof(User).GetPublicMethods();
+Console.WriteLine($"User has {methods.Count()} public methods");
+// Output: User has 2 public methods
+
+// Check if type implements an interface
+bool implementsIEntity = typeof(User).ImplementsInterface<IEntity>();
+Console.WriteLine(implementsIEntity); // true
+
+// Check if type is a simple type (value types, primitives, strings, dates, etc.)
+bool isSimple = typeof(int).IsSimpleType();
+Console.WriteLine(isSimple); // true
+
+bool isUserSimple = typeof(User).IsSimpleType();
+Console.WriteLine(isUserSimple); // false
+
+// Get property value by name
+var nameValue = user.GetPropertyValue("Name");
+Console.WriteLine(nameValue); // "Alice"
+
+// Set property value by name
+user.SetPropertyValue("Age", 31);
+Console.WriteLine(user.Age); // 31
+
+// Get all properties and their values as a dictionary
+var propertyDict = user.GetPropertyDictionary();
+foreach (var kvp in propertyDict)
+{
+    Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+}
+// Output:
+// Id: 1
+// Name: Alice
+// Age: 31
+// CreatedDate: 1/16/2026 12:00:00 AM
+// IsActive: True
+
+// Check if type has parameterless constructor
+bool hasParameterlessCtor = typeof(User).HasParameterlessConstructor();
+Console.WriteLine(hasParameterlessCtor); // true
+
+// Create instance of type
+var newUser = typeof(User).CreateInstance() as User;
+newUser.Id = 2;
+newUser.Name = "Bob";
+
+// Get all implementations of an interface
+var entityImplementations = typeof(IEntity).GetImplementations();
+Console.WriteLine(entityImplementations.Count()); // 1
+
+// Get friendly type name
+string friendlyName = typeof(Dictionary<string, List<int>>).GetFriendlyName();
+Console.WriteLine(friendlyName); // "Dictionary<String, List<Int32>>"
+```
+
 ## SchemaDiffServiceExtensions
 
 The `SchemaDiffServiceExtensions` class provides extension methods for registering schema diff v2 services with the .NET dependency injection container and for working fluently with schema diff results. It includes methods for rendering diffs as HTML documents, analyzing destructive changes, and performing three-way merge operations with automatic conflict resolution.
