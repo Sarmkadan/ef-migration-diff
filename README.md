@@ -270,6 +270,143 @@ var detector = new SchemaChangeDetectorService();
 // Detect all schema changes in a migration
 // -------------------------------------------------
 migration.Content = """
+protected override void Up(MigrationBuilder migrationBuilder) 
+{
+migrationBuilder.CreateTable(
+  name: "Users",
+  columns: table => new
+  {
+    table.Column<int>("Id").PrimaryKey();
+    table.Column<string>("Username").NotNullable();
+    table.Column<DateTime>("CreatedAt").NotNullable();
+  });
+}
+"""
+
+var migration = new Migration { Id = "20240101120000_AddUsers", Content = migration.Content };
+
+// Detect all changes
+List<SchemaChange> allChanges = detector.DetectChanges(migration);
+Console.WriteLine($"Total changes detected: {allChanges.Count}");
+
+// -------------------------------------------------
+// Get changes by specific type
+// -------------------------------------------------
+List<SchemaChange> tableCreations = detector.GetChangesByType(migration, SqlChangeType.CreateTable);
+Console.WriteLine($"Tables created: {tableCreations.Count}");
+
+// -------------------------------------------------
+// Get all affected tables
+// -------------------------------------------------
+List<string> affectedTables = detector.GetAffectedTables(migration);
+Console.WriteLine($"Affected tables: {string.Join(", ", affectedTables)}");
+
+// -------------------------------------------------
+// Count destructive changes
+// -------------------------------------------------
+int destructiveCount = detector.CountDestructiveChanges(migration);
+Console.WriteLine($"Destructive changes: {destructiveCount}");
+
+// -------------------------------------------------
+// Check if migration is safe
+// -------------------------------------------------
+bool isSafe = detector.IsMigrationSafe(migration);
+Console.WriteLine($"Is migration safe: {isSafe}");
+
+// -------------------------------------------------
+// Get comprehensive migration metadata
+// -------------------------------------------------
+Dictionary<string, object> metadata = detector.GetMigrationMetadata(migration);
+foreach (var kvp in metadata)
+{
+  Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+}
+```
+
+The service's public API includes methods for detecting schema changes (`DetectChanges`), filtering by change type (`GetChangesByType`), identifying affected tables (`GetAffectedTables`), counting destructive operations (`CountDestructiveChanges`), validating migration safety (`IsMigrationSafe`), and extracting detailed metadata (`GetMigrationMetadata`).
+
+
+## SchemaDiffPipelineService
+
+The `SchemaDiffPipelineService` orchestrates end-to-end schema comparison workflows by integrating the v1 migration infrastructure with the v2 visual diff engine. It bridges the gap between branch-relative migration collection and schema visualization, producing comprehensive diff reports that include side-by-side, unified, and merge editor HTML outputs.
+
+Here's a realistic usage example based on the service's public API:
+
+```csharp
+using EfMigrationDiff.Models;
+using EfMigrationDiff.Services;
+
+// Create required dependencies (these would typically come from DI)
+var migrationDiffService = new MigrationDiffService();
+var diffEngine = new SchemaDiffEngine();
+var renderer = new VisualDiffRenderer();
+
+// Initialize the pipeline
+var pipeline = new SchemaDiffPipelineService(
+    migrationDiffService,
+    diffEngine,
+    renderer
+);
+
+// -------------------------------------------------
+// Two-way schema diff between source and target branches
+// -------------------------------------------------
+var sourceBranch = new BranchInfo("feature/new-users", "main");
+var targetBranch = new BranchInfo("main", "main");
+
+var twoWayResult = pipeline.RunTwoWayDiff(sourceBranch, targetBranch);
+
+Console.WriteLine($"Two-way diff completed: {twoWayResult.SourceBranch} vs {twoWayResult.TargetBranch}");
+Console.WriteLine($"Side-by-side HTML length: {twoWayResult.SideBySideHtml.Length}");
+Console.WriteLine($"Unified HTML length: {twoWayResult.UnifiedHtml.Length}");
+Console.WriteLine($"Has destructive changes: {twoWayResult.HasDestructiveChanges}");
+
+// -------------------------------------------------
+// Three-way schema diff with merge analysis
+// -------------------------------------------------
+var baseBranch = new BranchInfo("release/v1.2", "main");
+var featureBranch = new BranchInfo("feature/user-auth", "main");
+var integrationBranch = new BranchInfo("main", "main");
+
+var threeWayResult = pipeline.RunThreeWayDiff(
+    baseBranch,
+    featureBranch,
+    integrationBranch
+);
+
+Console.WriteLine($"Three-way diff completed: {threeWayResult.BaseBranch} -> {threeWayResult.SourceBranch} vs {threeWayResult.TargetBranch}");
+Console.WriteLine($"Merge editor HTML length: {threeWayResult.MergeEditorHtml.Length}");
+Console.WriteLine($"Conflict count: {threeWayResult.ThreeWayDiff?.ConflictCount}");
+
+// -------------------------------------------------
+// Auto-merge trivially resolvable conflicts
+// -------------------------------------------------
+var mergeEditor = new MergeEditor();
+var mergeResult = pipeline.TryAutoMerge(
+    baseBranch,
+    featureBranch,
+    integrationBranch,
+    mergeEditor
+);
+
+Console.WriteLine($"Auto-merge completed with {mergeResult.ResolvedCount} resolved conflicts");
+Console.WriteLine($"Remaining unresolved: {mergeResult.UnresolvedWarnings.Count}");
+```
+
+The `SchemaDiffPipelineService` provides methods for two-way diffs (`RunTwoWayDiff`), three-way diffs (`RunThreeWayDiff`), and auto-merge attempts (`TryAutoMerge`), returning comprehensive results that include schema diff data, HTML visualizations, and metadata about the branches involved.
+
+```csharp
+using System;
+using System.Collections.Generic;
+using EfMigrationDiff.Models;
+using EfMigrationDiff.Services;
+
+var detector = new SchemaChangeDetectorService();
+
+// -------------------------------------------------
+// Detect all schema changes in a migration
+// -------------------------------------------------
+migration.Content = """
 protected override void Up(MigrationBuilder migrationBuilder)
 {
     migrationBuilder.CreateTable(
