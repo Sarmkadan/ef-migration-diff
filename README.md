@@ -5,6 +5,62 @@ diff pipelines split, extension points and known limitations - see
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The sections below are per-class
 reference docs.
 
+## MigrationFile
+
+The `MigrationFile` class represents an Entity Framework Core migration file, storing metadata and content about a migration. It provides properties for file system information (file path, size, timestamps), migration identification (migration ID, context name), and content management (content loading, hashing, validation). This class is used throughout the ef-migration-diff library for parsing, comparing, and analyzing EF Core migrations.
+
+Here's an example of how to use the `MigrationFile` class:
+
+```csharp
+// Create a migration file instance from a physical file
+var migrationFile = new MigrationFile
+{
+    FilePath = @"/home/project/Migrations/20240115093045_CreateUsersTable.cs",
+    FileName = "20240115093045_CreateUsersTable.cs",
+    DirectoryPath = @"/home/project/Migrations",
+    FileSize = 1024,
+    LastModified = DateTime.Parse("2024-01-15T09:30:45"),
+    DbContextName = "ApplicationDbContext",
+    MigrationId = "20240115093045",
+    IsDesigner = false
+};
+
+// Load the content asynchronously
+await migrationFile.LoadContentAsync();
+
+// Calculate hash for change detection
+migrationFile.CalculateHash();
+
+// Extract migration ID from filename
+var extractedId = migrationFile.ExtractMigrationId();
+Console.WriteLine($"Extracted Migration ID: {extractedId}"); // "20240115093045"
+
+// Validate the migration file
+var isValid = migrationFile.IsValid();
+Console.WriteLine($"Is valid: {isValid}");
+
+// Compare content with another migration file
+var otherMigrationFile = new MigrationFile
+{
+    FilePath = @"/home/project/Migrations/20240115093045_CreateUsersTable.Designer.cs",
+    Content = "// Designer file content"
+};
+
+var hasSameContent = migrationFile.HasSameContent(otherMigrationFile);
+Console.WriteLine($"Has same content: {hasSameContent}");
+
+// Get display path for user-friendly output
+var displayPath = migrationFile.GetDisplayPath();
+Console.WriteLine($"Display path: {displayPath}");
+
+// Use ToString() for debugging/logging
+Console.WriteLine(migrationFile.ToString());
+
+// Create from a migration ID and context name
+var newMigrationFile = new MigrationFile("20240115093046", "AddEmailToUsers", "ApplicationDbContext");
+Console.WriteLine(newMigrationFile.FileName); // "20240115093046_AddEmailToUsers.cs"
+```
+
 ## MigrationParserServiceTests
 
 The `MigrationParserServiceTests` class provides a set of unit tests for the `MigrationParserService` class, which parses Entity Framework Core migration files to extract metadata such as migration ID, name, and content. It tests various scenarios including valid migration files, designer files, invalid timestamps, empty content, and complex migration scenarios.
