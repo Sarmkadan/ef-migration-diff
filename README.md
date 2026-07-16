@@ -393,6 +393,116 @@ Console.WriteLine($"Auto-merge completed with {mergeResult.ResolvedCount} resolv
 Console.WriteLine($"Remaining unresolved: {mergeResult.UnresolvedWarnings.Count}");
 ```
 
+## SchemaDiffEngine
+
+The `SchemaDiffEngine` is the core diff computation and three-way merge engine for Entity Framework migration schemas. It implements both schema comparison (via `ISchemaDiffEngine`) and merge resolution planning (via `IMergeEditor`), providing a unified API for detecting changes, computing diffs between branches, and resolving merge conflicts. The engine supports two-way diffs for comparing any two migration sets, three-way diffs for merge scenarios with a common base, and automated resolution strategies for trivially resolvable conflicts.
+
+Here's a realistic usage example based on the engine's public API:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using EfMigrationDiff.Models;
+using EfMigrationDiff.Services;
+using Microsoft.Extensions.Logging;
+
+// Create required dependencies (typically from DI container)
+var conflictDetection = new ConflictDetectionService();
+var loggerFactory = LoggerFactory.Create(builder => {});
+var logger = loggerFactory.CreateLogger<SchemaDiffEngine>();
+
+// Initialize the engine
+var engine = new SchemaDiffEngine(conflictDetection, logger);
+
+// -------------------------------------------------
+// Two-way schema diff between source and target changes
+// -------------------------------------------------
+var sourceChanges = new List<SchemaChange>
+{
+    new SchemaChange("20240101120000_AddUsers", SqlChangeType.CreateTable, 
+        "CREATE TABLE [Users] ([Id] int PRIMARY KEY, [Username] nvarchar(max) NOT NULL)"),
+    new SchemaChange("20240101120100_AddPosts", SqlChangeType.CreateTable,
+        "CREATE TABLE [Posts] ([Id] int PRIMARY KEY, [UserId] int FOREIGN KEY REFERENCES [Users]([Id])")
+};
+
+var targetChanges = new List<SchemaChange>
+{
+    new SchemaChange("20240101120000_AddUsers", SqlChangeType.CreateTable,
+        "CREATE TABLE [Users] ([Id] int PRIMARY KEY, [Username] nvarchar(max) NOT NULL, [Email] nvarchar(max) NOT NULL)"),
+    new SchemaChange("20240101120200_AddComments", SqlChangeType.CreateTable,
+        "CREATE TABLE [Comments] ([Id] int PRIMARY KEY, [PostId] int FOREIGN KEY REFERENCES [Posts]([Id])")
+};
+
+// Compute diff with custom options
+var options = new SchemaDiffOptions
+{
+    SourceLabel = "feature/new-users",
+    TargetLabel = "main",
+    IgnoreWhitespace = true
+};
+
+var diffResult = engine.ComputeDiff(sourceChanges, targetChanges, options);
+
+Console.WriteLine($"Diff computed: {diffResult.SourceOnlyChanges.Count} source-only changes, " +
+                $"{diffResult.TargetOnlyChanges.Count} target-only changes, " +
+                $"{diffResult.ModifiedChanges.Count} modified changes");
+Console.WriteLine($"Side-by-side hunks: {diffResult.Hunks.Count}");
+
+// -------------------------------------------------
+// Three-way schema diff with merge analysis
+// -------------------------------------------------
+var baseChanges = new List<SchemaChange>
+{
+    new SchemaChange("20240101120000_AddUsers", SqlChangeType.CreateTable,
+        "CREATE TABLE [Users] ([Id] int PRIMARY KEY)")
+};
+
+var threeWayResult = engine.ComputeThreeWayDiff(
+    baseChanges,
+    sourceChanges,
+    targetChanges,
+    new SchemaDiffOptions { BaseLabel = "release/v1.2", SourceLabel = "feature/user-auth", TargetLabel = "main" }
+);
+
+Console.WriteLine($"Three-way diff completed: {threeWayResult.ConflictRegions.Count} conflict regions detected");
+Console.WriteLine($"Base→Source changes: {threeWayResult.BaseToSource.Hunks.Count} hunks");
+Console.WriteLine($"Base→Target changes: {threeWayResult.BaseToTarget.Hunks.Count} hunks");
+
+// -------------------------------------------------
+// Auto-merge trivially resolvable conflicts
+// -------------------------------------------------
+var autoMergePlan = engine.AutoMerge(threeWayResult);
+Console.WriteLine($"Auto-merge identified {autoMergePlan.Resolutions.Count(r => r.Value != MergeResolutionStrategy.Unresolved)} " +
+                $"resolvable conflicts out of {threeWayResult.ConflictRegions.Count} total");
+
+// -------------------------------------------------
+// Apply merge resolution and validate
+// -------------------------------------------------
+var mergeResult = engine.ApplyMergeResolution(threeWayResult, autoMergePlan);
+Console.WriteLine($"Merge result: {mergeResult.IsSuccessful}, {mergeResult.ResolvedChanges.Count} resolved, " +
+                $"{mergeResult.UnresolvedCount} unresolved");
+
+// Validate the resolution plan
+var validationErrors = engine.ValidateResolution(autoMergePlan, threeWayResult);
+if (validationErrors.Count > 0)
+{
+    Console.WriteLine("Validation errors:");
+    foreach (var error in validationErrors) Console.WriteLine($"- {error}");
+}
+
+// -------------------------------------------------
+// Manual resolution strategies
+// -------------------------------------------------
+var acceptSourcePlan = engine.AcceptSource(threeWayResult);
+var acceptTargetPlan = engine.AcceptTarget(threeWayResult);
+
+Console.WriteLine($"AcceptSource plan: {acceptSourcePlan.Resolutions.Count} resolutions");
+Console.WriteLine($"AcceptTarget plan: {acceptTargetPlan.Resolutions.Count} resolutions");
+```
+
+The `SchemaDiffEngine` exposes public members for diff computation (`ComputeDiff`, `ComputeThreeWayDiff`), merge resolution (`ApplyMergeResolution`, `AcceptSource`, `AcceptTarget`, `AutoMerge`), and validation (`ValidateResolution`). It serves as the central component for schema comparison and merge workflows in the EF Migration Diff tool.
+
+
 The `SchemaDiffPipelineService` provides methods for two-way diffs (`RunTwoWayDiff`), three-way diffs (`RunThreeWayDiff`), and auto-merge attempts (`TryAutoMerge`), returning comprehensive results that include schema diff data, HTML visualizations, and metadata about the branches involved.
 
 ```csharp
