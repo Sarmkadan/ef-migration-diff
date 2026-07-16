@@ -816,6 +816,84 @@ The `SchemaDiffEngine` is the core diff computation and three-way merge engine f
 
 Here's a realistic usage example based on the engine's public API:
 
+## FileHelper
+
+The `FileHelper` utility class provides robust file system operations with comprehensive error handling and validation. It includes methods for reading, writing, copying, and deleting files, as well as directory management and file metadata operations. The class is designed to safely handle file operations with proper exception handling and validation checks.
+
+```csharp
+using EfMigrationDiff.Utilities;
+
+// -------------------------------------------------
+// File reading and writing operations
+// -------------------------------------------------
+
+// Read a file safely (returns null if file doesn't exist)
+string? fileContent = FileHelper.ReadFileAsync("./Migrations/20240101120000_AddUsers.cs");
+if (fileContent != null)
+{
+    Console.WriteLine($"File size: {FileHelper.GetHumanReadableFileSize(FileHelper.GetFileSize("./Migrations/20240101120000_AddUsers.cs"))}");
+}
+
+// Write content to a file (automatically creates directories if needed)
+FileHelper.WriteFile("./output/generated-migration.cs", "public class GeneratedMigration { ... }");
+
+// Check if a file exists and get its size
+long fileSize = FileHelper.GetFileSize("./Migrations/20240101120000_AddUsers.cs");
+Console.WriteLine($"File size: {FileHelper.GetHumanReadableFileSize(fileSize)}");
+
+// -------------------------------------------------
+// Directory operations
+// -------------------------------------------------
+
+// Ensure a directory exists
+FileHelper.EnsureDirectoryExists("./output/migrations");
+
+// Get all migration files from a directory
+List<string> migrationFiles = FileHelper.GetMigrationFiles("./Migrations");
+Console.WriteLine($"Found {migrationFiles.Count} migration files");
+
+// Get all subdirectories matching a pattern
+List<string> subdirectories = FileHelper.GetSubdirectories("./src", "*");
+Console.WriteLine($"Found {subdirectories.Count} subdirectories");
+
+// Check if a directory is a valid migration directory
+bool isValidMigrationDir = FileHelper.IsValidMigrationDirectory("./Migrations");
+Console.WriteLine($"Is valid migration directory: {isValidMigrationDir}");
+
+// -------------------------------------------------
+// File management operations
+// -------------------------------------------------
+
+// Copy a file with automatic directory creation
+FileHelper.CopyFile(
+    sourcePath: "./templates/migration-template.cs",
+    destinationPath: "./Migrations/20240101120001_AddPosts.cs"
+);
+
+// Delete a file safely
+bool deleted = FileHelper.DeleteFile("./temp/old-migration.cs");
+Console.WriteLine($"File deleted: {deleted}");
+
+// Get file metadata
+DateTime lastModified = FileHelper.GetLastModifiedTime("./Migrations/20240101120000_AddUsers.cs");
+Console.WriteLine($"Last modified: {lastModified}");
+
+// -------------------------------------------------
+// Path manipulation utilities
+// -------------------------------------------------
+
+// Combine multiple path segments
+string fullPath = FileHelper.CombinePath(".", "src", "Migrations", "20240101120000_AddUsers.cs");
+Console.WriteLine($"Combined path: {fullPath}");
+
+// Get relative path between two paths
+string relativePath = FileHelper.GetRelativePath(
+    basePath: "./src",
+    targetPath: "./src/Migrations/20240101120000_AddUsers.cs"
+);
+Console.WriteLine($"Relative path: {relativePath}");
+```
+
 ## DbContextRepository
 
 The `DbContextRepository` class provides data access and CRUD operations for managing Entity Framework DbContext metadata. It serves as an in-memory repository that stores DbContext metadata and provides methods for querying, filtering, and managing DbContext data across different assemblies and database providers.
