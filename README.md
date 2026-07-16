@@ -326,6 +326,64 @@ foreach (var kvp in metadata)
 The service's public API includes methods for detecting schema changes (`DetectChanges`), filtering by change type (`GetChangesByType`), identifying affected tables (`GetAffectedTables`), counting destructive operations (`CountDestructiveChanges`), validating migration safety (`IsMigrationSafe`), and extracting detailed metadata (`GetMigrationMetadata`).
 
 
+## AppSettings
+
+The `AppSettings` class provides centralized configuration for the EF Migration Diff tool, exposing settings that control repository paths, migration analysis behavior, output formats, and validation rules. It serves as the single source of truth for application configuration across all CLI commands and services.
+
+Here's a realistic usage example based on the class's public members:
+
+```csharp
+using EfMigrationDiff.Configuration;
+
+// Create configuration with default values
+var settings = new AppSettings
+{
+    RepositoryPath = "./my-repo",
+    MigrationsPath = "./src/Migrations",
+    OutputPath = "./output",
+    ReportFormat = "html",
+    EnableDetailedLogging = true,
+    MaxConcurrentAnalysis = 4,
+    GenerateHtmlReport = true,
+    GenerateJsonReport = true,
+    DbContextNames = new[] { "ApplicationDbContext", "IdentityDbContext" },
+    SourceBranch = "feature/new-feature",
+    TargetBranch = "main"
+};
+
+// Access configuration values
+Console.WriteLine($"Repository path: {settings.RepositoryPath}");
+Console.WriteLine($"Migrations path: {settings.MigrationsPath}");
+Console.WriteLine($"Output path: {settings.OutputPath}");
+Console.WriteLine($"Report format: {settings.ReportFormat}");
+Console.WriteLine($"Max concurrent analysis: {settings.MaxConcurrentAnalysis}");
+
+// Use helper methods
+string migrationsDir = settings.GetMigrationsDirectory();
+Console.WriteLine($"Migrations directory: {migrationsDir}");
+
+string outputDir = settings.GetOutputDirectory();
+Console.WriteLine($"Output directory: {outputDir}");
+
+// Validate configuration
+try
+{
+    settings.ValidateAndThrow();
+    Console.WriteLine("Configuration is valid");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Configuration error: {ex.Message}");
+}
+
+// Convert to migration options
+var migrationOptions = settings.ToEfMigrationDiffOptions();
+Console.WriteLine($"Migration options created: {migrationOptions != null}");
+
+// Ensure output directory exists
+settings.EnsureOutputDirectory();
+```
+
 ## SchemaDiffPipelineService
 
 The `SchemaDiffPipelineService` orchestrates end-to-end schema comparison workflows by integrating the v1 migration infrastructure with the v2 visual diff engine. It bridges the gap between branch-relative migration collection and schema visualization, producing comprehensive diff reports that include side-by-side, unified, and merge editor HTML outputs.
