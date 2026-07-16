@@ -326,6 +326,64 @@ foreach (var kvp in metadata)
 The service's public API includes methods for detecting schema changes (`DetectChanges`), filtering by change type (`GetChangesByType`), identifying affected tables (`GetAffectedTables`), counting destructive operations (`CountDestructiveChanges`), validating migration safety (`IsMigrationSafe`), and extracting detailed metadata (`GetMigrationMetadata`).
 
 
+## ConfigurationBuilder
+
+The `ConfigurationBuilder` class provides a fluent API for configuring the application's dependency injection container and middleware pipeline. It allows you to register services, middleware components, command validators, logging, validation, and error handling in a type-safe, chainable manner, then build the final service provider and command executor.
+
+Here's a realistic usage example based on the class's public members:
+
+```csharp
+using EfMigrationDiff.Configuration;
+using EfMigrationDiff.CLI;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// Create a configuration builder
+var builder = new ConfigurationBuilder()
+    .WithAppSettings(settings =>
+    {
+        settings.RepositoryPath = "./my-repository";
+        settings.MigrationsPath = "./src/Migrations";
+        settings.OutputPath = "./output";
+    })
+    .AddCommand("migrate", "Migrate database to latest version")
+    .AddCommand("rollback", "Rollback database to specified version")
+    .AddMiddleware(async (context, next) =>
+    {
+        Console.WriteLine($"Executing middleware for command: {context.CommandName}");
+        return await next();
+    })
+    .AddCommandValidator("migrate", new CommandValidator()
+        .RequireMinArguments(1)
+        .RequireOption("--target")
+    )
+    .AddLogging(configure => configure.AddConsole())
+    .AddValidation()
+    .AddErrorHandling()
+    .AddSingleton<IMyService, MyService>()
+    .AddSingleton<IAnotherService, AnotherService>(ServiceLifetime.Singleton)
+    .AddSingleton<IDatabaseService, DatabaseService>(sp => new DatabaseService("connection-string"));
+
+// Build the service provider and command executor
+var (executor, services) = builder.Build();
+
+// Resolve services from the container
+var myService = services.GetRequiredService<IMyService>();
+var logger = services.GetRequiredService<ILogger<Program>>();
+var appSettings = services.GetRequiredService<AppSettings>();
+
+// Use the resolved services
+Console.WriteLine($"Repository path: {appSettings.RepositoryPath}");
+Console.WriteLine($"Migration parser: {services.GetService<MigrationParserService>() != null}");
+
+// Execute a command
+var result = await executor.ExecuteAsync("migrate", new[] { "--target", "v2.0.0", "--force" });
+if (result.Success)
+{
+    Console.WriteLine($"Command succeeded: {result.Message}");
+}
+```
+
 ## AppSettings
 
 The `AppSettings` class provides centralized configuration for the EF Migration Diff tool, exposing settings that control repository paths, migration analysis behavior, output formats, and validation rules. It serves as the single source of truth for application configuration across all CLI commands and services.
