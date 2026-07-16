@@ -168,6 +168,67 @@ Console.WriteLine($"Last scanned: {metadata.LastScannedAt}");
 Console.WriteLine(metadata.ToString()); // "ApplicationDbContext (MyApp.Data) - SQL Server"
 ```
 
+## ConflictInfo
+
+The `ConflictInfo` class represents a detected conflict between two Entity Framework Core migrations during comparison or merging operations. It tracks conflict identification (Id, FirstMigrationId, SecondMigrationId), severity levels (Severity), type classification (ConflictType), descriptive information (Description, Details), affected schema elements (AffectedElements), and resolution status (IsResolved, ResolutionStrategy, DetectedAt). This class is used throughout the ef-migration-diff library to identify, categorize, and resolve conflicts that arise when comparing migration histories.
+
+Here's an example of how to use the `ConflictInfo` class:
+
+```csharp
+// Create a conflict between two migrations
+var conflict = new ConflictInfo(
+    firstMigrationId: "20240115093045_CreateUsersTable",
+    secondMigrationId: "20240116104530_AddRolesTable",
+    conflictType: ConflictType.ColumnConflict
+);
+
+// Set additional properties
+conflict.Id = Guid.NewGuid().ToString();
+conflict.Description = "Column 'Email' already exists in table 'Users'";
+conflict.Severity = ConflictSeverity.Error;
+
+// Add affected elements
+conflict.AddAffectedElement("Users.Email");
+conflict.AddAffectedElement("Users.Username");
+
+// Add detailed context
+conflict.AddDetail("MigrationAChange", "Added Email column with type nvarchar(255)");
+conflict.AddDetail("MigrationBChange", "Added Email column with type varchar(100)");
+
+// Validate the conflict
+var isValid = conflict.IsValid();
+Console.WriteLine($"Conflict is valid: {isValid}"); // true
+
+// Get human-readable title
+var title = conflict.GetTitle();
+Console.WriteLine($"Conflict title: {title}"); // "Column Definition Conflict"
+
+// Check if blocking
+var isBlocking = conflict.IsBlocking();
+Console.WriteLine($"Is blocking: {isBlocking}"); // true
+
+// Mark as resolved with a strategy
+conflict.MarkResolved("ManualReviewRequired");
+Console.WriteLine($"Is resolved: {conflict.IsResolved}"); // true
+Console.WriteLine($"Resolution strategy: {conflict.ResolutionStrategy}"); // "ManualReviewRequired"
+
+// Get other migration involved
+var otherMigration = conflict.GetOtherMigration("20240115093045_CreateUsersTable");
+Console.WriteLine($"Other migration: {otherMigration}"); // "20240116104530_AddRolesTable"
+
+// Use ToString() for debugging/logging
+Console.WriteLine(conflict.ToString()); // "[Error] Column Definition Conflict between 20240115093045_CreateUsersTable and 20240116104530_AddRolesTable"
+
+// Create from constructor with different severity
+var criticalConflict = new ConflictInfo(
+    firstMigrationId: "20240201142015_AddEmailToUsers",
+    secondMigrationId: "20240202153020_RemoveEmailColumn",
+    conflictType: ConflictType.OperationConflict
+);
+criticalConflict.Severity = ConflictSeverity.Critical;
+Console.WriteLine(criticalConflict.ToString()); // "[Critical] Operation Order Conflict between 20240201142015_AddEmailToUsers and 20240202153020_RemoveEmailColumn"
+```
+
 ## MergeAttempt
 
 ```csharp
