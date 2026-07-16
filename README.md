@@ -906,6 +906,59 @@ var defaultOptionsResult = benchmarks.DefaultOptions();
 var withSqlContentResult = benchmarks.WithSqlContent();
 ```
 
+## MigrationImpactAnalyzer
+
+The `MigrationImpactAnalyzer` class analyzes Entity Framework Core migrations to detect potential issues, conflicts, and risks before deployment. It evaluates migration chains, identifies destructive operations, calculates risk scores, and provides detailed impact reports to help teams make informed decisions about migration safety.
+
+Here's an example of how to use the `MigrationImpactAnalyzer` class:
+
+```csharp
+// Create an analyzer instance
+var analyzer = new MigrationImpactAnalyzer();
+
+// Analyze a single migration
+var migrationReport = analyzer.AnalyzeMigration(
+    "20240115093045_AddUsersTable",
+    "ApplicationDbContext",
+    migrationContent: "migrationBuilder.CreateTable(...)");
+
+Console.WriteLine($"Migration: {analyzer.MigrationName}");
+Console.WriteLine($"Analyzed at: {analyzer.AnalyzedAt}");
+Console.WriteLine($"Issues detected: {analyzer.IssuesDetected}");
+Console.WriteLine($"Risk score: {analyzer.RiskScore:F2}");
+Console.WriteLine($"Risk level: {analyzer.RiskLevel}");
+
+// Analyze a chain of migrations
+var chainAnalysis = analyzer.AnalyzeMigrationChain(
+    new List<MigrationInfo>
+    {
+        new MigrationInfo("20240115093045", "CreateUsersTable", "ApplicationDbContext"),
+        new MigrationInfo("20240115093046", "AddEmailToUsers", "ApplicationDbContext")
+    });
+
+Console.WriteLine($"Total migrations: {analyzer.TotalMigrations}");
+Console.WriteLine($"High risk count: {analyzer.HighRiskCount}");
+Console.WriteLine($"Has critical risks: {analyzer.HasCriticalRisks}");
+Console.WriteLine($"Average risk score: {analyzer.GetAverageRiskScore():F2}");
+
+// Access detailed issues
+foreach (var issue in analyzer.IssuesDetected)
+{
+    Console.WriteLine($"Issue: {issue.Message}");
+    Console.WriteLine($"  Severity: {issue.Severity}");
+    Console.WriteLine($"  Line: {issue.LineNumber}");
+    Console.WriteLine($"  Risk: {issue.RiskLevel}");
+}
+
+// Access all migration reports
+foreach (var report in analyzer.MigrationReports)
+{
+    Console.WriteLine($"Migration ID: {report.MigrationId}");
+    Console.WriteLine($"  Name: {report.MigrationName}");
+    Console.WriteLine($"  Issues: {report.Issues.Count}");
+}
+```
+
 ## ReportEngine
 
 The `ReportEngine` class provides a robust mechanism to generate comprehensive migration analysis reports in various formats, including JSON, CSV, text, and HTML. It supports extensible reporting through custom templates, allowing developers to define tailored output structures for their migration diff analyses.
