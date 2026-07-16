@@ -39,4 +39,42 @@ class Program
     }
 }
 ```
+
+## PerformanceMetrics
+
+`PerformanceMetrics` records timing, memory usage, and execution counts for named operations. It provides methods to start a measurement, retrieve per‑operation statistics, generate a human‑readable report, and clear all collected data.
+
+```csharp
+using EfMigrationDiff.Utilities;
+
+class Program
+{
+    static void Main()
+    {
+        var metrics = new PerformanceMetrics();
+
+        // Measure an operation named "LoadData"
+        using (metrics.StartOperation("LoadData"))
+        {
+            // Simulated work
+            System.Threading.Thread.Sleep(150);
+        }
+
+        // Get metrics for the specific operation
+        var loadMetrics = metrics.GetMetrics("LoadData");
+        if (loadMetrics != null)
+        {
+            System.Console.WriteLine(
+                $"LoadData executed {loadMetrics.Count} time(s), total {loadMetrics.TotalDuration.TotalMilliseconds:F2}ms");
+        }
+
+        // Generate a full report of all recorded operations
+        System.Console.WriteLine(metrics.GenerateReport());
+
+        // Remove all recorded metrics
+        metrics.Clear();
+    }
+}
+```
+
 // ... rest of file content ...
