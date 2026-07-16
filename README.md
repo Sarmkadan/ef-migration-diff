@@ -107,6 +107,104 @@ var failedAttempt = new MergeAttempt
 Console.WriteLine(failedAttempt.ToString()); // "[FAIL] TableConflict — Incompatible schema changes detected"
 ```
 
+## DbContextMetadata
+
+The `DbContextMetadata` class represents metadata about a DbContext and its configuration. It tracks context identification (Id, ContextName), assembly information (AssemblyName, Namespace), database configuration (DatabaseProvider, ConnectionString), migration history (MigrationIds), entity types (EntityTypes), and custom properties (Properties). This class is used throughout the ef-migration-diff library for scanning, analyzing, and comparing DbContext configurations.
+
+Here's an example of how to use the `DbContextMetadata` class:
+
+```csharp
+// Create metadata for a DbContext
+var metadata = new DbContextMetadata("ApplicationDbContext", "MyApp.Data")
+{
+    Namespace = "MyApp.Data.Contexts",
+    DatabaseProvider = "SqlServer",
+    ConnectionString = "Server=localhost;Database=MyApp;Trusted_Connection=True;"
+};
+
+// Add migrations to the context's history
+metadata.AddMigration("20240115093045_CreateUsersTable");
+metadata.AddMigration("20240116104530_AddRolesTable");
+metadata.AddMigration("20240201142015_AddEmailToUsers");
+
+// Add entity types managed by the context
+metadata.AddEntityType("User");
+metadata.AddEntityType("Role");
+metadata.AddEntityType("Permission");
+
+// Add custom properties
+metadata.AddProperty("Version", "1.2.3");
+metadata.AddProperty("Environment", "Development");
+
+// Check metadata validity
+var isValid = metadata.IsValid();
+Console.WriteLine($"Metadata is valid: {isValid}"); // true
+
+// Get counts
+Console.WriteLine($"Migration count: {metadata.GetMigrationCount()}"); // 3
+Console.WriteLine($"Entity type count: {metadata.GetEntityTypeCount()}"); // 3
+
+// Check if a migration exists
+var hasMigration = metadata.HasMigration("20240115093045_CreateUsersTable");
+Console.WriteLine($"Has migration: {hasMigration}"); // true
+
+// Get a property value
+var version = metadata.GetProperty("Version");
+Console.WriteLine($"Version: {version}"); // "1.2.3"
+
+// Get the last migration
+var lastMigration = metadata.GetLastMigration();
+Console.WriteLine($"Last migration: {lastMigration}"); // "20240201142015_AddEmailToUsers"
+
+// Get provider display name
+var providerName = metadata.GetProviderDisplayName();
+Console.WriteLine($"Provider: {providerName}"); // "SQL Server"
+
+// Mark as recently scanned
+metadata.MarkAsScanned();
+Console.WriteLine($"Last scanned: {metadata.LastScannedAt}");
+
+// Use ToString() for debugging/logging
+Console.WriteLine(metadata.ToString()); // "ApplicationDbContext (MyApp.Data) - SQL Server"
+```
+
+## MergeAttempt
+
+```csharp
+// Create a merge attempt for a column conflict
+var attempt = new MergeAttempt
+{
+    ConflictId = "conf-20240615-001",
+    ConflictType = ConflictType.ColumnConflict,
+    StrategyApplied = MergeStrategy.LastWins,
+    Succeeded = true,
+    MergedContent = "migrationBuilder.AddColumn<int>(\"Age\", \"Users\");",
+    AttemptedAt = DateTime.UtcNow
+};
+
+// Check if the attempt succeeded
+Console.WriteLine($"Attempt succeeded: {attempt.Succeeded}"); // true
+
+// Access the strategy that was applied
+Console.WriteLine($"Strategy: {attempt.StrategyApplied}"); // LastWins
+
+// Get the human-readable description
+Console.WriteLine(attempt.ToString()); // "[OK] ColumnConflict — resolved via LastWins"
+
+// Create a failed attempt for demonstration
+var failedAttempt = new MergeAttempt
+{
+    ConflictId = "conf-20240615-002",
+    ConflictType = ConflictType.TableConflict,
+    StrategyApplied = MergeStrategy.Combine,
+    Succeeded = false,
+    FailureReason = "Incompatible schema changes detected",
+    AttemptedAt = DateTime.UtcNow
+};
+
+Console.WriteLine(failedAttempt.ToString()); // "[FAIL] TableConflict — Incompatible schema changes detected"
+```
+
 Here's an example of how to use the `MigrationFile` class:
 
 ```csharp
