@@ -852,6 +852,60 @@ services.AddSchemaDiffServices(() => new SchemaDiffOptions
 });
 ```
 
+## SchemaDiffBenchmarks
+
+The `SchemaDiffBenchmarks` class provides performance benchmarks for the ef-migration-diff library core algorithms using BenchmarkDotNet. It measures throughput, memory allocation, and execution time for critical operations including two-way diffs, three-way diffs, and merge resolution strategies. The benchmarks help identify performance bottlenecks and track optimization progress across different schema change volumes.
+
+Here's an example of how to run and use the `SchemaDiffBenchmarks` class:
+
+```csharp
+// Run benchmarks from command line
+var summary = BenchmarkRunner.Run<SchemaDiffBenchmarks>();
+
+// Or run specific benchmark categories
+BenchmarkRunner.Run<SchemaDiffBenchmarks>(config => config 
+    .AddFilter("SchemaDiffBenchmarks.ComputeDiff*"));
+
+// Create a benchmark instance for programmatic access
+var benchmarks = new SchemaDiffBenchmarks();
+
+// Setup the benchmark (required before running any benchmarks)
+benchmarks.Setup();
+
+// Run two-way diff benchmarks
+var smallDiff = benchmarks.ComputeDiff_Small();
+var mediumDiff = benchmarks.ComputeDiff_Medium();
+var largeDiff = benchmarks.ComputeDiff_Large();
+
+// Run two-way diff with different options
+var diffWithSql = benchmarks.ComputeDiff_WithSqlContent();
+var diffWithWhitespaceIgnored = benchmarks.ComputeDiff_WithWhitespaceIgnored();
+var diffWithMetadata = benchmarks.ComputeDiff_WithMetadata();
+
+// Run three-way diff benchmarks
+var threeWaySmall = benchmarks.ComputeThreeWayDiff_Small();
+var threeWayMedium = benchmarks.ComputeThreeWayDiff_Medium();
+var threeWayLarge = benchmarks.ComputeThreeWayDiff_Large();
+var threeWayWithConflicts = benchmarks.ComputeThreeWayDiff_WithConflicts();
+
+// Run merge resolution benchmarks
+var sourceStrategy = benchmarks.AcceptSourceStrategy();
+var targetStrategy = benchmarks.AcceptTargetStrategy();
+var autoMergeStrategy = benchmarks.AutoMergeStrategy();
+
+// Apply and validate merge resolution
+var mergeResult = benchmarks.ApplyMergeResolution();
+var validationResults = benchmarks.ValidateResolution();
+
+// Access the configuration
+var config = SchemaDiffOptions.Default;
+benchmarks.Setup(); // Re-setup to access the engine
+
+// Get default options benchmark
+var defaultOptionsResult = benchmarks.DefaultOptions();
+var withSqlContentResult = benchmarks.WithSqlContent();
+```
+
 ## ReportEngine
 
 The `ReportEngine` class provides a robust mechanism to generate comprehensive migration analysis reports in various formats, including JSON, CSV, text, and HTML. It supports extensible reporting through custom templates, allowing developers to define tailored output structures for their migration diff analyses.
