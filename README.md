@@ -523,6 +523,78 @@ Console.WriteLine(filePath.LooksLikeDirectory()); // false
 Console.WriteLine(dirPath2.LooksLikeDirectory()); // true
 ```
 
+
+## StringExtensions
+
+The `StringExtensions` class provides a collection of extension methods for string manipulation, including null-safe checks, case conversion, string formatting, and text manipulation utilities. These methods simplify common string operations and provide consistent behavior across different scenarios.
+
+Here's an example of how to use the `StringExtensions` class:
+
+```csharp
+// Check if a string is null or empty
+string? nullOrEmpty = null;
+bool isNullOrEmpty = nullOrEmpty.IsNullOrEmpty(); // true
+
+string emptyString = string.Empty;
+isNullOrEmpty = emptyString.IsNullOrEmpty(); // true
+
+string validString = "Hello World";
+isNullOrEmpty = validString.IsNullOrEmpty(); // false
+
+// Check if a string is null, empty, or whitespace
+string? nullOrWhiteSpace = null;
+bool isNullOrWhiteSpace = nullOrWhiteSpace.IsNullOrWhiteSpace(); // true
+
+string whitespaceString = "   ";
+isNullOrWhiteSpace = whitespaceString.IsNullOrWhiteSpace(); // true
+
+// Return empty string if null or empty, otherwise return the original
+string? nullableString = null;
+string result = nullableString.OrEmpty(); // ""
+
+string normalString = "Hello";
+result = normalString.OrEmpty(); // "Hello"
+
+// Return default value if null or empty
+string? text = null;
+string defaultValue = "default";
+string output = text.Or(defaultValue); // "default"
+
+// Ensure string ends with specific suffix
+string filename = "document";
+string withExtension = filename.EnsureEndsWith(".txt"); // "document.txt"
+
+// Ensure string starts with specific prefix
+string userInput = "password123";
+string withPrefix = userInput.EnsureStartsWith("auth_"); // "auth_password123"
+
+// Remove prefix from string
+string className = "UserService";
+string withoutPrefix = className.RemovePrefix("User"); // "Service"
+
+// Remove suffix from string
+string methodName = "GetUserByIdAsync";
+string withoutSuffix = methodName.RemoveSuffix("Async"); // "GetUserById"
+
+// Convert to different case formats
+string pascalCase = "user_service".ToPascalCase(); // "UserService"
+string camelCase = "UserService".ToCamelCase(); // "userService"
+string snakeCase = "UserService".ToSnakeCase(); // "user_service"
+string kebabCase = "UserService".ToKebabCase(); // "user-service"
+
+// Truncate string to maximum length
+string longText = "This is a very long text that needs to be shortened";
+string truncated = longText.Truncate(20); // "This is a very lon..."
+
+// Repeat string multiple times
+string separator = "-".Repeat(5); // "-----"
+
+// Count occurrences of substring
+string textWithDuplicates = "hello hello world hello";
+int count = textWithDuplicates.CountOccurrences("hello"); // 3
+```
+
+
 Here's an example of how to use the `CollectionExtensions` class:
 
 ```csharp
