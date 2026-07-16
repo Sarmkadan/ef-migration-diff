@@ -669,3 +669,97 @@ var firstTwo = users.TakeSafe(2); // Alice, Bob
 // Skip last N items
 var skipLastOne = users.SkipLast(1); // Alice, Bob, Charlie
 ```
+
+
+## SchemaDiffServiceExtensions
+
+The `SchemaDiffServiceExtensions` class provides extension methods for registering schema diff v2 services with the .NET dependency injection container and for working fluently with schema diff results. It includes methods for rendering diffs as HTML documents, analyzing destructive changes, and performing three-way merge operations with automatic conflict resolution.
+
+Here's an example of how to use the `SchemaDiffServiceExtensions` class:
+
+```csharp
+// Setup dependency injection with schema diff services
+var services = new ServiceCollection();
+
+// Register core schema diff services with default options
+services.AddSchemaDiffServices();
+
+// Register the schema diff pipeline (includes VisualDiffCommand)
+services.AddSchemaDiffPipeline();
+
+// Build the service provider
+var serviceProvider = services.BuildServiceProvider();
+
+// Resolve required services
+var diffEngine = serviceProvider.GetRequiredService<ISchemaDiffEngine>();
+var renderer = serviceProvider.GetRequiredService<IVisualDiffRenderer>();
+
+// Create a schema diff result by comparing two database schemas
+var sourceSchema = new DatabaseSchema { /* source schema definition */ };
+var targetSchema = new DatabaseSchema { /* target schema definition */ };
+
+var diffResult = diffEngine.CompareSchemas(sourceSchema, targetSchema);
+
+// Generate a side-by-side HTML diff report
+var sideBySideHtml = diffResult.ToSideBySideHtml(renderer);
+Console.WriteLine(sideBySideHtml);
+
+// Generate a unified HTML diff report
+var unifiedHtml = diffResult.ToUnifiedHtml(renderer);
+Console.WriteLine(unifiedHtml);
+
+// Check for destructive changes (dropping tables, columns, indexes, etc.)
+var destructiveChanges = diffResult.GetDestructiveChanges();
+if (destructiveChanges.Any())
+{
+    Console.WriteLine($"WARNING: Found {destructiveChanges.Count()} destructive changes!");
+    foreach (var change in destructiveChanges)
+    {
+        Console.WriteLine($"  - {change.Type}: {change.Name}");
+    }
+}
+
+// Get a plain-text summary of the diff
+var textSummary = diffResult.ToTextSummary();
+Console.WriteLine(textSummary);
+
+// Perform a three-way diff with merge resolution
+var baseSchema = new DatabaseSchema { /* common ancestor schema */ };
+var sourceSchema = new DatabaseSchema { /* source branch changes */ };
+var targetSchema = new DatabaseSchema { /* target branch changes */ };
+
+var threeWayDiff = diffEngine.CompareSchemas(baseSchema, sourceSchema, targetSchema);
+
+// Check if the merge is clean (no conflicts)
+if (threeWayDiff.IsCleanMerge())
+{
+    Console.WriteLine("Merge is clean - no conflicts detected!");
+}
+else
+{
+    Console.WriteLine($"Merge has {threeWayDiff.ConflictCount} conflicts");
+    
+    // Try automatic conflict resolution
+    var mergePlan = threeWayDiff.TryAutoResolve(diffEngine);
+    
+    // Get conflict summary statistics
+    var conflictSummary = threeWayDiff.GetConflictSummary();
+    Console.WriteLine($"Conflicts: Total={conflictSummary["Total"]}, " +
+                     $"Unresolved={conflictSummary["Unresolved"]}, " +
+                     $"AutoResolvable={conflictSummary["AutoResolvable"]}, " +
+                     $"Resolved={conflictSummary["Resolved"]}");
+    
+    // Generate a merge editor HTML document for interactive resolution
+    var mergeEditorHtml = threeWayDiff.ToMergeEditorHtml(renderer);
+    Console.WriteLine(mergeEditorHtml);
+}
+
+// Register schema diff services with custom options
+services.AddSchemaDiffServices(() => new SchemaDiffOptions
+{
+    // Custom configuration options
+    IncludeSystemTables = false,
+    CompareIndexes = true,
+    CompareConstraints = true
+});
+```
