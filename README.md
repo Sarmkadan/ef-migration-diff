@@ -169,3 +169,87 @@ if (executor.IsShortCircuited)
 ```
 
 The `CommandExecutor` supports middleware chaining, command registration, and provides detailed execution feedback through the `CommandResult` type which includes properties like `Success`, `Message`, `ExitCode`, `Data`, and `IsShortCircuited`.
+
+
+
+## MigrationParserService
+
+`MigrationParserService` is a utility service that reads Entity Framework migration files, extracts their metadata, validates their structure, and provides helper methods for comparing and analysing migrations. It can parse individual files, batches of files, or load all migrations from a directory.
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using EfMigrationDiff.Models;
+using EfMigrationDiff.Services;
+
+var parser = new MigrationParserService();
+
+// -------------------------------------------------
+// Parse a single migration file
+// -------------------------------------------------
+var singleFile = new MigrationFile("./Migrations/20230101120000_AddUserTable.cs", "MyDbContext");
+await singleFile.LoadContentAsync();
+
+Migration? migration = parser.ParseMigrationFile(singleFile);
+Console.WriteLine($"Parsed migration: {migration?.Name ?? "null"}");
+
+// -------------------------------------------------
+// Parse multiple migration files at once
+// -------------------------------------------------
+var manyFiles = new List<MigrationFile> { singleFile };
+List<Migration> manyMigrations = parser.ParseMigrationFiles(manyFiles);
+Console.WriteLine($"Parsed {manyMigrations.Count} migrations");
+
+// -------------------------------------------------
+// Load all migrations from a directory
+// -------------------------------------------------
+List<Migration> loaded = await parser.LoadMigrationsFromDirectoryAsync("./Migrations", "MyDbContext");
+Console.WriteLine($"Loaded {loaded.Count} migrations from directory");
+
+// -------------------------------------------------
+// Validate a migration file
+// -------------------------------------------------
+List<string> validationErrors = parser.ValidateMigrationFile(singleFile);
+if (validationErrors.Count > 0)
+{
+    Console.WriteLine("Validation errors:");
+    validationErrors.ForEach(Console.WriteLine);
+}
+
+// -------------------------------------------------
+// Get declared dependencies
+// -------------------------------------------------
+if (migration != null)
+{
+    List<string> deps = parser.GetMigrationDependencies(migration);
+    Console.WriteLine($"Dependencies: {string.Join(", ", deps)}");
+}
+
+// -------------------------------------------------
+// Compare two migrations (if at least two are loaded)
+// -------------------------------------------------
+if (loaded.Count >= 2)
+{
+    var comparison = parser.CompareMigrations(loaded[0], loaded[1]);
+    Console.WriteLine($"Same name: {comparison["SameName"]}");
+    Console.WriteLine($"Statement difference: {comparison["StatementDifference"]}");
+}
+
+// -------------------------------------------------
+// Extract raw SQL operations from a migration
+// -------------------------------------------------
+if (migration != null)
+{
+    List<string> sqlOps = parser.ExtractSqlOperations(migration);
+    Console.WriteLine($"SQL operations found: {sqlOps.Count}");
+}
+
+// -------------------------------------------------
+// Get a numeric sequence value from the migration ID
+// -------------------------------------------------
+int sequence = parser.GetMigrationSequence(migration?.Id ?? string.Empty);
+Console.WriteLine($"Migration sequence: {sequence}");
+```
+
+The example demonstrates the most common public members of `MigrationParserService`, showing how to parse, validate, compare, and analyse EF migration files in a real‑world scenario.
