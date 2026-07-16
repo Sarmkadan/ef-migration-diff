@@ -384,6 +384,122 @@ if (result.Success)
 }
 ```
 
+## MigrationRepository
+
+The `MigrationRepository` class provides data access and CRUD operations for managing Entity Framework migrations. It serves as an in-memory repository that stores migrations and provides methods for querying, filtering, and managing migration data across different DbContexts and statuses.
+
+```csharp
+using EfMigrationDiff.Models;
+using EfMigrationDiff.Repositories;
+
+// Create a new migration repository
+var repository = new MigrationRepository();
+
+// -------------------------------------------------
+// Add migrations to the repository
+// -------------------------------------------------
+var migration1 = new Migration
+{
+    Id = "20240101120000_AddUsers",
+    Name = "AddUsers",
+    DbContextName = "ApplicationDbContext",
+    Status = MigrationStatus.Pending,
+    Content = "CREATE TABLE [Users] ([Id] int PRIMARY KEY, [Username] nvarchar(max) NOT NULL)",
+    CreatedAt = DateTime.UtcNow
+};
+
+var migration2 = new Migration
+{
+    Id = "20240101120100_AddPosts",
+    Name = "AddPosts",
+    DbContextName = "ApplicationDbContext",
+    Status = MigrationStatus.Completed,
+    Content = "CREATE TABLE [Posts] ([Id] int PRIMARY KEY, [UserId] int FOREIGN KEY REFERENCES [Users]([Id])",
+    CreatedAt = DateTime.UtcNow.AddHours(1)
+};
+
+var migration3 = new Migration
+{
+    Id = "20240101120200_AddComments",
+    Name = "AddComments",
+    DbContextName = "BlogDbContext",
+    Status = MigrationStatus.Pending,
+    Content = "CREATE TABLE [Comments] ([Id] int PRIMARY KEY, [PostId] int FOREIGN KEY REFERENCES [Posts]([Id])",
+    CreatedAt = DateTime.UtcNow.AddHours(2)
+};
+
+repository.Add(migration1);
+repository.Add(migration2);
+repository.Add(migration3);
+
+// -------------------------------------------------
+// Query migrations by various criteria
+// -------------------------------------------------
+
+// Get a single migration by ID
+Migration? userMigration = repository.GetById("20240101120000_AddUsers");
+Console.WriteLine($"Found migration: {userMigration?.Name}");
+
+// Get all migrations for a DbContext
+List<Migration> appMigrations = repository.GetByDbContext("ApplicationDbContext");
+Console.WriteLine($"Application migrations count: {appMigrations.Count}");
+
+// Get migrations by status
+List<Migration> pendingMigrations = repository.GetByStatus(MigrationStatus.Pending);
+Console.WriteLine($"Pending migrations: {pendingMigrations.Count}");
+
+// Get all migrations sorted by creation date
+List<Migration> allMigrations = repository.GetAll();
+Console.WriteLine($"Total migrations: {allMigrations.Count}");
+
+// Search migrations by name
+List<Migration> userMigrations = repository.SearchByName("User");
+Console.WriteLine($"Migrations with 'User' in name: {userMigrations.Count}");
+
+// Get paginated results
+List<Migration> firstPage = repository.GetPaginated(0, 2);
+Console.WriteLine($"First page has {firstPage.Count} migrations");
+
+// Check if migration exists
+bool exists = repository.Exists("20240101120000_AddUsers");
+Console.WriteLine($"Migration exists: {exists}");
+
+// Get count
+int totalCount = repository.Count();
+Console.WriteLine($"Total migration count: {totalCount}");
+
+// Get latest migration for a DbContext
+Migration? latestAppMigration = repository.GetLatestByDbContext("ApplicationDbContext");
+Console.WriteLine($"Latest Application migration: {latestAppMigration?.Name}");
+
+// Get migrations by date range
+List<Migration> recentMigrations = repository.GetByDateRange(
+    DateTime.UtcNow.AddDays(-1),
+    DateTime.UtcNow
+);
+Console.WriteLine($"Migrations in last 24 hours: {recentMigrations.Count}");
+
+// Get migrations for multiple DbContexts
+List<Migration> multiContextMigrations = repository.GetByDbContexts("ApplicationDbContext", "BlogDbContext");
+Console.WriteLine($"Migrations across multiple contexts: {multiContextMigrations.Count}");
+
+// -------------------------------------------------
+// Update and delete operations
+// -------------------------------------------------
+
+// Update a migration
+migration2.Status = MigrationStatus.Completed;
+repository.Update(migration2);
+
+// Delete a migration
+bool deleted = repository.Delete("20240101120100_AddPosts");
+Console.WriteLine($"Migration deleted: {deleted}");
+
+// Clear all migrations
+repository.Clear();
+Console.WriteLine($"Repository cleared. Count: {repository.Count()}");
+```
+
 ## AppSettings
 
 The `AppSettings` class provides centralized configuration for the EF Migration Diff tool, exposing settings that control repository paths, migration analysis behavior, output formats, and validation rules. It serves as the single source of truth for application configuration across all CLI commands and services.
