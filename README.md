@@ -731,6 +731,66 @@ The `SchemaDiffEngine` is the core diff computation and three-way merge engine f
 
 Here's a realistic usage example based on the engine's public API:
 
+## GitRepository
+
+The `GitRepository` class provides a wrapper around LibGit2Sharp operations, enabling programmatic access to git repositories for branch management, commit history analysis, and file operations. It simplifies common git workflows like retrieving branch information, comparing branches, and reading file contents from specific commits.
+
+```csharp
+using EfMigrationDiff.Repositories;
+using System;
+
+// Create a new GitRepository instance pointing to a repository path
+var gitRepo = new GitRepository("./my-repository");
+
+// Initialize the repository connection
+if (gitRepo.Initialize())
+{
+    Console.WriteLine($"Repository initialized: {gitRepo}");
+    
+    // Get all branches
+    var allBranches = gitRepo.GetAllBranches();
+    Console.WriteLine($"Total branches: {allBranches.Count}");
+    foreach (var branch in allBranches)
+    {
+        Console.WriteLine($"- {branch.Name} (SHA: {branch.CommitSha})");
+    }
+    
+    // Get current branch
+    var currentBranch = gitRepo.GetCurrentBranch();
+    Console.WriteLine($"Current branch: {currentBranch}");
+    
+    // Get commits between two branches
+    var commits = gitRepo.GetCommitsBetween("feature/new-feature", "main");
+    Console.WriteLine($"Commits between branches: {commits.Count}");
+    
+    // Get changed files between branches
+    var changedFiles = gitRepo.GetChangedFiles("feature/new-feature", "main");
+    Console.WriteLine($"Changed files: {changedFiles.Count}");
+    foreach (var file in changedFiles.Take(5))
+    {
+        Console.WriteLine($"  - {file}");
+    }
+    
+    // Get file content from a specific commit
+    var fileContent = gitRepo.GetFileContent(
+        "abc123def456",
+        "src/Migrations/20240101120000_AddUsers.cs"
+    );
+    Console.WriteLine($"File content retrieved: {(fileContent != null ? "Yes" : "No"}");
+    
+    // Check repository clean status
+    var isClean = gitRepo.IsClean();
+    Console.WriteLine($"Repository is clean: {isClean}");
+    
+    // Get repository root path
+    var repoRoot = gitRepo.GetRepositoryRoot();
+    Console.WriteLine($"Repository root: {repoRoot}");
+}
+
+// Dispose when done
+gitRepo.Dispose();
+```
+
 ## DependencyInjection
 
 The `DependencyInjection` class provides centralized dependency injection configuration for the EF Migration Diff tool. It registers all application services, repositories, and configuration options using the Microsoft.Extensions.DependencyInjection framework, enabling consistent service resolution across CLI commands and services.
