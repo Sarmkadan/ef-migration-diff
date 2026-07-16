@@ -405,6 +405,43 @@ graph.AddNode(migration3);
 Console.WriteLine($"Node count: {graph.Nodes.Count}"); // 3
 ```
 
+## RequestLoggingMiddleware
+
+The `RequestLoggingMiddleware` class provides request logging functionality for command execution, tracking command invocation details, arguments, execution time, and results. It supports both file-based and console logging with configurable verbosity levels. This middleware is useful for debugging, auditing, and monitoring command execution within the ef-migration-diff library.
+
+Here's an example of how to use the `RequestLoggingMiddleware` class:
+
+```csharp
+// Create a console logger with verbose logging
+var consoleLogger = new ConsoleLogger();
+var consoleMiddleware = new RequestLoggingMiddleware(consoleLogger, isVerbose: true);
+
+// Create a command context
+var context = new CommandContext(
+    commandName: "migrate",
+    rawArguments: new[] { "--source", "main", "--target", "feature-branch" },
+    parsedOptions: new Dictionary<string, object> { { "source", "main" }, { "target", "feature-branch" } },
+    parsedArguments: new[] { "main", "feature-branch" }
+);
+
+// Invoke the middleware
+var result = await consoleMiddleware.InvokeAsync(context);
+
+// Output will be logged to console:
+// [INFO] [a1b2c3d4] Command started: migrate
+// [DEBUG] Arguments: --source, main, --target, feature-branch
+// [DEBUG] Parsed options: source=main, target=feature-branch
+// [DEBUG] Positional args: main, feature-branch
+
+// Create a file logger for persistent logging
+var fileLogger = new FileLogger("./logs/commands.log");
+var fileMiddleware = new RequestLoggingMiddleware(fileLogger, isVerbose: false);
+
+// Use the file-based middleware
+var fileResult = await fileMiddleware.InvokeAsync(context);
+// Logs will be written to ./logs/commands.log with timestamps
+```
+
 ## BranchInfo
 
 The `BranchInfo` class represents metadata and state information about a Git branch containing Entity Framework Core migrations. It tracks branch identification (Id, BranchName), commit details (CommitHash, CommitMessage, CommitDate, Author), migration content (MigrationIds, DbContexts, MigrationsPath), and remote status (IsRemote). This class is used throughout the ef-migration-diff library for comparing migration histories between branches and analyzing differences in database schema evolution.
