@@ -25,4 +25,37 @@ middleware.RegisterValidator("myCustomCommand", new CommandValidator()
 
 The `ValidationMiddleware` uses validators to perform the actual validation. Validators can be created using the `CommandValidator` class which provides methods like `RequireMinArguments`, `RequireOption`, `ValidateOptionValue`, and `AddRule` to define validation rules.
 
-// ... existing content ...
+## CommandParser
+
+`CommandParser` converts raw command‑line arguments into a `CommandContext`. It lets you register known options (short and long names, descriptions, and whether they are flags) and later retrieve the defined options for help generation.
+
+```csharp
+using EfMigrationDiff.CLI;
+using Microsoft.Extensions.DependencyInjection;
+
+// Create and configure the parser
+var parser = new CommandParser()
+    .RegisterOption("f", "force", "Force the operation", isFlag: true)
+    .RegisterOption("o", "output", "Path to the output file");
+
+// Parse a sample argument list
+var context = parser.Parse(
+    commandName: "migrate",
+    args: new[] { "--force", "-o", "result.txt", "src/db" },
+    serviceProvider: new ServiceCollection().BuildServiceProvider());
+
+// Inspect parsed arguments and options
+Console.WriteLine($"Positional arguments: {context.ParsedArguments.Count}");
+foreach (var opt in context.ParsedOptions)
+{
+    Console.WriteLine($"{opt.Key} = {opt.Value}");
+}
+
+// List the registered option definitions (useful for help text)
+foreach (var optDef in parser.GetRegisteredOptions())
+{
+    Console.WriteLine($"{optDef.ShortName}/--{optDef.LongName}: {optDef.Description} (Flag: {optDef.IsFlag})");
+}
+```
+
+The parser’s option definitions expose `ShortName`, `LongName`, `Description`, and `IsFlag` properties, allowing callers to generate user‑friendly documentation or perform additional validation.
