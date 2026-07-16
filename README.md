@@ -440,6 +440,50 @@ Console.WriteLine($"Migration options created: {migrationOptions != null}");
 settings.EnsureOutputDirectory();
 ```
 
+## SchemaDiffOptions
+
+The `SchemaDiffOptions` record provides immutable configuration options that control how schema diffs and merge operations are computed and rendered by the `SchemaDiffEngine` and `VisualDiffFormatter`. It defines display labels for branches, rendering behavior, and limits for diff output formatting.
+
+Key features include:
+- Branch labeling for clear diff output
+- Context line control for unified views
+- SQL content inclusion control
+- Metadata display options
+- Whitespace normalization
+- Hunk size limits
+
+Here's a realistic usage example based on the class's public members:
+
+```csharp
+using EfMigrationDiff.Configuration;
+
+// Create custom options for branch comparison
+var branchOptions = new SchemaDiffOptions
+{
+    SourceLabel = "feature/new-users",
+    TargetLabel = "main",
+    ContextLines = 5,
+    IncludeSqlContent = true,
+    IncludeMetadata = true,
+    IgnoreWhitespace = true,
+    MaxHunkLines = 500
+};
+
+// Use factory methods for common scenarios
+var branchComparison = SchemaDiffOptions.ForBranches("feature/auth-improvements", "main");
+var mergeScenario = SchemaDiffOptions.ForMerge("release/v1.2", "feature/user-auth", "integration");
+
+// Access default options
+var defaultOptions = SchemaDiffOptions.Default;
+Console.WriteLine($"Default base label: {defaultOptions.BaseLabel}");
+Console.WriteLine($"Default context lines: {defaultOptions.ContextLines}");
+Console.WriteLine($"Default SQL inclusion: {defaultOptions.IncludeSqlContent}");
+
+// Use with SchemaDiffEngine
+var engine = new SchemaDiffEngine();
+var diffResult = engine.ComputeDiff(sourceChanges, targetChanges, branchOptions);
+```
+
 ## SchemaDiffPipelineService
 
 The `SchemaDiffPipelineService` orchestrates end-to-end schema comparison workflows by integrating the v1 migration infrastructure with the v2 visual diff engine. It bridges the gap between branch-relative migration collection and schema visualization, producing comprehensive diff reports that include side-by-side, unified, and merge editor HTML outputs.
