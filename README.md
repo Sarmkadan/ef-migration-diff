@@ -731,6 +731,117 @@ The `SchemaDiffEngine` is the core diff computation and three-way merge engine f
 
 Here's a realistic usage example based on the engine's public API:
 
+## DbContextRepository
+
+The `DbContextRepository` class provides data access and CRUD operations for managing Entity Framework DbContext metadata. It serves as an in-memory repository that stores DbContext metadata and provides methods for querying, filtering, and managing DbContext data across different assemblies and database providers.
+
+```csharp
+using EfMigrationDiff.Models;
+using EfMigrationDiff.Repositories;
+
+// Create a new DbContext repository
+var repository = new DbContextRepository();
+
+// -------------------------------------------------
+// Add DbContext metadata to the repository
+// -------------------------------------------------
+var context1 = new DbContextMetadata
+{
+    Id = "ApplicationDbContext",
+    ContextName = "ApplicationDbContext",
+    AssemblyName = "MyApp.Data",
+    DatabaseProvider = "Microsoft.EntityFrameworkCore.SqlServer",
+    EntityTypes = new List<string> { "User", "Post", "Comment" },
+    MigrationIds = new List<string> { "20240101120000_AddUsers", "20240101120100_AddPosts" },
+    LastScannedAt = DateTime.UtcNow
+};
+
+var context2 = new DbContextMetadata
+{
+    Id = "IdentityDbContext",
+    ContextName = "IdentityDbContext",
+    AssemblyName = "MyApp.Identity",
+    DatabaseProvider = "Microsoft.EntityFrameworkCore.SqlServer",
+    EntityTypes = new List<string> { "User", "Role", "UserRole" },
+    MigrationIds = new List<string> { "20240101120200_AddIdentity" },
+    LastScannedAt = DateTime.UtcNow.AddMinutes(-30)
+};
+
+repository.Add(context1);
+repository.Add(context2);
+
+// -------------------------------------------------
+// Query DbContexts by various criteria
+// -------------------------------------------------
+
+// Get a single DbContext by ID
+DbContextMetadata? appContext = repository.GetById("ApplicationDbContext");
+Console.WriteLine($"Found DbContext: {appContext?.ContextName}");
+
+// Get DbContext by name
+DbContextMetadata? identityContext = repository.GetByName("IdentityDbContext");
+Console.WriteLine($"Found by name: {identityContext?.Id}");
+
+// Get all DbContexts for a specific assembly
+List<DbContextMetadata> dataAssemblyContexts = repository.GetByAssembly("MyApp.Data");
+Console.WriteLine($"Data assembly contexts: {dataAssemblyContexts.Count}");
+
+// Get DbContexts by database provider
+List<DbContextMetadata> sqlServerContexts = repository.GetByProvider("Microsoft.EntityFrameworkCore.SqlServer");
+Console.WriteLine($"SQL Server contexts: {sqlServerContexts.Count}");
+
+// Get all DbContexts
+List<DbContextMetadata> allContexts = repository.GetAll();
+Console.WriteLine($"Total DbContexts: {allContexts.Count}");
+
+// Search DbContexts by name
+List<DbContextMetadata> userContexts = repository.SearchByName("User");
+Console.WriteLine($"Contexts with 'User' in name: {userContexts.Count}");
+
+// Get recently scanned DbContexts (last 24 hours)
+List<DbContextMetadata> recentContexts = repository.GetRecentlyScanned(TimeSpan.FromHours(24));
+Console.WriteLine($"Recently scanned: {recentContexts.Count}");
+
+// Get DbContexts with migrations
+List<DbContextMetadata> contextsWithMigrations = repository.GetWithMigrations();
+Console.WriteLine($"Contexts with migrations: {contextsWithMigrations.Count}");
+
+// Get DbContexts by entity type
+List<DbContextMetadata> userDbContexts = repository.GetByEntityType("User");
+Console.WriteLine($"Contexts managing User entity: {userDbContexts.Count}");
+
+// Get DbContexts by provider and assembly
+List<DbContextMetadata> contextsByProviderAndAssembly = repository.GetByProviderAndAssembly(
+    "Microsoft.EntityFrameworkCore.SqlServer",
+    "MyApp.Data"
+);
+Console.WriteLine($"Contexts by provider+assembly: {contextsByProviderAndAssembly.Count}");
+
+// Check if DbContext exists
+bool exists = repository.Exists("ApplicationDbContext");
+Console.WriteLine($"ApplicationDbContext exists: {exists}");
+
+// Get count
+int totalCount = repository.Count();
+Console.WriteLine($"Total count: {totalCount}");
+
+// -------------------------------------------------
+// Update and delete operations
+// -------------------------------------------------
+
+// Update a DbContext
+context1.EntityTypes.Add("Product");
+repository.Update(context1);
+
+// Delete a DbContext
+bool deleted = repository.Delete("IdentityDbContext");
+Console.WriteLine($"IdentityDbContext deleted: {deleted}");
+
+// Clear all DbContexts
+repository.Clear();
+Console.WriteLine($"Repository cleared. Count: {repository.Count()}");
+```
+
 ## GitRepository
 
 The `GitRepository` class provides a wrapper around LibGit2Sharp operations, enabling programmatic access to git repositories for branch management, commit history analysis, and file operations. It simplifies common git workflows like retrieving branch information, comparing branches, and reading file contents from specific commits.
