@@ -59,3 +59,55 @@ foreach (var optDef in parser.GetRegisteredOptions())
 ```
 
 The parser’s option definitions expose `ShortName`, `LongName`, `Description`, and `IsFlag` properties, allowing callers to generate user‑friendly documentation or perform additional validation.
+
+
+## CommandExecutor
+
+`CommandExecutor` provides a fluent API for registering and executing CLI commands with middleware support. It maintains a collection of registered commands and middleware components, executes commands asynchronously, and provides detailed execution results including success status, exit codes, and custom data payloads.
+
+```csharp
+using EfMigrationDiff.CLI;
+
+// Create a command executor
+var executor = new CommandExecutor()
+    .RegisterCommand("migrate", "Migrate database to latest version")
+    .RegisterCommand("rollback", "Rollback database to specified version")
+    .RegisterMiddleware(async (context, next) => {
+        Console.WriteLine($"Executing middleware for command: {context.CommandName}");
+        return await next();
+    });
+
+// Execute a command asynchronously
+var result = await executor.ExecuteAsync("migrate", new[] { "--target", "v2.0.0", "--force" });
+
+// Check execution result
+if (result.Success)
+{
+    Console.WriteLine($"Command succeeded with exit code: {result.ExitCode}");
+    Console.WriteLine($"Message: {result.Message}");
+    Console.WriteLine($"Data: {result.Data}");
+}
+else
+{
+    Console.WriteLine($"Command failed: {result.Message}");
+}
+
+// Get information about registered commands
+Console.WriteLine($"Registered commands: {executor.GetRegisteredCommandCount()}");
+foreach (var cmdName in executor.GetRegisteredCommandNames())
+{
+    Console.WriteLine($$"- {{cmdName}}");
+}
+
+// Use static factory methods for quick results
+var okResult = CommandExecutor.Ok("Operation completed successfully", 0);
+var errorResult = CommandExecutor.Error("Invalid arguments provided", 1);
+
+// Check if execution was short-circuited by middleware
+if (executor.IsShortCircuited)
+{
+    Console.WriteLine($"Execution short-circuited with result: {executor.Result?.Message}");
+}
+```
+
+The `CommandExecutor` supports middleware chaining, command registration, and provides detailed execution feedback through the `CommandResult` type which includes properties like `Success`, `Message`, `ExitCode`, `Data`, and `IsShortCircuited`.
