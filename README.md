@@ -851,3 +851,29 @@ services.AddSchemaDiffServices(() => new SchemaDiffOptions
     CompareConstraints = true
 });
 ```
+
+## ReportEngine
+
+The `ReportEngine` class provides a robust mechanism to generate comprehensive migration analysis reports in various formats, including JSON, CSV, text, and HTML. It supports extensible reporting through custom templates, allowing developers to define tailored output structures for their migration diff analyses.
+
+Here's an example of how to use the `ReportEngine` class:
+
+```csharp
+// Initialize the engine
+var engine = new ReportEngine();
+
+// Generate reports in various formats
+var htmlReport = engine.GenerateHtmlReport(migrationDiff);
+var jsonReport = engine.GenerateJsonReport(migrationDiff);
+var csvReport = engine.GenerateCsvReport(migrationDiff);
+var textReport = engine.GenerateTextReport(migrationDiff);
+
+// Register and retrieve a custom report template
+public class CustomTemplate : IReportTemplate {
+    public string Name => "Custom";
+    public string GenerateReport(MigrationDiff diff) => "Custom report content";
+}
+
+engine.RegisterTemplate("MyCustomReport", new CustomTemplate());
+var template = engine.GetTemplate("MyCustomReport");
+```
