@@ -473,6 +473,55 @@ Console.WriteLine(localBranch.ToString()); // "main (a1b2c3d) - 3 migrations, 2 
 Console.WriteLine(remoteBranch.ToString()); // "origin/develop (z9y8x7w) - remote branch"
 ```
 
+## PluginSystem
+
+The `PluginSystem` class provides a flexible plugin architecture for extending the ef-migration-diff library's functionality. It enables dynamic loading, initialization, and execution of plugins that implement the `IPlugin` interface, allowing for custom migration analysis, conflict resolution strategies, and additional processing capabilities without modifying the core library code.
+
+Here's an example of how to use the `PluginSystem` class:
+
+```csharp
+// Create a plugin system instance
+var pluginSystem = new PluginSystem();
+
+// Load plugins asynchronously from a directory
+await pluginSystem.LoadPluginsAsync(@"./Plugins");
+
+// Get statistics about loaded plugins
+var stats = pluginSystem.GetStats();
+Console.WriteLine($"Total plugins: {stats.TotalPlugins}");
+Console.WriteLine($"Plugin names: {string.Join(", ", stats.PluginNames)}");
+
+// Get a specific plugin by name
+var myPlugin = pluginSystem.GetPlugin("MyCustomPlugin");
+if (myPlugin != null)
+{
+    Console.WriteLine($"Found plugin: {myPlugin.Name} v{myPlugin.Version} by {myPlugin.Author}");
+}
+
+// Get all loaded plugins
+var allPlugins = pluginSystem.GetAllPlugins().ToList();
+Console.WriteLine($"Loaded {allPlugins.Count} plugins");
+
+// Execute a hook across all plugins
+try
+{
+    await pluginSystem.ExecuteHookAsync("OnMigrationAnalyzed", migration);
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Hook execution failed: {ex.Message}");
+}
+
+// Initialize all plugins
+foreach (var plugin in allPlugins)
+{
+    await plugin.InitializeAsync();
+}
+
+// Unload all plugins when done
+await pluginSystem.UnloadAllAsync();
+```
+
 ## MigrationFile
 
 ```csharp
