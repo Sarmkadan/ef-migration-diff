@@ -894,6 +894,83 @@ string friendlyName = typeof(Dictionary<string, List<int>>).GetFriendlyName();
 Console.WriteLine(friendlyName); // "Dictionary<String, List<Int32>>"
 ```
 
+## DiffLine
+
+The `DiffLine` record represents a single line within a schema diff view. It captures the classification of the line (unchanged, added, removed, modified, or placeholder), the line number, the actual content, and the corresponding line number in the opposite pane for side-by-side comparisons.
+
+Each `DiffLine` instance is used to build `DiffHunk` objects, which group related changes into logical regions. The `DiffLine` type provides helpful computed properties like `IsChanged` and `UnifiedMarker` to simplify diff rendering and analysis.
+
+Here's an example of how to use the `DiffLine` type:
+
+```csharp
+// Create individual diff lines representing different types of changes
+var unchangedLine = new DiffLine(
+    DiffLineKind.Unchanged,
+    LineNumber: 10,
+    Content: "public class User { ",
+    CorrespondingLineNumber: 10
+);
+
+var addedLine = new DiffLine(
+    DiffLineKind.Added,
+    LineNumber: 15,
+    Content: "    public string Email { get; set; }",
+    CorrespondingLineNumber: 0 // No corresponding line on source side
+);
+
+var removedLine = new DiffLine(
+    DiffLineKind.Removed,
+    LineNumber: 12,
+    Content: "    public string Name { get; set; }",
+    CorrespondingLineNumber: 0 // No corresponding line on target side
+);
+
+var modifiedLine = new DiffLine(
+    DiffLineKind.Modified,
+    LineNumber: 20,
+    Content: "    public DateTime CreatedDate { get; set; }",
+    CorrespondingLineNumber: 20
+);
+
+// Use the computed properties
+Console.WriteLine($"Unchanged line changed: {unchangedLine.IsChanged}"); // false
+Console.WriteLine($"Added line changed: {addedLine.IsChanged}"); // true
+Console.WriteLine($"Removed line marker: {removedLine.UnifiedMarker}"); // '-'
+Console.WriteLine($"Added line marker: {addedLine.UnifiedMarker}"); // '+'
+Console.WriteLine($"Unchanged line marker: {unchangedLine.UnifiedMarker}"); // ' '
+
+// Create a collection of lines for a diff hunk
+var diffLines = new List<DiffLine> {
+    unchangedLine,
+    removedLine,
+    addedLine,
+    modifiedLine
+};
+
+// Filter to only changed lines for reporting
+var changedLines = diffLines.Where(line => line.IsChanged).ToList();
+Console.WriteLine($"Found {changedLines.Count} changed lines");
+
+// Use in a three-way merge context
+var sourceLine = new DiffLine(
+    DiffLineKind.Added,
+    LineNumber: 5,
+    Content: "    public int Age { get; set; }",
+    CorrespondingLineNumber: 0
+);
+
+var targetLine = new DiffLine(
+    DiffLineKind.Added,
+    LineNumber: 5,
+    Content: "    public int Age { get; set; }",
+    CorrespondingLineNumber: 0
+);
+
+// Check if both sides have identical changes (trivially resolvable conflict)
+bool isTrivialConflict = sourceLine.Content == targetLine.Content;
+Console.WriteLine("Trivial conflict: {isTrivialConflict}"); // true
+```
+
 ## SchemaDiffServiceExtensions
 
 The `SchemaDiffServiceExtensions` class provides extension methods for registering schema diff v2 services with the .NET dependency injection container and for working fluently with schema diff results. It includes methods for rendering diffs as HTML documents, analyzing destructive changes, and performing three-way merge operations with automatic conflict resolution.
