@@ -1,3 +1,10 @@
+## Architecture
+
+For the big picture - how branches get parsed into migrations, where the v1/v2
+diff pipelines split, extension points and known limitations - see
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The sections below are per-class
+reference docs.
+
 ## MigrationParserServiceTests
 
 The `MigrationParserServiceTests` class provides a set of unit tests for the `MigrationParserService` class, which parses Entity Framework Core migration files to extract metadata such as migration ID, name, and content. It tests various scenarios including valid migration files, designer files, invalid timestamps, empty content, and complex migration scenarios.
