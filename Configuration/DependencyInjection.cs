@@ -21,7 +21,10 @@ public static class DependencyInjection
         // Register repositories
         services.AddSingleton<MigrationRepository>();
         services.AddSingleton<DbContextRepository>();
-        services.AddTransient<GitRepository>();
+        // GitRepository's ctor takes a raw path, so a plain AddTransient<GitRepository>()
+        // would throw on resolve - construct it from the configured repository path instead.
+        services.AddTransient(sp =>
+            new GitRepository(sp.GetRequiredService<AppSettings>().RepositoryPath));
 
         // Register logging (required by MigrationAutoResolverService)
         services.AddLogging(configure => configure.AddConsole());
