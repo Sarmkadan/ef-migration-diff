@@ -330,6 +330,62 @@ The service's public API includes methods for detecting schema changes (`DetectC
 
 The `AppSettings` class provides centralized configuration for the EF Migration Diff tool, exposing settings that control repository paths, migration analysis behavior, output formats, and validation rules. It serves as the single source of truth for application configuration across all CLI commands and services.
 
+## EfMigrationDiffOptions
+
+The `EfMigrationDiffOptions` class provides strongly-typed configuration for the ef-migration-diff tool, controlling repository paths, migration analysis behavior, output formats, and validation rules. It supports branch comparison, concurrent analysis, and comprehensive report generation with validation capabilities.
+
+Here's a realistic usage example based on the class's public members:
+
+```csharp
+using EfMigrationDiff.Configuration;
+
+// Create configuration with required values
+var options = new EfMigrationDiffOptions
+{
+    RepositoryPath = "./my-repository",
+    MigrationsPath = "./src/Migrations",
+    OutputPath = "./reports",
+    ReportFormat = "html",
+    EnableDetailedLogging = true,
+    MaxConcurrentAnalysis = 8,
+    GenerateHtmlReport = true,
+    GenerateJsonReport = true,
+    DbContextNames = new[] { "ApplicationDbContext", "IdentityDbContext" },
+    SourceBranch = "feature/new-users",
+    TargetBranch = "main",
+    SchemaDiff = new SchemaDiffOptions
+    {
+        SourceLabel = "feature/new-users",
+        TargetLabel = "main",
+        IgnoreWhitespace = true
+    }
+};
+
+// Validate configuration
+try
+{
+    options.ValidateAndThrow();
+    Console.WriteLine("Configuration is valid");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Configuration error: {ex.Message}");
+}
+
+// Access configuration values
+Console.WriteLine($"Repository path: {options.RepositoryPath}");
+Console.WriteLine($"Migrations path: {options.MigrationsPath}");
+Console.WriteLine($"Output path: {options.OutputPath}");
+Console.WriteLine($"Source branch: {options.SourceBranch}");
+Console.WriteLine($"Target branch: {options.TargetBranch}");
+Console.WriteLine($"Max concurrent: {options.MaxConcurrentAnalysis}");
+
+// Check report generation settings
+Console.WriteLine($"Generate HTML: {options.GenerateHtmlReport}");
+Console.WriteLine($"Generate JSON: {options.GenerateJsonReport}");
+Console.WriteLine($"DbContexts: {string.Join(", ", options.DbContextNames)}");
+```
+
 Here's a realistic usage example based on the class's public members:
 
 ```csharp
