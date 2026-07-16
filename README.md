@@ -228,6 +228,78 @@ Console.WriteLine(conflictSummary);
 
 These tests ensure that migration comparison reports are generated correctly across all supported formats and include all relevant information about differences, conflicts, and schema changes.
 
+## ConflictResolutionEngine
+
+The `ConflictResolutionEngine` class analyzes migration conflicts and provides intelligent resolution strategies. It detects conflict patterns, evaluates severity levels, and generates actionable recommendations for resolving conflicts between Entity Framework Core migrations. The engine supports both automatic resolution for safe operations and manual review requirements for high-risk changes.
+
+Here's an example of how to use the `ConflictResolutionEngine` class:
+
+```csharp
+// Create a conflict resolution engine instance
+var conflictEngine = new ConflictResolutionEngine();
+
+// Register a custom strategy for a specific conflict type
+conflictEngine.RegisterStrategy(EfMigrationDiff.Models.ConflictType.IndexConflict, conflict => 
+    new ResolutionStrategy
+    {
+        Type = ResolutionType.Automatic,
+        Description = "Index conflicts can be safely merged",
+        Priority = 1,
+        IsHighRisk = false
+    });
+
+// Resolve a single conflict
+var columnConflict = new ConflictInfo("migration_a", "migration_b", ConflictType.ColumnConflict)
+{
+    Severity = ConflictSeverity.Critical,
+    Description = "Column definition conflict detected"
+};
+
+var resolution = conflictEngine.ResolveConflict(columnConflict);
+Console.WriteLine($"Conflict: {resolution.ConflictId}");
+Console.WriteLine($"Type: {resolution.ConflictType}");
+Console.WriteLine($"Severity: {resolution.Severity}");
+Console.WriteLine($"Strategy: {resolution.RecommendedStrategy.Type}");
+Console.WriteLine($"Description: {resolution.RecommendedStrategy.Description}");
+
+// Resolve a batch of conflicts
+var conflicts = new List<ConflictInfo>
+{
+    new ConflictInfo("mig1", "mig2", ConflictType.TableConflict)
+    {
+        Severity = ConflictSeverity.High,
+        Description = "Table operations conflict"
+    },
+    new ConflictInfo("mig3", "mig4", ConflictType.IndexConflict)
+    {
+        Severity = ConflictSeverity.Medium,
+        Description = "Index operations conflict"
+    },
+    new ConflictInfo("mig5", "mig6", ConflictType.ColumnConflict)
+    {
+        Severity = ConflictSeverity.Critical,
+        Description = "Column definition conflict"
+    }
+};
+
+var batchReport = conflictEngine.ResolveBatch(conflicts);
+Console.WriteLine($"Total conflicts: {batchReport.TotalConflicts}");
+Console.WriteLine($"Critical count: {batchReport.CriticalCount}");
+Console.WriteLine($"High count: {batchReport.HighCount}");
+Console.WriteLine($"Can auto-resolve: {batchReport.CanAutoResolve}");
+Console.WriteLine($"Can proceed without manual intervention: {batchReport.CanProceedWithoutManualIntervention}");
+
+// Access individual resolutions
+foreach (var conflictResolution in batchReport.Resolutions)
+{
+    Console.WriteLine($"\nConflict {conflictResolution.ConflictId}:");
+    Console.WriteLine($"  Type: {conflictResolution.ConflictType}");
+    Console.WriteLine($"  Severity: {conflictResolution.Severity}");
+    Console.WriteLine($"  Strategy: {conflictResolution.RecommendedStrategy.Type}");
+    Console.WriteLine($"  Recommendations: {string.Join(", ", conflictResolution.Recommendations)}");
+}
+```
+
 ## MigrationDependencyGraphTests
 
 The `MigrationDependencyGraphTests` class provides unit tests for the `MigrationDependencyGraph` class, which builds and analyzes dependency graphs between Entity Framework Core migrations. It tests various scenarios including graph construction, topological ordering, cycle detection, and impact analysis for rollback operations.
