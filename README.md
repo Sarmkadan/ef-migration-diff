@@ -266,6 +266,90 @@ var failedAttempt = new MergeAttempt
 Console.WriteLine(failedAttempt.ToString()); // "[FAIL] TableConflict — Incompatible schema changes detected"
 ```
 
+## MigrationDiff
+
+The `MigrationDiff` class represents the complete diff result between two branches' migrations. It captures the differences in migration histories, schema changes, and conflicts between source and target branches. This class is used throughout the ef-migration-diff library for comparing migration histories and identifying potential conflicts during branch merges.
+
+Here's an example of how to use the `MigrationDiff` class:
+
+```csharp
+// Create a migration diff between two branches
+var migrationDiff = new MigrationDiff(sourceBranchId: "main-branch", targetBranchId: "feature-branch")
+{
+    Id = Guid.NewGuid().ToString(),
+    CreatedAt = DateTime.UtcNow
+};
+
+// Add migrations that exist only in the source branch
+migrationDiff.AddSourceOnlyMigration(new Migration
+{
+    Id = "20240115093045",
+    Name = "CreateUsersTable",
+    DbContextName = "ApplicationDbContext",
+    Description = "Initial migration creating Users table"
+});
+
+// Add migrations that exist only in the target branch  
+migrationDiff.AddTargetOnlyMigration(new Migration
+{
+    Id = "20240116104530",
+    Name = "AddRolesTable",
+    DbContextName = "ApplicationDbContext",
+    Description = "Add Roles table to the database"
+});
+
+// Add migrations that exist in both branches
+migrationDiff.AddCommonMigration(new Migration
+{
+    Id = "20240201142015",
+    Name = "AddEmailToUsers",
+    DbContextName = "ApplicationDbContext",
+    Description = "Add email column to Users table"
+});
+
+// Add schema changes detected in each branch
+migrationDiff.SourceSchemaChanges.Add(new SchemaChange
+{
+    ChangeType = SchemaChangeType.Added,
+    ObjectType = SchemaObjectType.Table,
+    ObjectName = "Users",
+    Details = "Created Users table"
+});
+
+migrationDiff.TargetSchemaChanges.Add(new SchemaChange
+{
+    ChangeType = SchemaChangeType.Added,
+    ObjectType = SchemaObjectType.Column,
+    ObjectName = "Users.Email",
+    Details = "Added Email column to Users table"
+});
+
+// Add a conflict between migrations
+migrationDiff.AddConflict(new ConflictInfo(
+    firstMigrationId: "20240115093045",
+    secondMigrationId: "20240116104530", 
+    conflictType: ConflictType.ColumnConflict
+)
+{
+    Description = "Column Email already exists in table Users",
+    Severity = ConflictSeverity.Error
+});
+
+// Generate summary statistics
+migrationDiff.GenerateSummary();
+
+// Check the comparison result
+Console.WriteLine($"Result: {migrationDiff.Result}"); // ComparisonResult.Different
+Console.WriteLine($"Total schema changes: {migrationDiff.GetTotalSchemaChanges()}"); // 2
+Console.WriteLine($"Blocking conflicts: {migrationDiff.HasBlockingConflicts()}"); // false
+
+// Get result description
+Console.WriteLine(migrationDiff.GetResultDescription());
+
+// Use ToString() for debugging/logging
+Console.WriteLine(migrationDiff.ToString()); // "Diff main-branch..feature-branch: Migrations differ significantly"
+```
+
 ## BranchInfo
 
 The `BranchInfo` class represents metadata and state information about a Git branch containing Entity Framework Core migrations. It tracks branch identification (Id, BranchName), commit details (CommitHash, CommitMessage, CommitDate, Author), migration content (MigrationIds, DbContexts, MigrationsPath), and remote status (IsRemote). This class is used throughout the ef-migration-diff library for comparing migration histories between branches and analyzing differences in database schema evolution.
