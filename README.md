@@ -266,7 +266,75 @@ var failedAttempt = new MergeAttempt
 Console.WriteLine(failedAttempt.ToString()); // "[FAIL] TableConflict — Incompatible schema changes detected"
 ```
 
-Here's an example of how to use the `MigrationFile` class:
+## BranchInfo
+
+The `BranchInfo` class represents metadata and state information about a Git branch containing Entity Framework Core migrations. It tracks branch identification (Id, BranchName), commit details (CommitHash, CommitMessage, CommitDate, Author), migration content (MigrationIds, DbContexts, MigrationsPath), and remote status (IsRemote). This class is used throughout the ef-migration-diff library for comparing migration histories between branches and analyzing differences in database schema evolution.
+
+
+
+Here's an example of how to use the `BranchInfo` class:
+
+```csharp
+// Create a BranchInfo instance for a local development branch
+var localBranch = new BranchInfo("main")
+{
+    Id = Guid.NewGuid().ToString(),
+    BranchName = "main",
+    CommitHash = "a1b2c3d4e5f67890",
+    CommitMessage = "Update user model with email validation",
+    CommitDate = DateTime.Parse("2024-06-15T10:30:00"),
+    Author = "developer@company.com",
+    MigrationsPath = @"/src/MyProject/Migrations",
+    IsRemote = false
+};
+
+// Add migrations to the branch history
+localBranch.AddMigration("20240115093045_CreateUsersTable");
+localBranch.AddMigration("20240116104530_AddRolesTable");
+localBranch.AddMigration("20240201142015_AddEmailToUsers");
+
+// Add DbContexts managed by this branch
+localBranch.AddDbContext("ApplicationDbContext");
+localBranch.AddDbContext("IdentityDbContext");
+
+// Validate the branch information
+var isValid = localBranch.IsValid();
+Console.WriteLine($"Branch is valid: {isValid}"); // true
+
+// Get counts
+Console.WriteLine($"Migration count: {localBranch.GetMigrationCount()}"); // 3
+Console.WriteLine($"DbContext count: {localBranch.GetDbContextCount()}"); // 2
+
+// Check if a migration exists
+var hasMigration = localBranch.HasMigration("20240115093045_CreateUsersTable");
+Console.WriteLine($"Has migration: {hasMigration}"); // true
+
+// Check if a DbContext exists
+var hasContext = localBranch.HasDbContext("ApplicationDbContext");
+Console.WriteLine($"Has DbContext: {hasContext}"); // true
+
+// Get a short commit hash for display
+var shortHash = localBranch.GetShortCommitHash();
+Console.WriteLine($"Short commit hash: {shortHash}"); // "a1b2c3d"
+
+// Create a remote branch instance
+var remoteBranch = new BranchInfo("origin/develop")
+{
+    Id = Guid.NewGuid().ToString(),
+    CommitHash = "z9y8x7w6v5u43210",
+    CommitMessage = "Fix production deployment issue",
+    CommitDate = DateTime.Parse("2024-06-14T16:45:00"),
+    Author = "ci@company.com",
+    MigrationsPath = @"/src/MyProject/Migrations",
+    IsRemote = true
+};
+
+// Use ToString() for debugging/logging
+Console.WriteLine(localBranch.ToString()); // "main (a1b2c3d) - 3 migrations, 2 contexts"
+Console.WriteLine(remoteBranch.ToString()); // "origin/develop (z9y8x7w) - remote branch"
+```
+
+## MigrationFile
 
 ```csharp
 // Create a migration file instance from a physical file
