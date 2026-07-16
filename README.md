@@ -457,6 +457,65 @@ The `SchemaDiffEngine` is the core diff computation and three-way merge engine f
 
 Here's a realistic usage example based on the engine's public API:
 
+## DependencyInjection
+
+The `DependencyInjection` class provides centralized dependency injection configuration for the EF Migration Diff tool. It registers all application services, repositories, and configuration options using the Microsoft.Extensions.DependencyInjection framework, enabling consistent service resolution across CLI commands and services.
+
+Here's a realistic usage example based on the class's public members:
+
+```csharp
+using EfMigrationDiff.Configuration;
+using EfMigrationDiff.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// Create a service collection and register all application services
+var services = new ServiceCollection()
+    .AddApplicationServices(settings =>
+    {
+        settings.RepositoryPath = "./my-repository";
+        settings.MigrationsPath = "./src/Migrations";
+        settings.OutputPath = "./output";
+    })
+    .AddLogging(configure => configure.AddConsole());
+
+// Build the service provider
+var serviceProvider = services.BuildServiceProvider();
+
+// Resolve services from the container
+var migrationParser = serviceProvider.GetService<MigrationParserService>();
+var schemaDetector = serviceProvider.GetService<SchemaChangeDetectorService>();
+var conflictDetector = serviceProvider.GetService<ConflictDetectionService>();
+var gitRepository = serviceProvider.GetService<GitRepository>();
+var appSettings = serviceProvider.GetService<AppSettings>();
+
+// Use the resolved services
+Console.WriteLine($"Repository path: {appSettings?.RepositoryPath}");
+Console.WriteLine($"Migration parser: {migrationParser != null}");
+Console.WriteLine($"Schema detector: {schemaDetector != null}");
+
+// Create a service provider with a specific repository path
+var provider1 = DependencyInjection.CreateServiceProvider("./another-repo");
+var migrationDiffService = provider1.GetService<MigrationDiffService>();
+
+// Create a service provider with custom settings
+var provider2 = DependencyInjection.CreateServiceProvider(settings =>
+{
+    settings.RepositoryPath = "./custom-repo";
+    settings.EnableDetailedLogging = true;
+});
+var gitRepo = provider2.GetService<GitRepository>();
+
+// Create a service provider with IOptions configuration
+var provider3 = DependencyInjection.CreateServiceProviderWithOptions(options =>
+{
+    options.MaxConcurrentAnalysis = 8;
+    options.IgnoreWhitespace = true;
+});
+```
+
+The `DependencyInjection` class exposes several extension methods and factory methods for service registration and resolution, including `AddApplicationServices()` for registering all application components, `CreateServiceProvider()` for creating configured service providers, and `GetService<T>()` for retrieving services from the container.
+
 ```csharp
 using System;
 using System.Collections.Generic;
