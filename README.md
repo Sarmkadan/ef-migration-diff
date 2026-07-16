@@ -1,5 +1,90 @@
 // ... existing content ...
 
+## CacheService
+
+The `CacheService` class provides an in-memory caching solution with expiration support, thread-safe operations, and comprehensive statistics. It stores cached values with optional time-to-live (TTL), supports generic types, and automatically removes expired entries during access or via scheduled cleanup.
+
+
+
+```csharp
+using EfMigrationDiff.Caching;
+using System;
+
+// Create a cache service with automatic cleanup every 5 minutes
+var cache = new CacheService(cleanupInterval: TimeSpan.FromMinutes(5));
+
+// -------------------------------------------------
+// Basic caching operations
+// -------------------------------------------------
+
+// Set a value with 1 hour expiration
+cache.Set("user:123", new User { Id = 123, Name = "John Doe", Email = "john@example.com" }, 
+         expiration: TimeSpan.FromHours(1));
+
+// Set a value without expiration (must be manually removed)
+cache.Set("config:appSettings", new AppSettings { RepositoryPath = "./my-repo" });
+
+// Try to get a value (returns false if not found or expired)
+if (cache.TryGet<User>("user:123", out var user))
+{
+    Console.WriteLine($"Found user: {user.Name}");
+}
+
+// Get a value (throws if not found or expired)
+try
+{
+    var user = cache.Get<User>("user:123");
+    Console.WriteLine($"Retrieved user: {user.Name}");
+}
+catch (KeyNotFoundException)
+{
+    Console.WriteLine("User not found in cache");
+}
+
+// Get a value or default if not found
+var settings = cache.GetOrDefault<AppSettings>("config:appSettings");
+Console.WriteLine(settings != null ? "Settings found" : "Settings not found");
+
+// -------------------------------------------------
+// Advanced operations
+// -------------------------------------------------
+
+// Remove a specific key
+bool removed = cache.Remove("user:123");
+Console.WriteLine($"Key removed: {removed}");
+
+// Remove all keys matching a pattern
+int removedCount = cache.RemoveByPattern("user:");
+Console.WriteLine($"Keys matching 'user:' removed: {removedCount}");
+
+// Clear all cache entries
+cache.Clear();
+Console.WriteLine("Cache cleared");
+
+// Remove expired entries manually
+int expiredCount = cache.RemoveExpiredEntries();
+Console.WriteLine($"Expired entries removed: {expiredCount}");
+
+// -------------------------------------------------
+// Cache statistics
+// -------------------------------------------------
+
+// Set some test data
+cache.Set("temp:1", "value1");
+cache.Set("temp:2", "value2");
+cache.Set("temp:3", "value3", TimeSpan.FromSeconds(1));
+
+// Get statistics
+var stats = cache.GetStatistics();
+Console.WriteLine($"Total entries: {stats.TotalEntries}");
+Console.WriteLine($"Valid entries: {stats.ValidEntries}");
+Console.WriteLine($"Expired entries: {stats.ExpiredEntries}");
+Console.WriteLine($"Oldest entry: {stats.OldestEntry}");
+
+// Dispose when done (stops cleanup timer)
+cache.Dispose();
+```
+
 ## ValidationMiddleware
 
 The `ValidationMiddleware` class validates command context before execution, checking for required options, valid argument counts, and application configuration state. It allows registering validators for specific commands and short-circuits command execution if validation fails.
