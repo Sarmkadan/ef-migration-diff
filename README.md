@@ -253,3 +253,74 @@ Console.WriteLine($"Migration sequence: {sequence}");
 ```
 
 The example demonstrates the most common public members of `MigrationParserService`, showing how to parse, validate, compare, and analyse EF migration files in a real‑world scenario.
+
+## SchemaChangeDetectorService
+
+The `SchemaChangeDetectorService` analyzes Entity Framework migration files to detect and categorize schema changes. It parses migration content to identify operations like table creation/dropping, column additions/modifications/deletions, index operations, and foreign key changes. The service provides methods to query changes by type, count destructive operations, check migration safety, and extract comprehensive metadata about schema modifications.
+
+```csharp
+using System;
+using System.Collections.Generic;
+using EfMigrationDiff.Models;
+using EfMigrationDiff.Services;
+
+var detector = new SchemaChangeDetectorService();
+
+// -------------------------------------------------
+// Detect all schema changes in a migration
+// -------------------------------------------------
+migration.Content = """
+protected override void Up(MigrationBuilder migrationBuilder)
+{
+    migrationBuilder.CreateTable(
+        name: "Users",
+        columns: table => new
+        {
+            table.Column<int>("Id").PrimaryKey();
+            table.Column<string>("Username").NotNullable();
+            table.Column<DateTime>("CreatedAt").NotNullable();
+        });
+}
+""";
+
+var migration = new Migration { Id = "20240101120000_AddUsers", Content = migration.Content };
+
+// Detect all changes
+List<SchemaChange> allChanges = detector.DetectChanges(migration);
+Console.WriteLine($"Total changes detected: {allChanges.Count}");
+
+// -------------------------------------------------
+// Get changes by specific type
+// -------------------------------------------------
+List<SchemaChange> tableCreations = detector.GetChangesByType(migration, SqlChangeType.CreateTable);
+Console.WriteLine($"Tables created: {tableCreations.Count}");
+
+// -------------------------------------------------
+// Get all affected tables
+// -------------------------------------------------
+List<string> affectedTables = detector.GetAffectedTables(migration);
+Console.WriteLine($"Affected tables: {string.Join(", ", affectedTables)}");
+
+// -------------------------------------------------
+// Count destructive changes
+// -------------------------------------------------
+int destructiveCount = detector.CountDestructiveChanges(migration);
+Console.WriteLine($"Destructive changes: {destructiveCount}");
+
+// -------------------------------------------------
+// Check if migration is safe
+// -------------------------------------------------
+bool isSafe = detector.IsMigrationSafe(migration);
+Console.WriteLine($"Is migration safe: {isSafe}");
+
+// -------------------------------------------------
+// Get comprehensive migration metadata
+// -------------------------------------------------
+Dictionary<string, object> metadata = detector.GetMigrationMetadata(migration);
+foreach (var kvp in metadata)
+{
+    Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+}
+```
+
+The service's public API includes methods for detecting schema changes (`DetectChanges`), filtering by change type (`GetChangesByType`), identifying affected tables (`GetAffectedTables`), counting destructive operations (`CountDestructiveChanges`), validating migration safety (`IsMigrationSafe`), and extracting detailed metadata (`GetMigrationMetadata`).
