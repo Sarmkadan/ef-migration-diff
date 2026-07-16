@@ -894,6 +894,90 @@ string relativePath = FileHelper.GetRelativePath(
 Console.WriteLine($"Relative path: {relativePath}");
 ```
 
+## DataTableHelper
+
+The `DataTableHelper` class provides utility methods for formatting and displaying data in various table formats including console tables, markdown tables, key-value tables, and formatted statistics. It supports generic collections and provides consistent formatting across different output types.
+
+```csharp
+using EfMigrationDiff.Utilities;
+using System;
+using System.Collections.Generic;
+
+// Sample data for demonstration
+var migrations = new List<MigrationInfo>
+{
+    new MigrationInfo("20240101120000_AddUsers", "ApplicationDbContext", 15, DateTime.Parse("2024-01-01")),
+    new MigrationInfo("20240101120100_AddPosts", "ApplicationDbContext", 8, DateTime.Parse("2024-01-02")),
+    new MigrationInfo("20240101120200_AddComments", "BlogDbContext", 5, DateTime.Parse("2024-01-03"))
+};
+
+// Format as console table with custom column names
+string consoleTable = DataTableHelper.FormatAsConsoleTable(
+    migrations,
+    "Migration ID", "DbContext", "File Count", "Created Date"
+);
+Console.WriteLine("Console Table:");
+Console.WriteLine(consoleTable);
+
+// Format as markdown table (good for documentation)
+string markdownTable = DataTableHelper.FormatAsMarkdownTable(migrations);
+Console.WriteLine("\nMarkdown Table:");
+Console.WriteLine(markdownTable);
+
+// Format key-value data
+var stats = new Dictionary<string, object?>
+{
+    { "Total Migrations", migrations.Count },
+    { "Total Files", migrations.Sum(m => m.FileCount) },
+    { "DbContexts", migrations.Select(m => m.DbContext).Distinct().Count() },
+    { "Average Files per Migration", Math.Round(migrations.Average(m => m.FileCount)) }
+};
+
+string keyValueTable = DataTableHelper.FormatKeyValueTable(stats, "Metric", "Value");
+Console.WriteLine("\nKey-Value Table:");
+Console.WriteLine(keyValueTable);
+
+// Format statistics with borders
+var statistics = new Dictionary<string, long>
+{
+    { "Total Migrations", migrations.Count },
+    { "Total Files", migrations.Sum(m => m.FileCount) },
+    { "Completed", 15 },
+    { "Pending", 3 }
+};
+
+string formattedStats = DataTableHelper.FormatStatistics(statistics);
+Console.WriteLine(formattedStats);
+
+// Create a progress bar
+string progressBar = DataTableHelper.CreateProgressBar(7, migrations.Count);
+Console.WriteLine($"\nProgress: {progressBar}");
+
+// Format durations and file sizes
+var duration = TimeSpan.FromSeconds(45.67);
+var fileSize = 1024 * 1024 * 5; // 5 MB
+
+Console.WriteLine($"\nDuration: {DataTableHelper.FormatDuration(duration)}");
+Console.WriteLine($"File Size: {DataTableHelper.FormatFileSize(fileSize)}");
+
+// Helper class for demonstration
+public class MigrationInfo
+{
+    public string MigrationId { get; set; }
+    public string DbContext { get; set; }
+    public int FileCount { get; set; }
+    public DateTime CreatedDate { get; set; }
+
+    public MigrationInfo(string migrationId, string dbContext, int fileCount, DateTime createdDate)
+    {
+        MigrationId = migrationId;
+        DbContext = dbContext;
+        FileCount = fileCount;
+        CreatedDate = createdDate;
+    }
+}
+```
+
 ## DbContextRepository
 
 The `DbContextRepository` class provides data access and CRUD operations for managing Entity Framework DbContext metadata. It serves as an in-memory repository that stores DbContext metadata and provides methods for querying, filtering, and managing DbContext data across different assemblies and database providers.
