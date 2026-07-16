@@ -350,6 +350,61 @@ Console.WriteLine(migrationDiff.GetResultDescription());
 Console.WriteLine(migrationDiff.ToString()); // "Diff main-branch..feature-branch: Migrations differ significantly"
 ```
 
+## MigrationGraphNode
+
+The `MigrationGraphNode` class represents a single node in the migration dependency graph. It captures essential metadata about an Entity Framework Core migration including its identifier, human-readable name, associated DbContext, sequence position, and current status. This class is used throughout the ef-migration-diff library to build dependency graphs that model the relationships between migrations and support topological sorting, cycle detection, and impact analysis.
+
+Here's an example of how to use the `MigrationGraphNode` class:
+
+```csharp
+// Create migration nodes for a simple migration chain
+var migration1 = new MigrationGraphNode
+{
+    MigrationId = "20240115093045",
+    Name = "CreateUsersTable",
+    DbContextName = "ApplicationDbContext",
+    Sequence = 1,
+    Status = MigrationStatus.Applied
+};
+
+var migration2 = new MigrationGraphNode
+{
+    MigrationId = "20240116104530",
+    Name = "AddRolesTable",
+    DbContextName = "ApplicationDbContext",
+    Sequence = 2,
+    Status = MigrationStatus.Pending
+};
+
+var migration3 = new MigrationGraphNode
+{
+    MigrationId = "20240201142015",
+    Name = "AddEmailToUsers",
+    DbContextName = "ApplicationDbContext",
+    Sequence = 3,
+    Status = MigrationStatus.Pending
+};
+
+// Display node information
+Console.WriteLine(migration1.ToString()); // "[0001] 20240115093045 — CreateUsersTable"
+Console.WriteLine(migration2.ToString()); // "[0002] 20240116104530 — AddRolesTable"
+
+// Access properties
+Console.WriteLine($"Migration ID: {migration1.MigrationId}"); // "20240115093045"
+Console.WriteLine($"Context: {migration1.DbContextName}"); // "ApplicationDbContext"
+Console.WriteLine($"Sequence: {migration1.Sequence}"); // 1
+Console.WriteLine($"Status: {migration1.Status}"); // "Applied"
+
+// Create a graph and add nodes
+var graph = new MigrationDependencyGraph();
+graph.AddNode(migration1);
+graph.AddNode(migration2);
+graph.AddNode(migration3);
+
+// Verify nodes were added
+Console.WriteLine($"Node count: {graph.Nodes.Count}"); // 3
+```
+
 ## BranchInfo
 
 The `BranchInfo` class represents metadata and state information about a Git branch containing Entity Framework Core migrations. It tracks branch identification (Id, BranchName), commit details (CommitHash, CommitMessage, CommitDate, Author), migration content (MigrationIds, DbContexts, MigrationsPath), and remote status (IsRemote). This class is used throughout the ef-migration-diff library for comparing migration histories between branches and analyzing differences in database schema evolution.
