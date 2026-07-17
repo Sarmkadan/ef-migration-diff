@@ -16,6 +16,7 @@ public static class VisualDiffOutputTestsValidation
     /// </summary>
     /// <param name="value">The instance to validate.</param>
     /// <returns>A list of human-readable problems, or an empty list if valid.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     public static IReadOnlyList<string> Validate(this VisualDiffOutputTests value)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -318,8 +319,10 @@ public static class VisualDiffOutputTestsValidation
     /// </summary>
     /// <param name="value">The instance to check.</param>
     /// <returns><c>true</c> if valid; otherwise, <c>false</c>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     public static bool IsValid(this VisualDiffOutputTests value)
     {
+        ArgumentNullException.ThrowIfNull(value);
         return value.Validate().Count == 0;
     }
 
@@ -328,6 +331,7 @@ public static class VisualDiffOutputTestsValidation
     /// if it is not valid.
     /// </summary>
     /// <param name="value">The instance to validate.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when the instance is not valid.</exception>
     public static void EnsureValid(this VisualDiffOutputTests value)
     {
@@ -341,12 +345,12 @@ public static class VisualDiffOutputTestsValidation
         }
     }
 
-    private static SchemaDiffEngine CreateEngine(this VisualDiffOutputTests _) =>
-        new(new ConflictDetectionService(NullLogger<ConflictDetectionService>.Instance),
+    private static SchemaDiffEngine CreateEngine(this VisualDiffOutputTests _)
+        => new(new ConflictDetectionService(NullLogger<ConflictDetectionService>.Instance),
             NullLogger<SchemaDiffEngine>.Instance);
 
     private static SchemaDiffResult MakeEmptyDiff(string source, string target) =>
-        new()
+        new SchemaDiffResult
         {
             Id = Guid.NewGuid(),
             SourceLabel = source,
