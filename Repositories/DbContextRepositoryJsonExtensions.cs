@@ -43,17 +43,16 @@ public static class DbContextRepositoryJsonExtensions
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
     /// <returns>A deserialized <see cref="DbContextRepository"/> instance, or null if the JSON is empty or whitespace.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is empty or whitespace.</exception>
     /// <exception cref="JsonException">Thrown when the JSON is invalid or cannot be deserialized.</exception>
     public static DbContextRepository? FromJson(string json)
     {
         ArgumentException.ThrowIfNullOrEmpty(json);
 
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return null;
-        }
-
-        return JsonSerializer.Deserialize<DbContextRepository>(json, _jsonOptions);
+        return string.IsNullOrWhiteSpace(json)
+            ? null
+            : JsonSerializer.Deserialize<DbContextRepository>(json, _jsonOptions);
     }
 
     /// <summary>
@@ -62,8 +61,11 @@ public static class DbContextRepositoryJsonExtensions
     /// <param name="json">The JSON string to deserialize.</param>
     /// <param name="value">Receives the deserialized repository, or null if deserialization fails.</param>
     /// <returns>True if deserialization succeeded; otherwise, false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is empty or whitespace.</exception>
     public static bool TryFromJson(string json, out DbContextRepository? value)
     {
+        ArgumentNullException.ThrowIfNull(json);
         ArgumentException.ThrowIfNullOrEmpty(json);
 
         try
