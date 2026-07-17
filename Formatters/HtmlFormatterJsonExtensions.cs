@@ -20,16 +20,13 @@ public static class HtmlFormatterJsonExtensions
     /// <param name="value">The formatter instance to serialize.</param>
     /// <param name="indented">Whether to format the JSON with indentation for readability.</param>
     /// <returns>A JSON string representation of the formatter.</returns>
-    /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     public static string ToJson(this HtmlFormatter value, bool indented = false)
     {
         ArgumentNullException.ThrowIfNull(value);
 
         var options = indented
-            ? new System.Text.Json.JsonSerializerOptions(_jsonOptions)
-            {
-                WriteIndented = true
-            }
+            ? new System.Text.Json.JsonSerializerOptions(_jsonOptions) { WriteIndented = true }
             : _jsonOptions;
 
         return System.Text.Json.JsonSerializer.Serialize(value, options);
@@ -40,18 +37,15 @@ public static class HtmlFormatterJsonExtensions
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
     /// <returns>The deserialized <see cref="HtmlFormatter"/> instance, or null if the JSON is null or empty.</returns>
-    /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
     /// <exception cref="System.Text.Json.JsonException">Thrown when the JSON is invalid or cannot be deserialized.</exception>
     public static HtmlFormatter? FromJson(string json)
     {
         ArgumentNullException.ThrowIfNull(json);
 
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return null;
-        }
-
-        return System.Text.Json.JsonSerializer.Deserialize<HtmlFormatter>(json, _jsonOptions);
+        return string.IsNullOrWhiteSpace(json)
+            ? null
+            : System.Text.Json.JsonSerializer.Deserialize<HtmlFormatter>(json, _jsonOptions);
     }
 
     /// <summary>
@@ -60,7 +54,7 @@ public static class HtmlFormatterJsonExtensions
     /// <param name="json">The JSON string to deserialize.</param>
     /// <param name="value">Receives the deserialized instance if successful.</param>
     /// <returns>True if deserialization succeeded; otherwise, false.</returns>
-    /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
     public static bool TryFromJson(string json, out HtmlFormatter? value)
     {
         ArgumentNullException.ThrowIfNull(json);

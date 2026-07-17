@@ -10,14 +10,48 @@ public class HtmlFormatter
     private const string DocTypeHtml5 = "<!DOCTYPE html>";
 
     /// <summary>
+    /// Gets the document type declaration used for HTML documents.
+    /// </summary>
+    public string DocumentType { get; } = DocTypeHtml5;
+
+    /// <summary>
+    /// Gets the default language for HTML documents.
+    /// </summary>
+    public string Language { get; } = "en";
+
+    /// <summary>
+    /// Gets the default CSS styles for HTML output.
+    /// </summary>
+    public string DefaultStyles { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HtmlFormatter"/> class.
+    /// </summary>
+    public HtmlFormatter()
+    {
+        DefaultStyles = GetDefaultStyles();
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HtmlFormatter"/> class with custom settings.
+    /// </summary>
+    /// <param name="language">The language code for the HTML document (e.g., "en", "ru").</param>
+    /// <param name="customStyles">Custom CSS styles to include in the HTML output.</param>
+    public HtmlFormatter(string language, string? customStyles = null)
+    {
+        Language = language;
+        DefaultStyles = customStyles ?? GetDefaultStyles();
+    }
+
+    /// <summary>
     /// Generates a complete HTML document with title and body content.
     /// </summary>
     public string CreateDocument(string title, string bodyContent, string? customCss = null)
     {
         var html = new System.Text.StringBuilder();
 
-        html.AppendLine(DocTypeHtml5);
-        html.AppendLine("<html lang=\"en\">");
+        html.AppendLine(DocumentType);
+        html.AppendLine($"<html lang=\"{Language}\">");
         html.AppendLine("<head>");
         html.AppendLine($"  <title>{HtmlEncode(title)}</title>");
         html.AppendLine("  <meta charset=\"UTF-8\">");
