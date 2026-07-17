@@ -1,20 +1,25 @@
 #nullable enable
 
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using EfMigrationDiff.Models;
 
 namespace EfMigrationDiff.Repositories;
 
 /// <summary>
-/// Provides JSON serialization and deserialization extensions for <see cref="MigrationRepository"/>.
+/// Provides System.Text.Json serialization and deserialization extensions for <see cref="MigrationRepository"/>.
 /// </summary>
 public static class MigrationRepositoryJsonExtensions
 {
-    private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+    private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = false,
         PropertyNameCaseInsensitive = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
     };
 
     /// <summary>
@@ -60,10 +65,14 @@ public static class MigrationRepositoryJsonExtensions
     /// <param name="json">The JSON string to deserialize.</param>
     /// <param name="value">Receives the deserialized repository instance if successful.</param>
     /// <returns>True if deserialization succeeded; otherwise, false.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is null or empty.</exception>
     public static bool TryFromJson(string json, out MigrationRepository? value)
     {
-        ArgumentException.ThrowIfNullOrEmpty(json);
+        value = null;
+
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return false;
+        }
 
         try
         {
@@ -72,7 +81,6 @@ public static class MigrationRepositoryJsonExtensions
         }
         catch (JsonException)
         {
-            value = null;
             return false;
         }
     }
