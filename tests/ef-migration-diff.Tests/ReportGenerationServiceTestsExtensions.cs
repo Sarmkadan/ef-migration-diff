@@ -60,6 +60,10 @@ namespace EfMigrationDiff.Tests
                 {
                     method.Invoke(testInstance, Array.Empty<object>());
                 }
+                catch (Exception ex) when (ex.InnerException != null)
+                {
+                    return false;
+                }
                 catch
                 {
                     return false;
@@ -74,8 +78,12 @@ namespace EfMigrationDiff.Tests
         /// <param name="type">The type to search for test methods.</param>
         /// <param name="prefix">The prefix to filter test methods by.</param>
         /// <returns>An <see cref="IEnumerable{MethodInfo}"/> of matching test methods.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="type"/> or <paramref name="prefix"/> is null.</exception>
         private static IEnumerable<MethodInfo> GetTestMethods(Type type, string prefix)
         {
+            ArgumentNullException.ThrowIfNull(type);
+            ArgumentNullException.ThrowIfNull(prefix);
+
             return type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
                 .Where(m => m.Name.StartsWith(prefix, StringComparison.Ordinal));
         }
