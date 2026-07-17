@@ -37,7 +37,9 @@ public static class PathExtensionsValidation
             }
 
             // Check for relative path issues
-            if (path.StartsWith(".", StringComparison.Ordinal) && !path.StartsWith("./", StringComparison.Ordinal) && !path.StartsWith("../", StringComparison.Ordinal))
+            if (path.StartsWith(".", StringComparison.Ordinal) &&
+                !path.StartsWith("./", StringComparison.Ordinal) &&
+                !path.StartsWith("../", StringComparison.Ordinal))
             {
                 problems.Add("Path appears to be a relative path starting with '.'. Consider using './' prefix.");
             }
@@ -69,10 +71,8 @@ public static class PathExtensionsValidation
     /// </summary>
     /// <param name="path">The path to check.</param>
     /// <returns>True if the path is valid; otherwise, false.</returns>
-    public static bool IsValid(this string? path)
-    {
-        return Validate(path).Count == 0;
-    }
+    /// <exception cref="ArgumentNullException">Thrown if path is null.</exception>
+    public static bool IsValid(this string? path) => Validate(path).Count == 0;
 
     /// <summary>
     /// Ensures that a path string is valid, throwing an exception if it is not.
