@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace EfMigrationDiff.Tests
 {
@@ -23,14 +24,29 @@ namespace EfMigrationDiff.Tests
             var problems = new List<string>();
 
             // Validate the test fixture instance itself
-            // Since this is a test fixture class, we validate its state
-            // For a test fixture, the main things to validate would be:
-            // 1. The service field is not null
-            // 2. Any configuration or state
+            // Check that the service field is properly initialized
+            try
+            {
+                var serviceField = typeof(ConflictDetectionServiceTests).GetField("_service",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
 
-            // In this case, we can't easily validate the internal _service field
-            // without reflection, so we'll return empty list as the fixture is valid
-            // when instantiated properly
+                if (serviceField is null)
+                {
+                    problems.Add("Test fixture does not contain expected _service field");
+                }
+                else
+                {
+                    var service = serviceField.GetValue(value);
+                    if (service is null)
+                    {
+                        problems.Add("Test fixture _service field is null");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                problems.Add($"Failed to validate test fixture state: {ex.Message}");
+            }
 
             return problems.AsReadOnly();
         }
