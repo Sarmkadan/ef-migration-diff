@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+#nullable enable
+
 namespace EfMigrationDiff.Utilities;
 
 /// <summary>
@@ -30,10 +32,7 @@ public static class PerformanceMetricsJsonExtensions
         ArgumentNullException.ThrowIfNull(value);
 
         var options = indented
-            ? new JsonSerializerOptions(_jsonOptions)
-            {
-                WriteIndented = true
-            }
+            ? new JsonSerializerOptions(_jsonOptions) { WriteIndented = true }
             : _jsonOptions;
 
         return JsonSerializer.Serialize(value, options);
@@ -44,6 +43,7 @@ public static class PerformanceMetricsJsonExtensions
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
     /// <returns>The deserialized <see cref="PerformanceMetrics"/> instance, or null if the JSON is invalid.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null or empty.</exception>
     public static PerformanceMetrics? FromJson(string json)
     {
         ArgumentException.ThrowIfNullOrEmpty(json);
@@ -64,6 +64,7 @@ public static class PerformanceMetricsJsonExtensions
     /// <param name="json">The JSON string to deserialize.</param>
     /// <param name="value">Receives the deserialized <see cref="PerformanceMetrics"/> instance if successful.</param>
     /// <returns>True if deserialization succeeded; otherwise, false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null or empty.</exception>
     public static bool TryFromJson(string json, out PerformanceMetrics? value)
     {
         ArgumentException.ThrowIfNullOrEmpty(json);
