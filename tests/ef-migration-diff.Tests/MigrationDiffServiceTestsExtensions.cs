@@ -15,12 +15,12 @@ namespace EfMigrationDiff.Tests
         /// </summary>
         /// <param name="testInstance">The instance of <see cref="MigrationDiffServiceTests"/> containing the tests to run.</param>
         /// <param name="prefix">The prefix used to filter test methods by name.</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="testInstance"/> or <paramref name="prefix"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown if <paramref name="prefix"/> is whitespace.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="testInstance"/> or <paramref name="prefix"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException"><paramref name="prefix"/> is <see cref="string.Empty"/> or consists only of whitespace.</exception>
         public static void RunAllTestsStartingWith(this MigrationDiffServiceTests testInstance, string prefix)
         {
             ArgumentNullException.ThrowIfNull(testInstance);
-            ArgumentException.ThrowIfNullOrEmpty(prefix);
+            ArgumentException.ThrowIfNullOrWhiteSpace(prefix);
 
             var testMethods = GetTestMethods(testInstance.GetType(), prefix);
             foreach (var method in testMethods)
@@ -34,12 +34,12 @@ namespace EfMigrationDiff.Tests
         /// </summary>
         /// <param name="testInstance">The instance of <see cref="MigrationDiffServiceTests"/> containing the tests to validate.</param>
         /// <returns><c>true</c> if all tests pass; otherwise, <c>false</c>.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="testInstance"/> is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="testInstance"/> is <see langword="null"/>.</exception>
         public static bool AssertAllTestsPass(this MigrationDiffServiceTests testInstance)
         {
             ArgumentNullException.ThrowIfNull(testInstance);
 
-            var testMethods = GetTestMethods(testInstance.GetType(), "CompareBranches_");
+            var testMethods = GetTestMethods(testInstance.GetType(), string.Empty);
             foreach (var method in testMethods)
             {
                 try
@@ -58,13 +58,16 @@ namespace EfMigrationDiff.Tests
         /// Retrieves the names of all test methods in the provided <paramref name="testInstance"/>.
         /// </summary>
         /// <param name="testInstance">The instance of <see cref="MigrationDiffServiceTests"/> to inspect.</param>
+        /// <param name="prefix">The prefix used to filter method names. If empty, returns all test method names.</param>
         /// <returns>An <see cref="IEnumerable{T}"/> containing the names of all test methods.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="testInstance"/> is null.</exception>
-        public static IEnumerable<string> GetAllTestMethodNames(this MigrationDiffServiceTests testInstance)
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="testInstance"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">Thrown if <paramref name="prefix"/> is <see langword="null"/>.</exception>
+        public static IEnumerable<string> GetAllTestMethodNames(this MigrationDiffServiceTests testInstance, string prefix = "")
         {
             ArgumentNullException.ThrowIfNull(testInstance);
+            ArgumentNullException.ThrowIfNull(prefix);
 
-            return GetTestMethods(testInstance.GetType(), string.Empty)
+            return GetTestMethods(testInstance.GetType(), prefix)
                 .Select(m => m.Name);
         }
 
@@ -76,6 +79,9 @@ namespace EfMigrationDiff.Tests
         /// <returns>An <see cref="IEnumerable{T}"/> of <see cref="MethodInfo"/> objects representing the test methods.</returns>
         private static IEnumerable<MethodInfo> GetTestMethods(Type type, string prefix)
         {
+            ArgumentNullException.ThrowIfNull(type);
+            ArgumentException.ThrowIfNullOrWhiteSpace(prefix);
+
             return type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
                 .Where(m => m.Name.StartsWith(prefix, StringComparison.Ordinal) && m.ReturnType == typeof(void));
         }
