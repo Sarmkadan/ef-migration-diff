@@ -76,7 +76,6 @@ public static class DbContextMetadataValidation
         return errors.AsReadOnly();
     }
 
-
     /// <summary>
     /// Determines whether the given <see cref="DbContextMetadata"/> instance is valid.
     /// </summary>
@@ -85,9 +84,9 @@ public static class DbContextMetadataValidation
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
     public static bool IsValid(this DbContextMetadata value)
     {
+        ArgumentNullException.ThrowIfNull(value);
         return value.Validate().Count == 0;
     }
-
 
     /// <summary>
     /// Ensures that the given <see cref="DbContextMetadata"/> instance is valid.
