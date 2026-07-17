@@ -60,16 +60,17 @@ public static class MigrationParserServiceTestsExtensions
     /// Asserts that a migration file parses correctly and returns a non-null result.
     /// </summary>
     /// <param name="test">The test instance.</param>
+    /// <param name="parser">The parser service to use.</param>
     /// <param name="migrationFile">The migration file to parse.</param>
     /// <returns>The parsed migration object.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="migrationFile"/> is null.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="parser"/> or <paramref name="migrationFile"/> is null.</exception>
     public static Migration ParseMigrationAndAssertSuccess(
         this MigrationParserServiceTests test,
         MigrationParserService parser,
         MigrationFile migrationFile)
     {
-        ArgumentNullException.ThrowIfNull(migrationFile);
         ArgumentNullException.ThrowIfNull(parser);
+        ArgumentNullException.ThrowIfNull(migrationFile);
 
         var result = parser.ParseMigrationFile(migrationFile);
         result.Should().NotBeNull("because the migration file should parse successfully");
@@ -89,6 +90,7 @@ public static class MigrationParserServiceTestsExtensions
         yield return ("20240115093045_DropLegacyData.cs", "20240115093045");
         yield return ("20251231235959_AddFinalSchema.cs", "20251231235959");
         yield return ("20230101000000_InitialCreate.Designer.cs", "20230101000000");
+        yield return ("20240615143022_AddUserEmailIndex.cs", "20240615143022");
     }
 
     /// <summary>
@@ -96,6 +98,7 @@ public static class MigrationParserServiceTestsExtensions
     /// </summary>
     /// <param name="test">The test instance.</param>
     /// <param name="act">The action that should throw.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="act"/> is null.</exception>
     public static void AssertThrowsArgumentNullException(
         this MigrationParserServiceTests test,
         Action act)
