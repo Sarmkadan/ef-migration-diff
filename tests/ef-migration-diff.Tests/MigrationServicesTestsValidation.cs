@@ -5,7 +5,7 @@ using System.Globalization;
 namespace EfMigrationDiff.Tests;
 
 /// <summary>
-/// Validation helpers for the <see cref="MigrationServicesTests"/> class.
+/// Provides validation methods for <see cref="MigrationServicesTests"/> instances.
 /// </summary>
 public static class MigrationServicesTestsValidation
 {
@@ -61,10 +61,8 @@ public static class MigrationServicesTestsValidation
     /// </summary>
     /// <param name="value">The instance to check.</param>
     /// <returns>True if valid; otherwise false.</returns>
-    public static bool IsValid(this MigrationServicesTests? value)
-    {
-        return value.Validate().Count == 0;
-    }
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
+    public static bool IsValid(this MigrationServicesTests? value) => value?.Validate().Count == 0;
 
     /// <summary>
     /// Ensures that a <see cref="MigrationServicesTests"/> instance is valid, throwing an exception if not.
