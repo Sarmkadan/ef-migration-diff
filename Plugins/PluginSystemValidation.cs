@@ -109,10 +109,7 @@ public static class PluginSystemValidation
     /// <param name="value">The plugin system instance to check.</param>
     /// <returns><c>true</c> if the instance is valid; otherwise, <c>false</c>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
-    public static bool IsValid(this PluginSystem value)
-    {
-        return value.Validate().Count == 0;
-    }
+    public static bool IsValid(this PluginSystem value) => value.Validate().Count == 0;
 
     /// <summary>
     /// Ensures that a <see cref="PluginSystem"/> instance is valid, throwing an <see cref="ArgumentException"/>
@@ -131,7 +128,7 @@ public static class PluginSystemValidation
         {
             throw new ArgumentException(
                 $"PluginSystem validation failed with {problems.Count} problem(s):{Environment.NewLine}" +
-                string.Join(Environment.NewLine, problems.Select((p, i) => $"  {i + 1}. {p}")));
+                string.Join(Environment.NewLine, problems.Select((p, i) => $" {i + 1}. {p}")));
         }
     }
 
@@ -140,8 +137,17 @@ public static class PluginSystemValidation
     /// </summary>
     /// <param name="version">The version string to validate.</param>
     /// <returns><c>true</c> if the version is valid semantic version; otherwise, <c>false</c>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="version"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="version"/> is empty or exceeds 50 characters.</exception>
     private static bool IsValidSemanticVersion(string version)
     {
+        ArgumentException.ThrowIfNullOrEmpty(version);
+
+        if (version.Length > 50)
+        {
+            return false;
+        }
+
         if (string.IsNullOrWhiteSpace(version))
         {
             return false;
