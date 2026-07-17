@@ -12,21 +12,20 @@ namespace EfMigrationDiff.Services;
 public static class MigrationParserServiceValidation
 {
     /// <summary>
-    /// Validates the <see cref="MigrationParserService"/> instance and its configuration.
+    /// Validates the <see cref="MigrationParserService"/> instance.
     /// </summary>
+    /// <remarks>
+    /// MigrationParserService is stateless, so this validation only checks for null references.
+    /// All actual validation logic is delegated to parameter-specific validation methods.
+    /// </remarks>
     /// <param name="value">The service instance to validate.</param>
     /// <returns>A list of human-readable validation problems; empty if valid.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if value is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
     public static IReadOnlyList<string> Validate(this MigrationParserService value)
     {
         ArgumentNullException.ThrowIfNull(value);
 
-        var errors = new List<string>();
-
-        // MigrationParserService itself has no configurable state to validate
-        // All validation is done on the parameters passed to its methods
-
-        return errors.AsReadOnly();
+        return Array.Empty<string>();
     }
 
     /// <summary>
@@ -34,16 +33,14 @@ public static class MigrationParserServiceValidation
     /// </summary>
     /// <param name="value">The service instance to check.</param>
     /// <returns>True if the service is valid; otherwise false.</returns>
-    public static bool IsValid(this MigrationParserService value)
-    {
-        return value.Validate().Count == 0;
-    }
+    public static bool IsValid(this MigrationParserService value) => value.Validate().Count == 0;
+
 
     /// <summary>
     /// Ensures that the <see cref="MigrationParserService"/> instance is valid.
     /// </summary>
     /// <param name="value">The service instance to validate.</param>
-    /// <exception cref="ArgumentNullException">Thrown if value is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if the service is invalid, containing a list of problems.</exception>
     public static void EnsureValid(this MigrationParserService value)
     {
@@ -52,8 +49,7 @@ public static class MigrationParserServiceValidation
         var errors = value.Validate();
         if (errors.Count > 0)
         {
-            throw new ArgumentException(
-                $"MigrationParserService is invalid. Problems: {string.Join("; ", errors)}");
+            throw new ArgumentException($"MigrationParserService is invalid. Problems: {string.Join("; ", errors)}");
         }
     }
 
@@ -97,9 +93,9 @@ public static class MigrationParserServiceValidation
             errors.Add("Database context name cannot be null or whitespace");
         }
 
-        if (migrationFile.FileSize <= 0)
+        if (migrationFile.FileSize < 0)
         {
-            errors.Add("Migration file must have positive size");
+            errors.Add("Migration file size cannot be negative");
         }
 
         if (migrationFile.LastModified == default)
@@ -161,12 +157,12 @@ public static class MigrationParserServiceValidation
             errors.Add("Should contain exactly one public partial class");
         }
 
-        if (string.IsNullOrWhiteSpace(migrationFile.ExtractMigrationId()))
+        var migrationId = migrationFile.ExtractMigrationId();
+        if (string.IsNullOrWhiteSpace(migrationId))
         {
             errors.Add("Migration ID cannot be extracted from filename");
         }
-        else if (migrationFile.ExtractMigrationId()?.Length != 14 ||
-                 !migrationFile.ExtractMigrationId()!.All(char.IsDigit))
+        else if (migrationId.Length != 14 || !migrationId.All(char.IsDigit))
         {
             errors.Add("Migration ID must be a 14-digit timestamp in YYYYMMDDHHmmss format");
         }
