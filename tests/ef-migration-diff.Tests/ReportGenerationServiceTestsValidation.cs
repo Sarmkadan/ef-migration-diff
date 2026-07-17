@@ -107,10 +107,7 @@ public static class ReportGenerationServiceTestsValidation
     /// </summary>
     /// <param name="value">The instance to check.</param>
     /// <returns><see langword="true"/> if the instance is valid; otherwise, <see langword="false"/>.</returns>
-    public static bool IsValid(this ReportGenerationServiceTests? value)
-    {
-        return value.Validate().Count == 0;
-    }
+    public static bool IsValid(this ReportGenerationServiceTests? value) => value.Validate().Count == 0;
 
     /// <summary>
     /// Ensures that the specified <see cref="ReportGenerationServiceTests"/> instance is valid.
