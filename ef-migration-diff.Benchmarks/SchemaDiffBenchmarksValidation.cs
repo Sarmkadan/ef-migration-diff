@@ -15,7 +15,7 @@ namespace EfMigrationDiff.Benchmarks;
 /// </summary>
 public static class SchemaDiffBenchmarksValidation
 {
-    private static readonly FieldInfo[] _benchmarkFields;
+    private static readonly IReadOnlyList<FieldInfo> _benchmarkFields;
 
     static SchemaDiffBenchmarksValidation()
     {
@@ -39,7 +39,7 @@ public static class SchemaDiffBenchmarksValidation
             }
         }
         
-        _benchmarkFields = fields.ToArray();
+        _benchmarkFields = fields.AsReadOnly();
     }
 
     /// <summary>
@@ -58,16 +58,15 @@ public static class SchemaDiffBenchmarksValidation
         {
             var fieldValue = field.GetValue(value);
 
-            if (field.FieldType == typeof(SchemaDiffEngine))
+            switch (fieldValue)
             {
-                if (fieldValue is null)
-                {
+                case null when field.FieldType == typeof(SchemaDiffEngine):
                     problems.Add("Engine instance (_engine) has not been initialized. Call Setup() first.");
-                }
-            }
-            else if (fieldValue is System.Collections.ICollection collection && collection.Count == 0)
-            {
-                problems.Add($"{field.Name} is empty. Benchmarks require non-empty collections for meaningful measurements.");
+                    break;
+
+                case System.Collections.ICollection collection when collection.Count == 0:
+                    problems.Add($"{field.Name} is empty. Benchmarks require non-empty collections for meaningful measurements.");
+                    break;
             }
         }
 
@@ -79,10 +78,9 @@ public static class SchemaDiffBenchmarksValidation
     /// </summary>
     /// <param name="value">The benchmarks instance to check.</param>
     /// <returns><c>true</c> if valid; otherwise, <c>false</c>.</returns>
-    public static bool IsValid(this SchemaDiffBenchmarks value)
-    {
-        return Validate(value).Count == 0;
-    }
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+    public static bool IsValid(this SchemaDiffBenchmarks value) =>
+        Validate(value).Count == 0;
 
     /// <summary>
     /// Ensures the given <see cref="SchemaDiffBenchmarks"/> instance is valid, throwing an <see cref="ArgumentException"/> with
@@ -90,8 +88,11 @@ public static class SchemaDiffBenchmarksValidation
     /// </summary>
     /// <param name="value">The benchmarks instance to validate.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="value"/> is invalid.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     public static void EnsureValid(this SchemaDiffBenchmarks value)
     {
+        ArgumentNullException.ThrowIfNull(value);
+
         var problems = Validate(value);
         if (problems.Count > 0)
         {
