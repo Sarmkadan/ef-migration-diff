@@ -72,11 +72,9 @@ namespace EfMigrationDiff.Tests
 
         // Helper that isolates the reflection logic used by the public extensions.
         private static IEnumerable<MethodInfo> GetTestMethods(Type testType, string prefix) =>
-            testType
-                .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-                .Where(m =>
-                    m.Name.StartsWith(prefix, StringComparison.Ordinal) &&
-                    m.GetParameters().Length == 0 &&
-                    m.ReturnType == typeof(void));
+            testType.GetMethods(BindingFlags.Instance | BindingFlags.Public)
+                .Where(m => m.Name.StartsWith(prefix, StringComparison.Ordinal)
+                    && m.GetParameters().Length == 0
+                    && m.ReturnType == typeof(void));
     }
 }
