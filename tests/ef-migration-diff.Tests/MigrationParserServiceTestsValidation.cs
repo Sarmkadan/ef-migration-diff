@@ -19,12 +19,7 @@ public static class MigrationParserServiceTestsValidation
     {
         ArgumentNullException.ThrowIfNull(value);
 
-        var problems = new List<string>();
-
-        // MigrationParserServiceTests has no writable state to validate
-        // All validation is handled by the test methods themselves
-
-        return problems.AsReadOnly();
+        return Array.Empty<string>();
     }
 
     /// <summary>
@@ -32,10 +27,7 @@ public static class MigrationParserServiceTestsValidation
     /// </summary>
     /// <param name="value">The test instance to check.</param>
     /// <returns><see langword="true"/> if the instance is valid; otherwise, <see langword="false"/>.</returns>
-    public static bool IsValid(this MigrationParserServiceTests? value)
-    {
-        return value?.Validate().Count is 0 or null;
-    }
+    public static bool IsValid(this MigrationParserServiceTests? value) => value?.Validate().Count is 0 or null;
 
     /// <summary>
     /// Ensures that the specified <see cref="MigrationParserServiceTests"/> instance is valid.
