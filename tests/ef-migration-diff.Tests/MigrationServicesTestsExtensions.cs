@@ -6,10 +6,10 @@ namespace EfMigrationDiff.Tests
     public static class MigrationServicesTestsExtensions
     {
         /// <summary>
-        /// Asserts that all tests pass and returns a list of failed test names.
+        /// Runs all tests and returns a list of failed test names.
         /// </summary>
         /// <param name="testInstance">The instance of <see cref="MigrationServicesTests"/>.</param>
-        /// <returns>A list of failed test names.</returns>
+        /// <returns>A list of failed test names. Empty if all tests pass.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="testInstance"/> is null.</exception>
         public static IReadOnlyList<string> GetFailedTestNames(this MigrationServicesTests testInstance)
         {
@@ -17,18 +17,58 @@ namespace EfMigrationDiff.Tests
 
             var failedTestNames = new List<string>();
 
-            testInstance.DetectChanges_WithCreateTableContent_DetectsOneCreateTableChange();
-            testInstance.IsMigrationSafe_WithDropTableContent_ReturnsFalse();
-            testInstance.DetectConflicts_WhenSameTableCreatedWithDifferentSchema_ReturnsNamingConflict();
-            testInstance.DetectConflicts_WhenSameColumnModifiedWithDifferentDefaultValue_ReturnsColumnConflict();
-            testInstance.DetectConflicts_WhenSameColumnModifiedWithSameDefaultValue_ReturnsNoConflicts();
+            try
+            {
+                testInstance.DetectChanges_WithCreateTableContent_DetectsOneCreateTableChange();
+            }
+            catch (Exception ex)
+            {
+                failedTestNames.Add($"DetectChanges_WithCreateTableContent_DetectsOneCreateTableChange: {ex.Message}");
+            }
+
+            try
+            {
+                testInstance.IsMigrationSafe_WithDropTableContent_ReturnsFalse();
+            }
+            catch (Exception ex)
+            {
+                failedTestNames.Add($"IsMigrationSafe_WithDropTableContent_ReturnsFalse: {ex.Message}");
+            }
+
+            try
+            {
+                testInstance.DetectConflicts_WhenSameTableCreatedWithDifferentSchema_ReturnsNamingConflict();
+            }
+            catch (Exception ex)
+            {
+                failedTestNames.Add($"DetectConflicts_WhenSameTableCreatedWithDifferentSchema_ReturnsNamingConflict: {ex.Message}");
+            }
+
+            try
+            {
+                testInstance.DetectConflicts_WhenSameColumnModifiedWithDifferentDefaultValue_ReturnsColumnConflict();
+            }
+            catch (Exception ex)
+            {
+                failedTestNames.Add($"DetectConflicts_WhenSameColumnModifiedWithDifferentDefaultValue_ReturnsColumnConflict: {ex.Message}");
+            }
+
+            try
+            {
+                testInstance.DetectConflicts_WhenSameColumnModifiedWithSameDefaultValue_ReturnsNoConflicts();
+            }
+            catch (Exception ex)
+            {
+                failedTestNames.Add($"DetectConflicts_WhenSameColumnModifiedWithSameDefaultValue_ReturnsNoConflicts: {ex.Message}");
+            }
+
             try
             {
                 testInstance.ExecuteAsync_WithRegisteredMockedCommand_InvokesCommandExactlyOnce().Wait();
             }
-            catch (AggregateException ex)
+            catch (Exception ex)
             {
-                failedTestNames.Add(ex.InnerException.Message);
+                failedTestNames.Add($"ExecuteAsync_WithRegisteredMockedCommand_InvokesCommandExactlyOnce: {ex.Message}");
             }
 
             return failedTestNames.AsReadOnly();
@@ -39,16 +79,18 @@ namespace EfMigrationDiff.Tests
         /// </summary>
         /// <param name="testInstance">The instance of <see cref="MigrationServicesTests"/>.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="testInstance"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when any test fails.</exception>
         public static void RunAllTests(this MigrationServicesTests testInstance)
         {
             ArgumentNullException.ThrowIfNull(testInstance);
 
-            testInstance.DetectChanges_WithCreateTableContent_DetectsOneCreateTableChange();
-            testInstance.IsMigrationSafe_WithDropTableContent_ReturnsFalse();
-            testInstance.DetectConflicts_WhenSameTableCreatedWithDifferentSchema_ReturnsNamingConflict();
-            testInstance.DetectConflicts_WhenSameColumnModifiedWithDifferentDefaultValue_ReturnsColumnConflict();
-            testInstance.DetectConflicts_WhenSameColumnModifiedWithSameDefaultValue_ReturnsNoConflicts();
-            testInstance.ExecuteAsync_WithRegisteredMockedCommand_InvokesCommandExactlyOnce().Wait();
+            var failedTests = testInstance.GetFailedTestNames();
+
+            if (failedTests.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    $"One or more tests failed:{Environment.NewLine}{string.Join(Environment.NewLine, failedTests)}");
+            }
         }
     }
 }
