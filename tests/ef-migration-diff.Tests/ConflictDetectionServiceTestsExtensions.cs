@@ -48,6 +48,7 @@ namespace EfMigrationDiff.Tests
         /// <param name="testInstance">The test instance to validate.</param>
         /// <returns>True if all tests pass; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="testInstance"/> is null.</exception>
+        /// <exception cref="TargetInvocationException">Thrown if any test method throws an exception.</exception>
         public static bool AssertAllConflictTestsPass(this ConflictDetectionServiceTests testInstance)
         {
             ArgumentNullException.ThrowIfNull(testInstance);
@@ -69,8 +70,12 @@ namespace EfMigrationDiff.Tests
         /// <param name="type">The type to inspect.</param>
         /// <param name="prefix">The prefix used to identify test methods.</param>
         /// <returns>An <see cref="IEnumerable{T}"/> of <see cref="MethodInfo"/> representing the test methods.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="type"/> is null or <paramref name="prefix"/> is null.</exception>
         private static IEnumerable<MethodInfo> GetTestMethods(Type type, string prefix)
         {
+            ArgumentNullException.ThrowIfNull(type);
+            ArgumentNullException.ThrowIfNull(prefix);
+
             return type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
                 .Where(m => m.Name.StartsWith(prefix, StringComparison.Ordinal) && m.ReturnType == typeof(void));
         }
