@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 
 namespace EfMigrationDiff.Exceptions
 {
@@ -20,7 +19,7 @@ namespace EfMigrationDiff.Exceptions
             ArgumentNullException.ThrowIfNull(exception);
 
             var messages = new List<string>();
-            var current = exception;
+            Exception? current = exception;
             while (current != null)
             {
                 messages.Add($"[{current.GetType().Name}] {current.Message}");
@@ -40,10 +39,10 @@ namespace EfMigrationDiff.Exceptions
         {
             ArgumentNullException.ThrowIfNull(exception);
 
-            var current = exception;
-            while (current.InnerException is EfMigrationDiffException inner)
+            Exception current = exception;
+            while (current.InnerException != null)
             {
-                current = inner;
+                current = current.InnerException;
             }
 
             return current;
@@ -59,13 +58,14 @@ namespace EfMigrationDiff.Exceptions
         {
             ArgumentNullException.ThrowIfNull(exception);
 
-            var current = exception;
+            Exception? current = exception;
             while (current != null)
             {
                 if (current is MigrationConflictException)
                 {
                     return true;
                 }
+
                 current = current.InnerException as EfMigrationDiffException;
             }
 
