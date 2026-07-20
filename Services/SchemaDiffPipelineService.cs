@@ -20,8 +20,9 @@ namespace EfMigrationDiff.Services;
 public sealed class SchemaDiffPipelineService
 {
     private readonly MigrationDiffService _migrationDiffService;
-    private readonly ISchemaDiffEngine    _diffEngine;
-    private readonly IVisualDiffRenderer  _renderer;
+    private readonly ISchemaDiffEngine _diffEngine;
+    private readonly IVisualDiffRenderer _renderer;
+    private readonly BreakingChangeDetector _breakingChangeDetector;
 
     /// <summary>
     /// Initialises the pipeline with v1 and v2 service dependencies.
@@ -29,14 +30,17 @@ public sealed class SchemaDiffPipelineService
     /// <param name="migrationDiffService">v1 service that collects schema changes per branch.</param>
     /// <param name="diffEngine">v2 engine that computes two-way and three-way diffs.</param>
     /// <param name="renderer">Renderer that produces HTML output from diff results.</param>
+    /// <param name="breakingChangeDetector">Optional service to classify breaking changes; if null, breaking change detection is disabled.</param>
     public SchemaDiffPipelineService(
         MigrationDiffService migrationDiffService,
-        ISchemaDiffEngine    diffEngine,
-        IVisualDiffRenderer  renderer)
+        ISchemaDiffEngine diffEngine,
+        IVisualDiffRenderer renderer,
+        BreakingChangeDetector? breakingChangeDetector = null)
     {
         _migrationDiffService = migrationDiffService;
-        _diffEngine           = diffEngine;
-        _renderer             = renderer;
+        _diffEngine = diffEngine;
+        _renderer = renderer;
+        _breakingChangeDetector = breakingChangeDetector ?? new BreakingChangeDetector(null);
     }
 
     // =========================================================================
@@ -58,8 +62,8 @@ public sealed class SchemaDiffPipelineService
     /// and unified HTML representations.
     /// </returns>
     public SchemaDiffPipelineResult RunTwoWayDiff(
-        BranchInfo       sourceBranch,
-        BranchInfo       targetBranch,
+        BranchInfo sourceBranch,
+        BranchInfo targetBranch,
         SchemaDiffOptions? options = null)
     {
         var effectiveOptions = options ?? SchemaDiffOptions.ForBranches(
@@ -72,14 +76,22 @@ public sealed class SchemaDiffPipelineService
             migrationDiff.TargetSchemaChanges,
             effectiveOptions);
 
+        // Classify breaking changes if detector is available
+        BreakingChangeSummary? breakingChangeSummary = null;
+        if (_breakingChangeDetector != null)
+        {
+            breakingChangeSummary = _breakingChangeDetector.ClassifyDiffResult(diff);
+        }
+
         return new SchemaDiffPipelineResult
         {
-            Diff           = diff,
-            MigrationDiff  = migrationDiff,
+            Diff = diff,
+            MigrationDiff = migrationDiff,
             SideBySideHtml = _renderer.RenderSideBySide(diff),
-            UnifiedHtml    = _renderer.RenderUnified(diff),
-            SourceBranch   = sourceBranch.BranchName,
-            TargetBranch   = targetBranch.BranchName
+            UnifiedHtml = _renderer.RenderUnified(diff),
+            SourceBranch = sourceBranch.BranchName,
+            TargetBranch = targetBranch.BranchName,
+            BreakingChangeSummary = breakingChangeSummary
         };
     }
 
@@ -103,9 +115,9 @@ public sealed class SchemaDiffPipelineService
     /// a merge editor HTML document.
     /// </returns>
     public SchemaDiffPipelineResult RunThreeWayDiff(
-        BranchInfo        baseBranch,
-        BranchInfo        sourceBranch,
-        BranchInfo        targetBranch,
+        BranchInfo baseBranch,
+        BranchInfo sourceBranch,
+        BranchInfo targetBranch,
         SchemaDiffOptions? options = null)
     {
         var effectiveOptions = options ?? SchemaDiffOptions.ForMerge(
@@ -120,18 +132,26 @@ public sealed class SchemaDiffPipelineService
         var baseToTarget = _migrationDiffService.CompareBranches(baseBranch, targetBranch);
 
         var threeWayDiff = _diffEngine.ComputeThreeWayDiff(
-            baseToSource.SourceSchemaChanges,   // base
-            baseToSource.TargetSchemaChanges,   // source
-            baseToTarget.TargetSchemaChanges,   // target
+            baseToSource.SourceSchemaChanges, // base
+            baseToSource.TargetSchemaChanges, // source
+            baseToTarget.TargetSchemaChanges, // target
             effectiveOptions);
+
+        // Classify breaking changes if detector is available
+        BreakingChangeSummary? breakingChangeSummary = null;
+        if (_breakingChangeDetector != null)
+        {
+            breakingChangeSummary = _breakingChangeDetector.ClassifyDiffResult(threeWayDiff.BaseToSource);
+        }
 
         return new SchemaDiffPipelineResult
         {
-            ThreeWayDiff    = threeWayDiff,
+            ThreeWayDiff = threeWayDiff,
             MergeEditorHtml = _renderer.RenderMergeEditor(threeWayDiff),
-            BaseBranch      = baseBranch.BranchName,
-            SourceBranch    = sourceBranch.BranchName,
-            TargetBranch    = targetBranch.BranchName
+            BaseBranch = baseBranch.BranchName,
+            SourceBranch = sourceBranch.BranchName,
+            TargetBranch = targetBranch.BranchName,
+            BreakingChangeSummary = breakingChangeSummary
         };
     }
 
@@ -154,10 +174,10 @@ public sealed class SchemaDiffPipelineService
     /// remaining warnings for unresolved regions.
     /// </returns>
     public SchemaMergeResult TryAutoMerge(
-        BranchInfo        baseBranch,
-        BranchInfo        sourceBranch,
-        BranchInfo        targetBranch,
-        IMergeEditor      mergeEditor,
+        BranchInfo baseBranch,
+        BranchInfo sourceBranch,
+        BranchInfo targetBranch,
+        IMergeEditor mergeEditor,
         SchemaDiffOptions? options = null)
     {
         var result = RunThreeWayDiff(baseBranch, sourceBranch, targetBranch, options);
@@ -229,4 +249,10 @@ public sealed class SchemaDiffPipelineResult
     /// such as <c>DROP TABLE</c> or <c>DROP COLUMN</c>. Only meaningful for two-way runs.
     /// </summary>
     public bool HasDestructiveChanges => Diff?.HasDestructiveChanges ?? false;
+
+    /// <summary>
+    /// Optional summary of breaking changes detected in the schema diff.
+    /// Populated when breaking change detection was enabled.
+    /// </summary>
+    public BreakingChangeSummary? BreakingChangeSummary { get; init; }
 }
