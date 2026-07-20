@@ -1,4 +1,8 @@
 #nullable enable
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace EfMigrationDiff.CLI;
 
 /// <summary>
@@ -12,6 +16,9 @@ public class CommandParser
 
     public CommandParser()
     {
+        // Register the common "format" option used by ReportEngine.
+        // Allows callers to specify: --format=json, -f csv, etc.
+        RegisterOption("f", "format", "Specifies output format (json, csv, text, html, markdown)", isFlag: false);
     }
 
     /// <summary>

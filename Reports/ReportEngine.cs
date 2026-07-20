@@ -1,4 +1,8 @@
 #nullable enable
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using EfMigrationDiff.Models;
 using EfMigrationDiff.Formatters;
 
@@ -33,6 +37,7 @@ public class ReportEngine
             "csv" => GenerateCsvReport(diff),
             "text" => GenerateTextReport(diff),
             "html" => GenerateHtmlReport(diff),
+            "markdown" => GenerateMarkdownReport(diff),
             _ => GenerateTextReport(diff)
         };
     }
@@ -190,6 +195,73 @@ public class ReportEngine
         }
 
         return _htmlFormatter.CreateDocument("Migration Diff Report", bodyContent.ToString());
+    }
+
+    /// <summary>
+    /// Generates a Markdown report. The report contains a summary section with counts,
+    /// followed by a table for each change category (Added, Removed, Modified) listing the
+    /// object name and a description of the change.
+    /// </summary>
+    public string GenerateMarkdownReport(MigrationDiff diff)
+    {
+        var sb = new StringBuilder();
+
+        // Header
+        sb.AppendLine($"# Migration Diff Report");
+        sb.AppendLine();
+        sb.AppendLine($"*Generated: {DateTime.UtcNow:u}*");
+        sb.AppendLine();
+
+        // Summary
+        sb.AppendLine("## Summary");
+        sb.AppendLine();
+        sb.AppendLine($"- **Result:** {diff.Result}");
+        sb.AppendLine($"- **Conflicts:** {diff.Conflicts.Count}");
+        sb.AppendLine($"- **Schema Changes:** {diff.GetTotalSchemaChanges()}");
+        sb.AppendLine();
+
+        // Conflicts (optional, keep consistent with other formats)
+        if (diff.Conflicts.Any())
+        {
+            sb.AppendLine("## Conflicts");
+            sb.AppendLine();
+            foreach (var conflict in diff.Conflicts)
+            {
+                sb.AppendLine($"- [{conflict.Severity}] {conflict.GetTitle()}: {conflict.FirstMigrationId} ↔ {conflict.SecondMigrationId}");
+            }
+            sb.AppendLine();
+        }
+
+        // Group schema changes by ChangeType (Added / Removed / Modified)
+        var allChanges = diff.SourceSchemaChanges.Concat(diff.TargetSchemaChanges);
+        var groups = allChanges
+            .GroupBy(sc => sc.ChangeType)
+            .OrderBy(g => g.Key.ToString());
+
+        foreach (var group in groups)
+        {
+            var title = group.Key.ToString(); // e.g., Added, Removed, Modified
+            sb.AppendLine($"## {title} Changes");
+            sb.AppendLine();
+            sb.AppendLine("| Object | Description | Migration | Destructive |");
+            sb.AppendLine("|--------|-------------|----------|-------------|");
+
+            foreach (var change in group)
+            {
+                var objectName = !string.IsNullOrEmpty(change.TableName)
+                    ? change.TableName
+                    : "(unknown)";
+
+                var description = change.GetDescription().Replace("|", "\\|");
+                var destructive = change.IsDestructive() ? "Yes" : "No";
+
+                sb.AppendLine($"| {objectName} | {description} | {change.MigrationId} | {destructive} |");
+            }
+
+            sb.AppendLine();
+        }
+
+        return sb.ToString();
     }
 
     /// <summary>
