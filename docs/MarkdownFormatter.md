@@ -1,0 +1,98 @@
+# MarkdownFormatter
+
+The `MarkdownFormatter` class provides utilities for generating and formatting markdown reports, particularly useful for documenting differences between database schemas or migrations in Entity Framework. It supports serialization of objects to markdown, file output, and includes exception handling for formatting issues.
+
+## API
+
+### `public MarkdownFormatter`
+
+Initializes a new instance of the `MarkdownFormatter` class. This constructor does not require any parameters and prepares the formatter for subsequent operations.
+
+### `public string Format(object? data)`
+
+Formats the provided object into a markdown string representation. The method inspects the object's structure and converts it into a human-readable markdown format.
+
+- **Parameters**:
+  - `data` (object?): The object to format. If null, returns an empty string.
+- **Return value**: A markdown-formatted string representing the input object.
+- **Throws**: `MarkdownFormattingException` if the object cannot be formatted due to unsupported types or circular references.
+
+### `public string GenerateMarkdownReport(object? data)`
+
+Generates a complete markdown report from the provided object, including headers, sections, and formatted content. This method is a higher-level wrapper around `Format` and is intended for producing full reports.
+
+- **Parameters**:
+  - `data` (object?): The object to include in the report. If null, returns a report indicating no data.
+- **Return value**: A markdown-formatted report string.
+- **Throws**: `MarkdownFormattingException` if formatting fails for any reason.
+
+### `public void WriteToFile(string filePath, object? data)`
+
+Writes the markdown representation of the provided object to a file at the specified path. The file will be overwritten if it already exists.
+
+- **Parameters**:
+  - `filePath` (string): The path to the output file. Must be a valid file path.
+  - `data` (object?): The object to write to the file. If null, writes an empty report.
+- **Throws**:
+  - `ArgumentNullException` if `filePath` is null.
+  - `ArgumentException` if `filePath` is empty or contains invalid characters.
+  - `MarkdownFormattingException` if the object cannot be formatted.
+  - `IOException` if the file cannot be written.
+
+### `public T? Deserialize<T>(string markdown)`
+
+Deserializes a markdown string back into an object of type `T`. The method parses the markdown content and reconstructs the original object structure.
+
+- **Parameters**:
+  - `markdown` (string): The markdown string to deserialize.
+- **Return value**: The deserialized object of type `T`, or null if the markdown is empty or invalid.
+- **Throws**: `MarkdownFormattingException` if the markdown content is malformed or cannot be parsed.
+
+### `public object? Deserialize(string markdown)`
+
+Deserializes a markdown string into an object. This is a non-generic overload that returns an `object`, suitable when the target type is not known at compile time.
+
+- **Parameters**:
+  - `markdown` (string): The markdown string to deserialize.
+- **Return value**: The deserialized object, or null if the markdown is empty or invalid.
+- **Throws**: `MarkdownFormattingException` if the markdown content is malformed or cannot be parsed.
+
+### `public MarkdownFormattingException(string message) : base(message)`
+
+Constructs a new `MarkdownFormattingException` with the specified error message.
+
+- **Parameters**:
+  - `message` (string): The message describing the formatting error.
+
+### `public MarkdownFormattingException(string message, Exception innerException) : base(message, innerException)`
+
+Constructs a new `MarkdownFormattingException` with the specified error message and inner exception.
+
+- **Parameters**:
+  - `message` (string): The message describing the formatting error.
+  - `innerException` (Exception): The exception that is the cause of the current exception.
+
+## Usage
+
+```csharp
+// Example 1: Generate a markdown report from a database schema difference
+var differences = new List<SchemaDifference>
+{
+    new SchemaDifference { Name = "Table1", Type = "Added", Details = "New table" },
+    new SchemaDifference { Name = "Column1", Type = "Removed", Details = "Column removed" }
+};
+var formatter = new MarkdownFormatter();
+string report = formatter.GenerateMarkdownReport(differences);
+Console.WriteLine(report);
+
+// Example 2: Write a markdown report to a file
+var schema = new DatabaseSchema { Name = "MyDatabase", Tables = new List<Table>() };
+formatter.WriteToFile("schema_report.md", schema);
+```
+
+## Notes
+
+- The `Format` and `GenerateMarkdownReport` methods are not thread-safe; concurrent calls with shared state may produce inconsistent results. For thread-safe usage, ensure each thread uses its own instance of `MarkdownFormatter`.
+- Circular references in objects passed to `Format` or `GenerateMarkdownReport` will cause a `MarkdownFormattingException` to be thrown.
+- The `Deserialize` methods assume the markdown content was generated by this formatter. Parsing arbitrary markdown strings may result in unexpected behavior or exceptions.
+- File operations in `WriteToFile` may fail due to permissions, disk space, or invalid paths. Always handle potential `IOException` in production code.
