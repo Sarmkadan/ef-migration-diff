@@ -78,6 +78,13 @@ public class EfMigrationDiffOptions
     public SchemaDiffOptions SchemaDiff { get; set; } = SchemaDiffOptions.Default;
 
     /// <summary>
+    /// Gets or sets the list of migration name globs to ignore.
+    /// Migrations matching any of these patterns will be excluded from diff calculations
+    /// and reported as skipped.
+    /// </summary>
+    public string[] IgnoredMigrations { get; set; } = Array.Empty<string>();
+
+    /// <summary>
     /// Validates the configuration options.
     /// </summary>
     /// <returns>A list of validation errors, or empty list if valid.</returns>

@@ -1,6 +1,8 @@
 #nullable enable
+using System.Text.RegularExpressions;
 using EfMigrationDiff.Models;
 using EfMigrationDiff.Repositories;
+using EfMigrationDiff.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace EfMigrationDiff.Services;
@@ -14,17 +16,20 @@ public class MigrationDiffService
     private readonly ConflictDetectionService _conflictDetectionService;
     private readonly SchemaChangeDetectorService _schemaChangeDetectorService;
     private readonly ILogger<MigrationDiffService> _logger;
+    private readonly EfMigrationDiffOptions? _options;
 
     public MigrationDiffService(
         MigrationRepository migrationRepository,
         ConflictDetectionService conflictDetectionService,
         SchemaChangeDetectorService schemaChangeDetectorService,
-        ILogger<MigrationDiffService> logger)
+        ILogger<MigrationDiffService> logger,
+        EfMigrationDiffOptions? options = null)
     {
         _migrationRepository = migrationRepository;
         _conflictDetectionService = conflictDetectionService;
         _schemaChangeDetectorService = schemaChangeDetectorService;
         _logger = logger;
+        _options = options;
     }
 
     /// <summary>
@@ -139,7 +144,7 @@ public class MigrationDiffService
     }
 
     /// <summary>
-    /// Gets all migrations for a specific branch.
+    /// Gets all migrations for a specific branch, respecting the ignore list.
     /// </summary>
     private List<Migration> GetBranchMigrations(BranchInfo branch)
     {
@@ -150,6 +155,13 @@ public class MigrationDiffService
             var migration = _migrationRepository.GetById(migrationId);
             if (migration is not null)
             {
+                var identifier = migration.Name ?? migration.Id;
+                if (IsIgnored(identifier))
+                {
+                    _logger.LogInformation("Skipping ignored migration {Migration}", identifier);
+                    continue;
+                }
+
                 migrations.Add(migration);
             }
         }
@@ -158,7 +170,7 @@ public class MigrationDiffService
     }
 
     /// <summary>
-    /// Gets migrations for a specific DbContext in a branch.
+    /// Gets migrations for a specific DbContext in a branch, respecting the ignore list.
     /// </summary>
     private List<Migration> GetContextMigrations(BranchInfo branch, string dbContextName)
     {
@@ -169,11 +181,45 @@ public class MigrationDiffService
             var migration = _migrationRepository.GetById(migrationId);
             if (migration?.DbContextName == dbContextName)
             {
+                var identifier = migration.Name ?? migration.Id;
+                if (IsIgnored(identifier))
+                {
+                    _logger.LogInformation("Skipping ignored migration {Migration}", identifier);
+                    continue;
+                }
+
                 migrations.Add(migration);
             }
         }
 
         return migrations.OrderBy(m => m.Sequence).ToList();
+    }
+
+    /// <summary>
+    /// Determines whether a migration name matches any of the ignore globs.
+    /// </summary>
+    private bool IsIgnored(string? migrationName)
+    {
+        if (string.IsNullOrEmpty(migrationName) || _options?.IgnoredMigrations == null)
+            return false;
+
+        foreach (var pattern in _options.IgnoredMigrations)
+        {
+            if (GlobMatch(migrationName, pattern))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Simple glob matching where '*' matches any sequence of characters.
+    /// Case‑insensitive.
+    /// </summary>
+    private bool GlobMatch(string text, string pattern)
+    {
+        var regexPattern = "^" + Regex.Escape(pattern).Replace("\\*", ".*") + "$";
+        return Regex.IsMatch(text, regexPattern, RegexOptions.IgnoreCase);
     }
 
     /// <summary>
