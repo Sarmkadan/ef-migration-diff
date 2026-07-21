@@ -81,44 +81,54 @@ public class CompareCommand : ICommand
             context.WriteColoredOutput($"✓ DOT graph exported to: {dotExportPath}", ConsoleColor.Green);
         }
 
+        // Check for summary mode
+        bool isSummary = context.GetOption("summary") != null;
+
         // Display summary
         context.WriteColoredOutput($"\n✓ Comparison completed", ConsoleColor.Green);
         context.WriteOutput($"  Conflicts detected: {diff.Conflicts.Count}");
         context.WriteOutput($"  Schema changes: {diff.GetTotalSchemaChanges()}");
         context.WriteOutput($"  Result: {diff.Result}");
 
-        // Generate report
-        appSettings.EnsureOutputDirectory();
-
-        if (!string.IsNullOrEmpty(format))
+        if (isSummary)
         {
-            appSettings.ReportFormat = format;
-        }
-
-        var reportPath = Path.Combine(
-            appSettings.GetOutputDirectory(),
-            appSettings.GetReportFilename("migration-comparison"));
-
-        var reportContent = appSettings.ReportFormat switch
-        {
-            "json" => reportService.GenerateJsonReport(diff),
-            "html" => reportService.GenerateHtmlReport(diff),
-            _ => reportService.GenerateTextReport(diff)
-        };
-
-        File.WriteAllText(reportPath, reportContent);
-
-        // When JSON format is requested, emit the report to stdout so callers can pipe
-        // or capture it directly without locating the output file. Status messages are
-        // sent to stderr to keep stdout clean for machine consumption.
-        if (appSettings.ReportFormat == "json")
-        {
-            context.ErrorOutput.WriteLine($"✓ Report saved to: {reportPath}");
-            context.WriteOutput(reportContent);
+            context.WriteOutput($"  Summary: Added: {diff.OnlyInSource.Count}, Removed: {diff.OnlyInTarget.Count}, Conflicts: {diff.Conflicts.Count}");
         }
         else
         {
-            context.WriteColoredOutput($"✓ Report saved to: {reportPath}", ConsoleColor.Green);
+            // Generate report
+            appSettings.EnsureOutputDirectory();
+
+            if (!string.IsNullOrEmpty(format))
+            {
+                appSettings.ReportFormat = format;
+            }
+
+            var reportPath = Path.Combine(
+                appSettings.GetOutputDirectory(),
+                appSettings.GetReportFilename("migration-comparison"));
+
+            var reportContent = appSettings.ReportFormat switch
+            {
+                "json" => reportService.GenerateJsonReport(diff),
+                "html" => reportService.GenerateHtmlReport(diff),
+                _ => reportService.GenerateTextReport(diff)
+            };
+
+            File.WriteAllText(reportPath, reportContent);
+
+            // When JSON format is requested, emit the report to stdout so callers can pipe
+            // or capture it directly without locating the output file. Status messages are
+            // sent to stderr to keep stdout clean for machine consumption.
+            if (appSettings.ReportFormat == "json")
+            {
+                context.ErrorOutput.WriteLine($"✓ Report saved to: {reportPath}");
+                context.WriteOutput(reportContent);
+            }
+            else
+            {
+                context.WriteColoredOutput($"✓ Report saved to: {reportPath}", ConsoleColor.Green);
+            }
         }
 
         gitRepo.Dispose();
