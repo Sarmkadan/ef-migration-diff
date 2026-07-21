@@ -60,6 +60,28 @@ public sealed class MigrationDependencyGraphService
     }
 
     /// <summary>
+    /// Generates a DOT (Graphviz) representation of the graph.
+    /// </summary>
+    /// <param name="graph">The graph to render.</param>
+    /// <returns>A string containing the DOT representation.</returns>
+    public string RenderDot(MigrationDependencyGraph graph)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("digraph MigrationGraph {");
+        sb.AppendLine("    node [shape=box];");
+        foreach (var node in graph.Nodes.Values.OrderBy(n => n.Sequence))
+        {
+            sb.AppendLine($"    \"{node.MigrationId}\" [label=\"[{node.Sequence:D4}] {node.Name}\"];");
+        }
+        foreach (var edge in graph.Edges)
+        {
+            sb.AppendLine($"    \"{edge.FromId}\" -> \"{edge.ToId}\" [label=\"{edge.Kind}\"];");
+        }
+        sb.AppendLine("}");
+        return sb.ToString();
+    }
+
+    /// <summary>
     /// Generates a plain-text representation of the graph suitable for console output.
     /// Each line shows one node and its direct dependencies.
     /// </summary>

@@ -4,6 +4,7 @@ using EfMigrationDiff.Repositories;
 using EfMigrationDiff.Services;
 using EfMigrationDiff.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
+using System.IO;
 
 namespace EfMigrationDiff.CLI.Commands;
 
@@ -64,6 +65,21 @@ public class CompareCommand : ICommand
 
         // Perform comparison
         var diff = diffService.CompareBranches(source, target);
+
+        // Optional DOT graph export
+        string? dotExportPath = context.GetOption("dot");
+        if (!string.IsNullOrEmpty(dotExportPath))
+        {
+            var graphService = context.ServiceProvider.GetService<MigrationDependencyGraphService>()
+                ?? throw new InvalidOperationException("MigrationDependencyGraphService not found");
+
+            // Combine all migrations to build the graph
+            var allMigrations = diff.OnlyInSource.Concat(diff.OnlyInTarget).Concat(diff.InBoth);
+            var graph = graphService.Build(allMigrations);
+            var dotContent = graphService.RenderDot(graph);
+            File.WriteAllText(dotExportPath, dotContent);
+            context.WriteColoredOutput($"✓ DOT graph exported to: {dotExportPath}", ConsoleColor.Green);
+        }
 
         // Display summary
         context.WriteColoredOutput($"\n✓ Comparison completed", ConsoleColor.Green);

@@ -19,6 +19,7 @@ public class CommandParser
         // Register the common "format" option used by ReportEngine.
         // Allows callers to specify: --format=json, -f csv, etc.
         RegisterOption("f", "format", "Specifies output format (json, csv, text, html, markdown)", isFlag: false);
+        RegisterOption(string.Empty, "dot", "Exports migration dependency graph to a DOT file", isFlag: false);
     }
 
     /// <summary>
