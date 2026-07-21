@@ -98,6 +98,40 @@ public class BreakingChangeDetector
             );
         }
 
+        // Check for adding nullable column (safe)
+        if (change.ChangeType == SqlChangeType.AddColumn)
+        {
+            var nullableReason = CheckNullableColumn(change);
+            if (nullableReason != null)
+            {
+                return new BreakingChangeClassification(
+                    change,
+                    BreakingChangeSeverity.Safe,
+                    nullableReason
+                );
+            }
+        }
+
+        // Check for renaming objects (potential warning - affects references)
+        if (change.ChangeType == SqlChangeType.Rename)
+        {
+            return new BreakingChangeClassification(
+                change,
+                BreakingChangeSeverity.Warning,
+                "object renamed - may affect application code that references old name"
+            );
+        }
+
+        // Check for adding foreign key (warning - affects relationships)
+        if (change.ChangeType == SqlChangeType.AddForeignKey)
+        {
+            return new BreakingChangeClassification(
+                change,
+                BreakingChangeSeverity.Warning,
+                "foreign key added - may affect data integrity constraints"
+            );
+        }
+
         // Safe changes
         return new BreakingChangeClassification(
             change,
@@ -125,13 +159,13 @@ public class BreakingChangeDetector
         var warnings = classifications.Count(c => c.Severity == BreakingChangeSeverity.Warning);
 
         return new BreakingChangeSummary(
-            allChanges.Count,
-            breaking,
-            safe,
-            warnings,
-            classifications,
-            breaking > 0,
-            breaking == 0
+            TotalChanges: allChanges.Count,
+            BreakingChanges: breaking,
+            SafeChanges: safe,
+            WarningChanges: warnings,
+            Classifications: classifications,
+            HasBreakingChanges: breaking > 0,
+            IsSafe: breaking == 0 && warnings == 0
         );
     }
 
@@ -197,6 +231,21 @@ public class BreakingChangeDetector
             {
                 return $"added non-nullable column '{change.ColumnName}' without default value";
             }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Checks if a new column is nullable (safe change).
+    /// </summary>
+    private string? CheckNullableColumn(SchemaChange change)
+    {
+        // Check if column is explicitly nullable
+        if (change.GetMetadata("Nullable") is string nullable &&
+            nullable.Equals("true", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"added nullable column '{change.ColumnName}' - backward compatible";
         }
 
         return null;
