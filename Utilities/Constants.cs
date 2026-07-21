@@ -100,4 +100,12 @@ public static class Constants
         public const int MinDegreeOfParallelism = 1;
         public const int MaxDegreeOfParallelism = 16;
     }
+
+    public static class ExitCodes
+    {
+        public const int NoDiff = 0;
+        public const int DiffFound = 1;
+        public const int ConflictsFound = 2;
+        public const int Error = 3;
+    }
 }

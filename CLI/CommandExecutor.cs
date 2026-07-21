@@ -1,4 +1,6 @@
 #nullable enable
+using EfMigrationDiff.Utilities;
+
 namespace EfMigrationDiff.CLI;
 
 /// <summary>
@@ -59,7 +61,8 @@ public class CommandExecutor
                     return middlewareResult.Result ?? new CommandResult
                     {
                         Success = false,
-                        Message = "Command execution short-circuited by middleware"
+                        Message = "Command execution short-circuited by middleware",
+                        ExitCode = Constants.ExitCodes.Error
                     };
                 }
             }
@@ -71,7 +74,7 @@ public class CommandExecutor
                 {
                     Success = false,
                     Message = $"Unknown command: {commandName}",
-                    ExitCode = 1
+                    ExitCode = Constants.ExitCodes.Error
                 };
             }
 
@@ -85,7 +88,7 @@ public class CommandExecutor
             {
                 Success = false,
                 Message = ex.Message,
-                ExitCode = 1
+                ExitCode = Constants.ExitCodes.Error
             };
         }
     }
@@ -155,14 +158,14 @@ public class CommandResult
             Success = true,
             Message = message,
             Data = data,
-            ExitCode = 0
+            ExitCode = Constants.ExitCodes.NoDiff
         };
     }
 
     /// <summary>
     /// Creates a failure result with exit code.
     /// </summary>
-    public static CommandResult Error(string message, int exitCode = 1)
+    public static CommandResult Error(string message, int exitCode = Constants.ExitCodes.Error)
     {
         return new CommandResult
         {
