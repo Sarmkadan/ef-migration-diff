@@ -248,7 +248,7 @@ public class CommandParser
                     return $"The --format option value exceeds maximum length of 100 characters. Length: {option.Value.Length} characters.";
                 }
             }
-            // Validate dot file path option
+            // Validate dot file path option - basic validation only
             else if (option.Key == "dot")
             {
                 if (string.IsNullOrWhiteSpace(option.Value))
@@ -262,7 +262,7 @@ public class CommandParser
                 }
 
                 // Basic path validation - check for invalid path characters
-                if (option.Value.Any(c => Path.GetInvalidPathChars().Contains(c)))
+                if (option.Value.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
                 {
                     return "The --dot option value contains invalid path characters.";
                 }
