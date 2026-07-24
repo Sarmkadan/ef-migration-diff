@@ -12,6 +12,7 @@ namespace EfMigrationDiff.CLI;
 /// </summary>
 public class CommandParser
 {
+    private const int MaxArgumentLength = 32 * 1024; // 32KB maximum argument length
     private readonly Dictionary<string, CommandOptionDefinition> _knownOptions = new();
     private readonly HashSet<string> _flagOptions = new();
     private readonly StringBuilder _usageBuilder = new();
@@ -59,13 +60,14 @@ public class CommandParser
     /// Parses raw command-line arguments into a CommandContext with structured options and positional args.
     /// Handles various formats: --option=value, --option value, -o value, --flag
     /// </summary>
-    /// <param name="commandName">Name of the command being executed</param>
-    /// <param name="args">Raw command line arguments</param>
-    /// <param name="serviceProvider">Service provider for dependency injection</param>
+    /// <param name="commandName">Name of the command being executed. Cannot be null or whitespace.</param>
+    /// <param name="args">Raw command line arguments. Cannot be null.</param>
+    /// <param name="serviceProvider">Service provider for dependency injection. Cannot be null.</param>
     /// <param name="output">Output writer (defaults to Console.Out)</param>
     /// <param name="errorOutput">Error output writer (defaults to Console.Error)</param>
     /// <returns>Parsed command context</returns>
-    /// <exception cref="ArgumentNullException">Thrown when commandName or args is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when commandName, args, or serviceProvider is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when commandName is empty or whitespace, or when any argument exceeds the maximum allowed length.</exception>
     public CommandContext Parse(
         string commandName,
         string[] args,
@@ -74,13 +76,33 @@ public class CommandParser
         TextWriter? errorOutput = null)
     {
         ArgumentNullException.ThrowIfNull(commandName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(commandName, nameof(commandName));
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(serviceProvider);
 
-        var context = new CommandContext(commandName, args, serviceProvider, output, errorOutput);
-
+        // Validate argument count
         if (args.Length == 0)
-            return context;
+            return new CommandContext(commandName, args, serviceProvider, output, errorOutput);
+
+        // Validate each argument for length and content
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i].Length > MaxArgumentLength)
+            {
+                throw new ArgumentException(
+                    $"Argument at position {i} exceeds maximum allowed length of {MaxArgumentLength} characters. Length: {args[i].Length} characters.",
+                    nameof(args));
+            }
+
+            if (string.IsNullOrWhiteSpace(args[i]))
+            {
+                throw new ArgumentException(
+                    $"Argument at position {i} cannot be null, empty, or whitespace.",
+                    nameof(args));
+            }
+        }
+
+        var context = new CommandContext(commandName, args, serviceProvider, output, errorOutput);
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -194,17 +216,73 @@ public class CommandParser
     /// <summary>
     /// Validates parsed arguments and options, returning error messages if validation fails.
     /// </summary>
-    /// <param name="context">The parsed command context</param>
-    /// <param name="commandName">The command name for usage generation</param>
-    /// <param name="args">The original arguments for error context</param>
-    /// <returns>Error message if validation fails, null otherwise</returns>
-    /// <exception cref="ArgumentNullException">Thrown when context is null</exception>
-    /// <exception cref="ArgumentException">Thrown when commandName is null or empty</exception>
+    /// <param name="context">The parsed command context. Cannot be null.</param>
+    /// <param name="commandName">The command name for usage generation. Cannot be null or empty.</param>
+    /// <param name="args">The original arguments for error context. Cannot be null.</param>
+    /// <returns>Error message if validation fails, null otherwise.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when context, commandName, or args is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when commandName is empty.</exception>
     public string? Validate(CommandContext context, string commandName, string[] args)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentException.ThrowIfNullOrEmpty(commandName);
         ArgumentNullException.ThrowIfNull(args);
+
+        // Validate option values for non-flag options
+        foreach (var option in context.ParsedOptions)
+        {
+            // Skip flag options that are just "true"
+            if (option.Value == "true")
+                continue;
+
+            // Validate format option (used for report output)
+            if (option.Key == "format" || option.Key == "f")
+            {
+                if (string.IsNullOrWhiteSpace(option.Value))
+                {
+                    return "The --format option cannot be empty or whitespace.";
+                }
+
+                if (option.Value.Length > 100)
+                {
+                    return $"The --format option value exceeds maximum length of 100 characters. Length: {option.Value.Length} characters.";
+                }
+            }
+            // Validate dot file path option
+            else if (option.Key == "dot")
+            {
+                if (string.IsNullOrWhiteSpace(option.Value))
+                {
+                    return "The --dot option cannot be empty or whitespace.";
+                }
+
+                if (option.Value.Length > MaxArgumentLength)
+                {
+                    return $"The --dot option value exceeds maximum allowed length of {MaxArgumentLength} characters. Length: {option.Value.Length} characters.";
+                }
+
+                // Basic path validation - check for invalid path characters
+                if (option.Value.Any(c => Path.GetInvalidPathChars().Contains(c)))
+                {
+                    return "The --dot option value contains invalid path characters.";
+                }
+            }
+        }
+
+        // Validate positional arguments
+        for (int i = 0; i < context.ParsedArguments.Count; i++)
+        {
+            var arg = context.ParsedArguments[i];
+            if (string.IsNullOrWhiteSpace(arg))
+            {
+                return $"Positional argument at position {i} cannot be null, empty, or whitespace.";
+            }
+
+            if (arg.Length > MaxArgumentLength)
+            {
+                return $"Positional argument at position {i} exceeds maximum allowed length of {MaxArgumentLength} characters. Length: {arg.Length} characters.";
+            }
+        }
 
         // Check for unknown options that aren't registered
         var knownOptions = _knownOptions.Keys.ToHashSet(StringComparer.Ordinal);
@@ -310,9 +388,9 @@ public class CommandParser
     /// <summary>
     /// Generates usage information for the command.
     /// </summary>
-    /// <param name="commandName">The command name to display in usage</param>
-    /// <returns>Formatted usage string</returns>
-    /// <exception cref="ArgumentException">Thrown when commandName is null or empty</exception>
+    /// <param name="commandName">The command name to display in usage. Cannot be null or empty.</param>
+    /// <returns>Formatted usage string.</returns>
+    /// <exception cref="ArgumentException">Thrown when commandName is null or empty.</exception>
     public string GenerateUsage(string commandName)
     {
         ArgumentException.ThrowIfNullOrEmpty(commandName);
