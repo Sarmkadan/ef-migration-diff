@@ -1,5 +1,6 @@
 #nullable enable
 using EfMigrationDiff.Utilities;
+using System.Text.Json;
 
 namespace EfMigrationDiff.CLI;
 
@@ -41,13 +42,27 @@ public class CommandExecutor
     /// Executes a command by name with the given arguments.
     /// Returns a CommandResult indicating success/failure and any output.
     /// </summary>
+    /// <param name="commandName">Name of the command to execute. Cannot be null or whitespace.</param>
+    /// <param name="args">Command arguments. Can be empty but not null.</param>
+    /// <param name="serviceProvider">Service provider for dependency injection. Cannot be null.</param>
+    /// <param name="output">Standard output writer. If null, uses Console.Out.</param>
+    /// <param name="errorOutput">Error output writer. If null, uses Console.Error.</param>
+    /// <param name="verbose">If true, includes detailed stack traces in error output.</param>
+    /// <returns>A CommandResult indicating success/failure and any output.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if commandName or serviceProvider is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if commandName is empty or whitespace.</exception>
     public async Task<CommandResult> ExecuteAsync(
         string commandName,
         string[] args,
         IServiceProvider serviceProvider,
         TextWriter? output = null,
-        TextWriter? errorOutput = null)
+        TextWriter? errorOutput = null,
+        bool verbose = false)
     {
+        ArgumentNullException.ThrowIfNull(commandName);
+        ArgumentNullException.ThrowIfNull(args);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+
         var context = _parser.Parse(commandName, args, serviceProvider, output, errorOutput);
 
         try
@@ -88,11 +103,119 @@ public class CommandExecutor
             var result = await command.ExecuteAsync(context);
             return result;
         }
+        catch (ArgumentNullException ex)
+        {
+            var errorMsg = $"Invalid argument: {ex.ParamName}";
+            context.WriteError(errorMsg);
+            if (verbose && ex.StackTrace is not null)
+            {
+                context.WriteError($"Stack trace:\n{ex.StackTrace}");
+            }
+            return new CommandResult
+            {
+                Success = false,
+                Message = errorMsg,
+                ExitCode = Constants.ExitCodes.Error
+            };
+        }
+        catch (ArgumentException ex)
+        {
+            var errorMsg = $"Invalid argument: {ex.Message}";
+            context.WriteError(errorMsg);
+            if (verbose && ex.StackTrace is not null)
+            {
+                context.WriteError($"Stack trace:\n{ex.StackTrace}");
+            }
+            return new CommandResult
+            {
+                Success = false,
+                Message = errorMsg,
+                ExitCode = Constants.ExitCodes.Error
+            };
+        }
+        catch (JsonException ex)
+        {
+            var errorMsg = $"JSON processing error: {ex.Message}";
+            context.WriteError(errorMsg);
+            if (verbose && ex.StackTrace is not null)
+            {
+                context.WriteError($"Stack trace:\n{ex.StackTrace}");
+            }
+            return new CommandResult
+            {
+                Success = false,
+                Message = errorMsg,
+                ExitCode = Constants.ExitCodes.Error
+            };
+        }
+        catch (IOException ex)
+        {
+            var errorMsg = $"File I/O error: {ex.Message}";
+            context.WriteError(errorMsg);
+            if (verbose && ex.StackTrace is not null)
+            {
+                context.WriteError($"Stack trace:\n{ex.StackTrace}");
+            }
+            return new CommandResult
+            {
+                Success = false,
+                Message = errorMsg,
+                ExitCode = Constants.ExitCodes.Error
+            };
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            var errorMsg = $"Access denied: {ex.Message}";
+            context.WriteError(errorMsg);
+            if (verbose && ex.StackTrace is not null)
+            {
+                context.WriteError($"Stack trace:\n{ex.StackTrace}");
+            }
+            return new CommandResult
+            {
+                Success = false,
+                Message = errorMsg,
+                ExitCode = Constants.ExitCodes.Error
+            };
+        }
+        catch (OperationCanceledException ex)
+        {
+            var errorMsg = $"Operation cancelled: {ex.Message}";
+            context.WriteError(errorMsg);
+            if (verbose && ex.StackTrace is not null)
+            {
+                context.WriteError($"Stack trace:\n{ex.StackTrace}");
+            }
+            return new CommandResult
+            {
+                Success = false,
+                Message = errorMsg,
+                ExitCode = Constants.ExitCodes.Error
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            var errorMsg = $"Invalid operation: {ex.Message}";
+            context.WriteError(errorMsg);
+            if (verbose && ex.StackTrace is not null)
+            {
+                context.WriteError($"Stack trace:\n{ex.StackTrace}");
+            }
+            return new CommandResult
+            {
+                Success = false,
+                Message = errorMsg,
+                ExitCode = Constants.ExitCodes.Error
+            };
+        }
         catch (Exception ex)
         {
-            var errorMsg = $"Error: {ex.Message}";
+            var errorMsg = $"Unexpected error: {ex.Message}";
             context.WriteError(errorMsg);
-            context.WriteOutput(_parser.GenerateUsage(commandName));
+            if (verbose && ex.StackTrace is not null)
+            {
+                context.WriteError($"Stack trace:\n{ex.StackTrace}");
+            }
             return new CommandResult
             {
                 Success = false,

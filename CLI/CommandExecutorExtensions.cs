@@ -1,5 +1,4 @@
 #nullable enable
-
 namespace EfMigrationDiff.CLI;
 
 /// <summary>
@@ -32,6 +31,7 @@ public static class CommandExecutorExtensions
     /// <param name="commandName">Name of the command to execute. Cannot be <see langword="null"/> or empty.</param>
     /// <param name="args">Command arguments. Can be empty but not <see langword="null"/>.</param>
     /// <param name="serviceProvider">Service provider for dependency injection. Cannot be <see langword="null"/>.</param>
+    /// <param name="verbose">If true, includes detailed stack traces in error output.</param>
     /// <returns>The command result.</returns>
     /// <exception cref="ArgumentNullException">Thrown if any parameter is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown if the command execution fails.</exception>
@@ -39,14 +39,15 @@ public static class CommandExecutorExtensions
         this CommandExecutor executor,
         string commandName,
         string[] args,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        bool verbose = false)
     {
         ArgumentNullException.ThrowIfNull(executor);
         ArgumentNullException.ThrowIfNull(commandName);
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(serviceProvider);
 
-        var result = await executor.ExecuteAsync(commandName, args, serviceProvider);
+        var result = await executor.ExecuteAsync(commandName, args, serviceProvider, verbose: verbose);
 
         if (!result.Success)
         {
@@ -65,6 +66,7 @@ public static class CommandExecutorExtensions
     /// <param name="commandName">Name of the command to execute. Cannot be <see langword="null"/> or empty.</param>
     /// <param name="args">Command arguments. Can be empty but not <see langword="null"/>.</param>
     /// <param name="serviceProvider">Service provider for dependency injection. Cannot be <see langword="null"/>.</param>
+    /// <param name="verbose">If true, includes detailed stack traces in error output.</param>
     /// <returns>The data payload from the command result.</returns>
     /// <exception cref="ArgumentNullException">Thrown if any parameter is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown if the command fails or data is not of type <typeparamref name="T"/>.</exception>
@@ -72,14 +74,15 @@ public static class CommandExecutorExtensions
         this CommandExecutor executor,
         string commandName,
         string[] args,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        bool verbose = false)
     {
         ArgumentNullException.ThrowIfNull(executor);
         ArgumentNullException.ThrowIfNull(commandName);
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(serviceProvider);
 
-        var result = await executor.ExecuteAsync(commandName, args, serviceProvider);
+        var result = await executor.ExecuteAsync(commandName, args, serviceProvider, verbose: verbose);
 
         if (!result.Success)
         {
@@ -104,19 +107,21 @@ public static class CommandExecutorExtensions
     /// <param name="commandName">Name of the command to execute. Cannot be <see langword="null"/> or empty.</param>
     /// <param name="args">Command arguments. Can be empty but not <see langword="null"/>.</param>
     /// <param name="serviceProvider">Service provider for dependency injection. Cannot be <see langword="null"/>.</param>
+    /// <param name="verbose">If true, includes detailed stack traces in error output.</param>
     /// <returns>The command result, successful or failed.</returns>
     /// <exception cref="ArgumentNullException">Thrown if any parameter is <see langword="null"/>.</exception>
     public static async Task<CommandResult> ExecuteWithFallbackAsync(
         this CommandExecutor executor,
         string commandName,
         string[] args,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        bool verbose = false)
     {
         ArgumentNullException.ThrowIfNull(executor);
         ArgumentNullException.ThrowIfNull(commandName);
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(serviceProvider);
 
-        return await executor.ExecuteAsync(commandName, args, serviceProvider);
+        return await executor.ExecuteAsync(commandName, args, serviceProvider, verbose: verbose);
     }
 }
