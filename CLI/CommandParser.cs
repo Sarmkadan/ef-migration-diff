@@ -1,8 +1,11 @@
 #nullable enable
+
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using EfMigrationDiff.Configuration;
 
 namespace EfMigrationDiff.CLI;
 
@@ -215,6 +218,8 @@ public class CommandParser
 
     /// <summary>
     /// Validates parsed arguments and options, returning error messages if validation fails.
+    /// This method delegates all validation to <see cref="EfMigrationDiffOptions.ValidateCliConstraints"/>
+    /// to ensure consistent validation between CLI parsing and direct configuration usage.
     /// </summary>
     /// <param name="context">The parsed command context. Cannot be null.</param>
     /// <param name="commandName">The command name for usage generation. Cannot be null or empty.</param>
@@ -228,63 +233,13 @@ public class CommandParser
         ArgumentException.ThrowIfNullOrEmpty(commandName);
         ArgumentNullException.ThrowIfNull(args);
 
-        // Validate option values for non-flag options
-        foreach (var option in context.ParsedOptions)
-        {
-            // Skip flag options that are just "true"
-            if (option.Value == "true")
-                continue;
+        // Extract validation parameters from parsed context and arguments
+        var formatOption = context.GetOption("format");
+        var hasSummary = context.HasOption("summary");
+        var hasDot = context.HasOption("dot");
+        var dotPath = context.GetOption("dot");
 
-            // Validate format option (used for report output)
-            if (option.Key == "format" || option.Key == "f")
-            {
-                if (string.IsNullOrWhiteSpace(option.Value))
-                {
-                    return "The --format option cannot be empty or whitespace.";
-                }
-
-                if (option.Value.Length > 100)
-                {
-                    return $"The --format option value exceeds maximum length of 100 characters. Length: {option.Value.Length} characters.";
-                }
-            }
-            // Validate dot file path option - basic validation only
-            else if (option.Key == "dot")
-            {
-                if (string.IsNullOrWhiteSpace(option.Value))
-                {
-                    return "The --dot option cannot be empty or whitespace.";
-                }
-
-                if (option.Value.Length > MaxArgumentLength)
-                {
-                    return $"The --dot option value exceeds maximum allowed length of {MaxArgumentLength} characters. Length: {option.Value.Length} characters.";
-                }
-
-                // Basic path validation - check for invalid path characters
-                if (option.Value.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
-                {
-                    return "The --dot option value contains invalid path characters.";
-                }
-            }
-        }
-
-        // Validate positional arguments
-        for (int i = 0; i < context.ParsedArguments.Count; i++)
-        {
-            var arg = context.ParsedArguments[i];
-            if (string.IsNullOrWhiteSpace(arg))
-            {
-                return $"Positional argument at position {i} cannot be null, empty, or whitespace.";
-            }
-
-            if (arg.Length > MaxArgumentLength)
-            {
-                return $"Positional argument at position {i} exceeds maximum allowed length of {MaxArgumentLength} characters. Length: {arg.Length} characters.";
-            }
-        }
-
-        // Check for unknown options that aren't registered
+        // Collect unknown options for validation
         var knownOptions = _knownOptions.Keys.ToHashSet(StringComparer.Ordinal);
         var unknownOptions = new List<string>();
 
@@ -316,12 +271,7 @@ public class CommandParser
             }
         }
 
-        if (unknownOptions.Count > 0)
-        {
-            return $"Unknown option(s) specified: {string.Join(", ", unknownOptions.Select(o => $"--{o}"))}. Use --help for available options.";
-        }
-
-        // Check for duplicate flags by scanning original arguments
+        // Collect duplicate flags for validation
         var flagOptionNames = _flagOptions.ToHashSet();
         var seenFlags = new HashSet<string>();
         var duplicateFlags = new List<string>();
@@ -352,28 +302,19 @@ public class CommandParser
             }
         }
 
-        if (duplicateFlags.Count > 0)
-        {
-            return $"Duplicate flag(s) specified: {string.Join(", ", duplicateFlags.Select(f => $"--{f}"))}. Each flag can only be specified once.";
-        }
+        // Delegate all validation to EfMigrationDiffOptions for consistency
+        var options = new EfMigrationDiffOptions();
+        var validationErrors = options.ValidateCliConstraints(
+            reportFormat: formatOption,
+            enableSummaryMode: hasSummary,
+            dotExportPath: dotPath,
+            unknownOptions: unknownOptions.Count > 0 ? unknownOptions : null,
+            duplicateFlags: duplicateFlags.Count > 0 ? duplicateFlags : null,
+            positionalArgumentCount: context.ParsedArguments.Count
+        );
 
-        // Check for conflicting options
-        var hasSummary = context.HasOption("summary");
-        var hasDot = context.HasOption("dot");
-
-        if (hasSummary && hasDot)
-        {
-            return "Options --summary and --dot are mutually exclusive. Choose one or the other.";
-        }
-
-        // Check for missing required positional arguments
-        // Commands typically need at least 2 positional arguments (source and target migrations/branches)
-        if (context.ParsedArguments.Count < 2)
-        {
-            return "Missing required arguments. Expected at least 2 positional arguments (source migration/branch and target migration/branch).";
-        }
-
-        return null;
+        // Return first error for CLI consistency, or null if validation passed
+        return validationErrors.Count > 0 ? validationErrors[0] : null;
     }
 
     /// <summary>
