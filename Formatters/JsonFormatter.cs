@@ -6,6 +6,25 @@ using System.Text.Json.Serialization;
 namespace EfMigrationDiff.Formatters;
 
 /// <summary>
+/// Exception for formatting operations.
+/// </summary>
+public class FormattingException : Exception
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FormattingException"/> class with a message.
+    /// </summary>
+    /// <param name="message">The error message.</param>
+    public FormattingException(string message) : base(message) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FormattingException"/> class with a message and inner exception.
+    /// </summary>
+    /// <param name="message">The error message.</param>
+    /// <param name="innerException">The inner exception.</param>
+    public FormattingException(string message, Exception innerException) : base(message, innerException) { }
+}
+
+/// <summary>
 /// Custom JSON converter that ensures culture-invariant serialization of DateTime values.
 /// </summary>
 internal sealed class CultureInvariantDateTimeConverter : JsonConverter<DateTime>
@@ -52,6 +71,11 @@ internal sealed class CultureInvariantNumberConverter : JsonConverter<double>
 /// </summary>
 public class JsonFormatter : IOutputFormatter
 {
+    // Security limits to prevent DoS attacks from maliciously crafted JSON
+    private const int MaxJsonDepth = 1000;
+    private const int MaxJsonSizeBytes = 1_000_000; // 1 MB
+    private const int MaxStringLength = 100_000;
+
     private readonly JsonSerializerOptions _options;
 
     /// <summary>
@@ -69,7 +93,8 @@ public class JsonFormatter : IOutputFormatter
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             ReferenceHandler = ReferenceHandler.Preserve,
             NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
-            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            MaxDepth = MaxJsonDepth
         };
 
         _options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
@@ -101,12 +126,83 @@ public class JsonFormatter : IOutputFormatter
     }
 
     /// <summary>
+    /// Validates JSON input to ensure it doesn't exceed security limits before deserialization.
+    /// </summary>
+    /// <param name="json">The JSON string to validate.</param>
+    /// <exception cref="JsonSecurityException">Thrown when JSON exceeds security limits.</exception>
+    private static void ValidateJsonInput(string json)
+    {
+        ArgumentNullException.ThrowIfNull(json);
+
+        // Check size limit
+        if (json.Length > MaxJsonSizeBytes)
+        {
+            throw new JsonSecurityException(
+                $"JSON input exceeds maximum allowed size of {MaxJsonSizeBytes} bytes. " +
+                $"Actual size: {json.Length} bytes. " +
+                "Consider using a smaller input or increase MaxJsonSizeBytes if this is expected.");
+        }
+
+        // Quick check for extreme nesting by counting brackets (approximate)
+        // This helps catch obviously malicious input before attempting deserialization
+        int bracketDepth = 0;
+        int maxBracketDepth = 0;
+        bool inString = false;
+        char prevChar = '\0';
+
+        for (int i = 0; i < json.Length; i++)
+        {
+            char c = json[i];
+
+            // Handle escape sequences in strings
+            if (c == '\\' && prevChar != '\\' && inString)
+            {
+                i++; // Skip next character
+                prevChar = '\\';
+                continue;
+            }
+
+            if (c == '"' && prevChar != '\\')
+            {
+                inString = !inString;
+            }
+
+            if (!inString)
+            {
+                if (c == '{' || c == '[')
+                {
+                    bracketDepth++;
+                    if (bracketDepth > maxBracketDepth)
+                    {
+                        maxBracketDepth = bracketDepth;
+                    }
+                }
+                else if (c == '}' || c == ']')
+                {
+                    bracketDepth--;
+                }
+            }
+
+            prevChar = c;
+        }
+
+        if (maxBracketDepth > MaxJsonDepth)
+        {
+            throw new JsonSecurityException(
+                $"JSON input exceeds maximum allowed depth of {MaxJsonDepth} levels. " +
+                $"Detected depth: {maxBracketDepth} levels. " +
+                "This may indicate a maliciously crafted deeply nested JSON structure.");
+        }
+    }
+
+    /// <summary>
     /// Deserializes JSON string to an object of specified type.
     /// </summary>
     /// <typeparam name="T">The type to deserialize to.</typeparam>
     /// <param name="json">The JSON string to deserialize.</param>
     /// <returns>The deserialized object, or null if the JSON is null.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
+    /// <exception cref="JsonSecurityException">Thrown when JSON input exceeds security limits.</exception>
     /// <exception cref="FormattingException">Thrown when deserialization fails.</exception>
     public T? Deserialize<T>(string json)
     {
@@ -114,7 +210,13 @@ public class JsonFormatter : IOutputFormatter
 
         try
         {
+            ValidateJsonInput(json);
             return JsonSerializer.Deserialize<T>(json, _options);
+        }
+        catch (JsonException ex) when (ex.Message.Contains("maximum depth") || ex.Message.Contains("exceeds the maximum depth"))
+        {
+            throw new JsonSecurityException(
+                $"JSON input exceeds maximum nesting depth of {MaxJsonDepth} levels: {ex.Message}", ex);
         }
         catch (Exception ex) when (ex is not FormattingException)
         {
@@ -128,7 +230,8 @@ public class JsonFormatter : IOutputFormatter
     /// <param name="json">The JSON string to deserialize.</param>
     /// <param name="type">The type of the object to deserialize to.</param>
     /// <returns>The deserialized object, or null if the JSON is null.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> or <paramref name="type"/> is null.</exception>
+    /// <exception cref="JsonSecurityException">Thrown when JSON input exceeds security limits.</exception>
     /// <exception cref="FormattingException">Thrown when deserialization fails.</exception>
     public object? Deserialize(string json, Type type)
     {
@@ -137,7 +240,13 @@ public class JsonFormatter : IOutputFormatter
 
         try
         {
+            ValidateJsonInput(json);
             return JsonSerializer.Deserialize(json, type, _options);
+        }
+        catch (JsonException ex) when (ex.Message.Contains("maximum depth") || ex.Message.Contains("exceeds the maximum depth"))
+        {
+            throw new JsonSecurityException(
+                $"JSON input exceeds maximum nesting depth of {MaxJsonDepth} levels: {ex.Message}", ex);
         }
         catch (Exception ex) when (ex is not FormattingException)
         {
@@ -176,6 +285,7 @@ public class JsonFormatter : IOutputFormatter
     /// <returns>The deserialized object, or null if the file is empty or deserialization fails.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="filePath"/> is null.</exception>
     /// <exception cref="FormattingException">Thrown when file reading or deserialization fails.</exception>
+    /// <exception cref="JsonSecurityException">Thrown when JSON input exceeds security limits.</exception>
     public T? ReadFromFile<T>(string filePath)
     {
         ArgumentNullException.ThrowIfNull(filePath);
@@ -193,29 +303,29 @@ public class JsonFormatter : IOutputFormatter
 }
 
 /// <summary>
+/// Exception thrown when JSON input exceeds configured security limits.
+/// </summary>
+public class JsonSecurityException : FormattingException
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="JsonSecurityException"/> class.
+    /// </summary>
+    /// <param name="message">The error message.</param>
+    public JsonSecurityException(string message) : base(message) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="JsonSecurityException"/> class with a message and inner exception.
+    /// </summary>
+    /// <param name="message">The error message.</param>
+    /// <param name="innerException">The inner exception.</param>
+    public JsonSecurityException(string message, Exception innerException) : base(message, innerException) { }
+}
+
+/// <summary>
 /// Interface for output formatters.
 /// </summary>
 public interface IOutputFormatter
 {
     string Format(object? obj);
     void WriteToFile(string filePath, object? obj);
-}
-
-/// <summary>
-/// Exception for formatting operations.
-/// </summary>
-public class FormattingException : Exception
-{
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FormattingException"/> class with a message.
-    /// </summary>
-    /// <param name="message">The error message.</param>
-    public FormattingException(string message) : base(message) { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FormattingException"/> class with a message and inner exception.
-    /// </summary>
-    /// <param name="message">The error message.</param>
-    /// <param name="innerException">The inner exception.</param>
-    public FormattingException(string message, Exception innerException) : base(message, innerException) { }
 }
