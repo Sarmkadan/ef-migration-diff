@@ -35,54 +35,344 @@ public class ReportGenerationService
     }
 
     /// <summary>
-    /// Generates a JSON report of a migration diff.
+    /// Represents a breaking change in the migration comparison output.
     /// </summary>
+    /// <param name="Id">Unique identifier for the breaking change.</param>
+    /// <param name="Type">Human-readable type of breaking change.</param>
+    /// <param name="Severity">Severity level of the breaking change.</param>
+    /// <param name="Description">Description of the breaking change.</param>
+    /// <param name="FirstMigrationId">First migration involved.</param>
+    /// <param name="SecondMigrationId">Second migration involved.</param>
+    /// <param name="AffectedElements">List of affected schema elements.</param>
+    /// <param name="Details">Additional details about the breaking change.</param>
+    /// <param name="DetectedAt">When the breaking change was detected.</param>
+    private sealed record BreakingChangeJson(
+        string Id,
+        string Type,
+        string Severity,
+        string Description,
+        string FirstMigrationId,
+        string SecondMigrationId,
+        List<string> AffectedElements,
+        Dictionary<string, string> Details,
+        DateTime DetectedAt);
+
+    /// <summary>
+    /// Represents a conflict in the migration comparison output.
+    /// </summary>
+    /// <param name="Id">Unique identifier for the conflict.</param>
+    /// <param name="Type">Type of conflict.</param>
+    /// <param name="Severity">Severity level.</param>
+    /// <param name="Description">Description of the conflict.</param>
+    /// <param name="FirstMigrationId">First migration involved.</param>
+    /// <param name="SecondMigrationId">Second migration involved.</param>
+    /// <param name="AffectedElements">List of affected schema elements.</param>
+    /// <param name="Details">Additional details about the conflict.</param>
+    /// <param name="IsBlocking">Whether this conflict blocks deployment.</param>
+    /// <param name="IsResolved">Whether this conflict has been resolved.</param>
+    /// <param name="ResolutionStrategy">How the conflict was resolved (if applicable).</param>
+    /// <param name="DetectedAt">When the conflict was detected.</param>
+    private sealed record ConflictJson(
+        string Id,
+        string Type,
+        string Severity,
+        string Description,
+        string FirstMigrationId,
+        string SecondMigrationId,
+        List<string> AffectedElements,
+        Dictionary<string, string> Details,
+        bool IsBlocking,
+        bool IsResolved,
+        string? ResolutionStrategy,
+        DateTime DetectedAt);
+
+    /// <summary>
+    /// Represents a schema change in the migration comparison output.
+    /// </summary>
+    /// <param name="Id">Unique identifier for the schema change.</param>
+    /// <param name="MigrationId">Migration that contains this change.</param>
+    /// <param name="Type">Type of schema change.</param>
+    /// <param name="TableName">Table affected by the change.</param>
+    /// <param name="ColumnName">Column affected by the change (if applicable).</param>
+    /// <param name="Sql">The SQL statement.</param>
+    /// <param name="LineNumber">Line number in migration file.</param>
+    /// <param name="IsDestructive">Whether this is a destructive operation.</param>
+    /// <param name="Metadata">Additional metadata about the change.</param>
+    private sealed record SchemaChangeJson(
+        string Id,
+        string MigrationId,
+        string Type,
+        string TableName,
+        string? ColumnName,
+        string Sql,
+        int LineNumber,
+        bool IsDestructive,
+        Dictionary<string, object?> Metadata);
+
+    /// <summary>
+    /// Represents a migration summary in the output.
+    /// </summary>
+    /// <param name="Id">Migration identifier.</param>
+    /// <param name="Name">Human-readable name.</param>
+    /// <param name="DbContextName">DbContext this migration belongs to.</param>
+    /// <param name="Sequence">Sequence number.</param>
+    private sealed record MigrationSummaryJson(
+        string Id,
+        string Name,
+        string DbContextName,
+        int Sequence);
+
+    /// <summary>
+    /// Represents a cycle/path in the migration dependency graph.
+    /// </summary>
+    /// <param name="Migrations">List of migrations in the cycle.</param>
+    /// <param name="Severity">Severity level.</param>
+    /// <param name="Description">Description of the cycle.</param>
+    private sealed record CycleJson(
+        string[] Migrations,
+        string Severity,
+        string Description);
+
+    /// <summary>
+    /// Summary statistics for the migration comparison.
+    /// </summary>
+    /// <param name="Result">Comparison result.</param>
+    /// <param name="TotalMigrations">Total number of migrations.</param>
+    /// <param name="SourceOnlyCount">Migrations only in source.</param>
+    /// <param name="TargetOnlyCount">Migrations only in target.</param>
+    /// <param name="CommonCount">Migrations in both branches.</param>
+    /// <param name="TotalSchemaChanges">Total schema changes.</param>
+    /// <param name="SourceSchemaChanges">Schema changes in source.</param>
+    /// <param name="TargetSchemaChanges">Schema changes in target.</param>
+    /// <param name="TotalConflicts">Total conflicts detected.</param>
+    /// <param name="BlockingConflicts">Conflicts that block deployment.</param>
+    /// <param name="HasBlockingConflicts">Whether blocking conflicts exist.</param>
+    /// <param name="DestructiveChanges">Number of destructive changes.</param>
+    /// <param name="CanDeploy">Whether deployment is possible.</param>
+    private sealed record ComparisonSummaryJson(
+        string Result,
+        int TotalMigrations,
+        int SourceOnlyCount,
+        int TargetOnlyCount,
+        int CommonCount,
+        int TotalSchemaChanges,
+        int SourceSchemaChanges,
+        int TargetSchemaChanges,
+        int TotalConflicts,
+        int BlockingConflicts,
+        bool HasBlockingConflicts,
+        int DestructiveChanges,
+        bool CanDeploy);
+
+    /// <summary>
+    /// Schema changes grouped by source/target.
+    /// </summary>
+    /// <param name="Source">Changes in source branch.</param>
+    /// <param name="Target">Changes in target branch.</param>
+    private sealed record SchemaChangesJson(
+        List<SchemaChangeJson> Source,
+        List<SchemaChangeJson> Target);
+
+    /// <summary>
+    /// Migrations grouped by their presence in branches.
+    /// </summary>
+    /// <param name="SourceOnly">Migrations only in source.</param>
+    /// <param name="TargetOnly">Migrations only in target.</param>
+    /// <param name="Common">Migrations in both branches.</param>
+    private sealed record MigrationsJson(
+        List<MigrationSummaryJson> SourceOnly,
+        List<MigrationSummaryJson> TargetOnly,
+        List<MigrationSummaryJson> Common);
+
+    /// <summary>
+    /// The complete migration comparison report with versioned schema.
+    /// </summary>
+    /// <param name="SchemaVersion">Version of the output schema.</param>
+    /// <param name="GeneratedAt">When the report was generated.</param>
+    /// <param name="SourceBranch">Source branch name.</param>
+    /// <param name="TargetBranch">Target branch name.</param>
+    /// <param name="Summary">Summary statistics.</param>
+    /// <param name="BreakingChanges">List of breaking changes.</param>
+    /// <param name="Conflicts">List of all conflicts.</param>
+    /// <param name="SchemaChanges">Schema changes by branch.</param>
+    /// <param name="Migrations">Migrations by presence.</param>
+    /// <param name="Cycles">Cycle information.</param>
+    private sealed record MigrationComparisonReportJson(
+        string SchemaVersion,
+        DateTime GeneratedAt,
+        string SourceBranch,
+        string TargetBranch,
+        ComparisonSummaryJson Summary,
+        List<BreakingChangeJson> BreakingChanges,
+        List<ConflictJson> Conflicts,
+        SchemaChangesJson SchemaChanges,
+        MigrationsJson Migrations,
+        List<CycleJson> Cycles);
+
+    /// <summary>
+    /// Generates a JSON report of a migration diff with a stable, versioned schema.
+    /// Output is pipeable and suitable for CI/CD pipelines.
+    /// </summary>
+    /// <param name="diff">The migration diff to serialize.</param>
+    /// <returns>A JSON string with stable ordering and versioned schema.</returns>
     public string GenerateJsonReport(MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+
         diff.GenerateSummary();
 
-        var reportData = new
-        {
-            diff.Result,
-            GeneratedAt = DateTime.UtcNow,
-            diff.Summary,
-            Migrations = new
-            {
-                SourceOnly = diff.OnlyInSource.Select(m => new { m.Id, m.Name }),
-                TargetOnly = diff.OnlyInTarget.Select(m => new { m.Id, m.Name }),
-                Common = diff.InBoth.Select(m => new { m.Id, m.Name })
-            },
-            Conflicts = diff.Conflicts.Select(c => new
-            {
+        // Build breaking changes from conflicts with Critical or Error severity
+        var breakingChanges = diff.Conflicts
+            .Where(c => c.IsBlocking())
+            .Select(c => new BreakingChangeJson(
                 c.Id,
-                c.ConflictType,
-                c.Severity,
+                c.GetTitle(),
+                c.Severity.ToString(),
                 c.Description,
-                AffectedElements = c.AffectedElements
-            }),
-            SchemaChanges = new
-            {
-                Source = diff.SourceSchemaChanges.Select(sc => new
-                {
-                    sc.ChangeType,
-                    sc.TableName,
-                    sc.ColumnName,
-                    sc.LineNumber
-                }),
-                Target = diff.TargetSchemaChanges.Select(sc => new
-                {
-                    sc.ChangeType,
-                    sc.TableName,
-                    sc.ColumnName,
-                    sc.LineNumber
-                })
-            }
-        };
+                c.FirstMigrationId,
+                c.SecondMigrationId,
+                c.AffectedElements.OrderBy(e => e, StringComparer.Ordinal).ToList(),
+                c.Details.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToDictionary(kv => kv.Key, kv => kv.Value),
+                c.DetectedAt
+            ))
+            .OrderBy(bc => bc.Severity, StringComparer.Ordinal)
+            .ThenBy(bc => bc.Description, StringComparer.Ordinal)
+            .ToList();
 
-        return JsonSerializer.Serialize(reportData, new JsonSerializerOptions
+        // Build conflicts array with stable ordering
+        var conflicts = diff.Conflicts
+            .Select(c => new ConflictJson(
+                c.Id,
+                c.ConflictType.ToString(),
+                c.Severity.ToString(),
+                c.Description,
+                c.FirstMigrationId,
+                c.SecondMigrationId,
+                c.AffectedElements.OrderBy(e => e, StringComparer.Ordinal).ToList(),
+                c.Details.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToDictionary(kv => kv.Key, kv => kv.Value),
+                c.IsBlocking(),
+                c.IsResolved,
+                c.IsResolved ? c.ResolutionStrategy : null,
+                c.DetectedAt
+            ))
+            .OrderByDescending(c => c.IsBlocking)
+            .ThenBy(c => c.Severity, StringComparer.Ordinal)
+            .ThenBy(c => c.Description, StringComparer.Ordinal)
+            .ToList();
+
+        // Build schema changes with stable ordering
+        var schemaChanges = new SchemaChangesJson(
+            Source: diff.SourceSchemaChanges
+                .Select(sc => new SchemaChangeJson(
+                    sc.Id,
+                    sc.MigrationId,
+                    sc.ChangeType.ToString(),
+                    sc.TableName,
+                    sc.ColumnName,
+                    sc.Sql,
+                    sc.LineNumber,
+                    sc.IsDestructive(),
+                    sc.Metadata.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToDictionary(kv => kv.Key, kv => (object?)kv.Value)
+                ))
+                .OrderBy(sc => sc.MigrationId, StringComparer.Ordinal)
+                .ThenBy(sc => sc.LineNumber)
+                .ToList(),
+            Target: diff.TargetSchemaChanges
+                .Select(sc => new SchemaChangeJson(
+                    sc.Id,
+                    sc.MigrationId,
+                    sc.ChangeType.ToString(),
+                    sc.TableName,
+                    sc.ColumnName,
+                    sc.Sql,
+                    sc.LineNumber,
+                    sc.IsDestructive(),
+                    sc.Metadata.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToDictionary(kv => kv.Key, kv => (object?)kv.Value)
+                ))
+                .OrderBy(sc => sc.MigrationId, StringComparer.Ordinal)
+                .ThenBy(sc => sc.LineNumber)
+                .ToList()
+        );
+
+        // Build migrations with stable ordering
+        var migrations = new MigrationsJson(
+            SourceOnly: diff.OnlyInSource
+                .Select(m => new MigrationSummaryJson(
+                    m.Id,
+                    m.Name,
+                    m.DbContextName,
+                    m.Sequence
+                ))
+                .OrderBy(m => m.Sequence)
+                .ThenBy(m => m.Name, StringComparer.Ordinal)
+                .ToList(),
+            TargetOnly: diff.OnlyInTarget
+                .Select(m => new MigrationSummaryJson(
+                    m.Id,
+                    m.Name,
+                    m.DbContextName,
+                    m.Sequence
+                ))
+                .OrderBy(m => m.Sequence)
+                .ThenBy(m => m.Name, StringComparer.Ordinal)
+                .ToList(),
+            Common: diff.InBoth
+                .Select(m => new MigrationSummaryJson(
+                    m.Id,
+                    m.Name,
+                    m.DbContextName,
+                    m.Sequence
+                ))
+                .OrderBy(m => m.Sequence)
+                .ThenBy(m => m.Name, StringComparer.Ordinal)
+                .ToList()
+        );
+
+        // Build cycle information from blocking conflicts
+        var cycles = diff.Conflicts
+            .Where(c => c.IsBlocking())
+            .Select(c => new CycleJson(
+                Migrations: new[] { c.FirstMigrationId, c.SecondMigrationId },
+                Severity: c.Severity.ToString(),
+                Description: c.Description
+            ))
+            .OrderBy(c => c.Severity, StringComparer.Ordinal)
+            .ThenBy(c => string.Join("-", c.Migrations), StringComparer.Ordinal)
+            .ToList();
+
+        // Build the final report with versioned schema
+        var report = new MigrationComparisonReportJson(
+            SchemaVersion: "1.0",
+            GeneratedAt: DateTime.UtcNow,
+            SourceBranch: diff.SourceBranchId,
+            TargetBranch: diff.TargetBranchId,
+            Summary: new ComparisonSummaryJson(
+                Result: diff.Result.ToString(),
+                TotalMigrations: diff.InBoth.Count + diff.OnlyInSource.Count + diff.OnlyInTarget.Count,
+                SourceOnlyCount: diff.OnlyInSource.Count,
+                TargetOnlyCount: diff.OnlyInTarget.Count,
+                CommonCount: diff.InBoth.Count,
+                TotalSchemaChanges: diff.GetTotalSchemaChanges(),
+                SourceSchemaChanges: diff.SourceSchemaChanges.Count,
+                TargetSchemaChanges: diff.TargetSchemaChanges.Count,
+                TotalConflicts: diff.Conflicts.Count,
+                BlockingConflicts: diff.GetBlockingConflicts(),
+                HasBlockingConflicts: diff.HasBlockingConflicts(),
+                DestructiveChanges: diff.GetDestructiveChanges().Count,
+                CanDeploy: !diff.HasBlockingConflicts()
+            ),
+            BreakingChanges: breakingChanges,
+            Conflicts: conflicts,
+            SchemaChanges: schemaChanges,
+            Migrations: migrations,
+            Cycles: cycles
+        );
+
+        return JsonSerializer.Serialize(report, new JsonSerializerOptions
         {
             WriteIndented = true,
-            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
         });
     }
 
