@@ -52,6 +52,15 @@ public class CommandExecutor
 
         try
         {
+            // Validate parsed arguments before execution
+            var validationError = _parser.Validate(context, commandName, args);
+            if (validationError is not null)
+            {
+                context.WriteError(validationError);
+                context.WriteOutput(_parser.GenerateUsage(commandName));
+                return CommandResult.Error(validationError, Constants.ExitCodes.Error);
+            }
+
             // Execute middleware pipeline
             foreach (var middleware in _middlewares)
             {
@@ -70,12 +79,10 @@ public class CommandExecutor
             // Execute the actual command
             if (!_commands.TryGetValue(commandName.ToLowerInvariant(), out var command))
             {
-                return new CommandResult
-                {
-                    Success = false,
-                    Message = $"Unknown command: {commandName}",
-                    ExitCode = Constants.ExitCodes.Error
-                };
+                var errorMsg = $"Unknown command: {commandName}. Use --help for available commands.";
+                context.WriteError(errorMsg);
+                context.WriteOutput(_parser.GenerateUsage(commandName));
+                return CommandResult.Error(errorMsg, Constants.ExitCodes.Error);
             }
 
             var result = await command.ExecuteAsync(context);
@@ -83,11 +90,13 @@ public class CommandExecutor
         }
         catch (Exception ex)
         {
-            context.WriteError(ex.Message);
+            var errorMsg = $"Error: {ex.Message}";
+            context.WriteError(errorMsg);
+            context.WriteOutput(_parser.GenerateUsage(commandName));
             return new CommandResult
             {
                 Success = false,
-                Message = ex.Message,
+                Message = errorMsg,
                 ExitCode = Constants.ExitCodes.Error
             };
         }
