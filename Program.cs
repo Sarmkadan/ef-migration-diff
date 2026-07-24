@@ -19,8 +19,20 @@ internal class MigrationDiffApplication
     private readonly AppSettings _appSettings;
 
     public MigrationDiffApplication()
+        : this(null)
     {
-        _serviceProvider = DependencyInjection.CreateServiceProvider(Environment.CurrentDirectory);
+    }
+
+    public MigrationDiffApplication(EfMigrationDiffOptions? cliOptions)
+    {
+        // Load configuration from file with CLI override precedence
+        var optionsWithPrecedence = ConfigFileLoader.LoadWithPrecedence(
+            cliOptions ?? new EfMigrationDiffOptions(),
+            Environment.CurrentDirectory);
+
+        _serviceProvider = DependencyInjection.CreateServiceProviderWithConfig(
+            Environment.CurrentDirectory,
+            optionsWithPrecedence);
         _appSettings = _serviceProvider.GetService<AppSettings>() ?? throw new InvalidOperationException("Failed to initialize AppSettings");
     }
 
@@ -430,9 +442,9 @@ internal class MigrationDiffApplication
 
     private void ShowHelp()
     {
-        Console.WriteLine("\n╔════════════════════════════════════════════════════════════╗");
+        Console.WriteLine("\n╔═════════════════════════════════════════════════════════════╗");
         Console.WriteLine("║     EF Migration Diff - Entity Framework Migration Tool     ║");
-        Console.WriteLine("╚════════════════════════════════════════════════════════════╝\n");
+        Console.WriteLine("╚═════════════════════════════════════════════════════════════╝\n");
 
         Console.WriteLine("DESCRIPTION:");
         Console.WriteLine("  Compares Entity Framework migrations between git branches");

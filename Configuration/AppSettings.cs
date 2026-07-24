@@ -186,11 +186,34 @@ public class AppSettings
             MaxConcurrentAnalysis = MaxConcurrentAnalysis,
             GenerateHtmlReport = GenerateHtmlReport,
             GenerateJsonReport = GenerateJsonReport,
-            DbContextNames = DbContextNames,
+            DbContextNames = DbContextNames ?? Array.Empty<string>(),
             SourceBranch = SourceBranch,
             TargetBranch = TargetBranch,
-            SchemaDiff = SchemaDiff
+            SchemaDiff = SchemaDiff,
+            IgnoredMigrations = Array.Empty<string>()
         };
+    }
+
+    /// <summary>
+    /// Loads configuration from the nearest efmigrationdiff.json file found by walking up the directory tree.
+    /// </summary>
+    /// <param name="repositoryPath">The repository path to use as starting directory for config search.</param>
+    /// <returns>The loaded configuration, or null if no config file was found.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="repositoryPath"/> is null.</exception>
+    public static EfMigrationDiffOptions? LoadFromConfigFile(string repositoryPath)
+    {
+        ArgumentNullException.ThrowIfNull(repositoryPath);
+        return ConfigFileLoader.LoadFromNearestConfigFile(repositoryPath);
+    }
+
+    /// <summary>
+    /// Validates a configuration file for unknown properties.
+    /// </summary>
+    /// <param name="configPath">The path to the config file to validate.</param>
+    /// <exception cref="ConfigFileException">Thrown when unknown properties are found.</exception>
+    public static void ValidateConfigFile(string configPath)
+    {
+        ConfigFileLoader.ValidateNoUnknownProperties(configPath);
     }
 
     /// <summary>

@@ -160,3 +160,18 @@ public class FileOperationException : EfMigrationDiffException
         Operation = operation;
     }
 }
+
+/// <summary>
+/// Thrown when configuration file operations fail.
+/// </summary>
+public class ConfigFileException : EfMigrationDiffException
+{
+    public string? FilePath { get; set; }
+
+    public ConfigFileException(string message) : base(message) { }
+    public ConfigFileException(string message, Exception innerException) : base(message, innerException) { }
+    public ConfigFileException(string filePath, string message) : base($"{message} (file: {filePath})")
+    {
+        FilePath = filePath;
+    }
+}

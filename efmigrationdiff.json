@@ -1,0 +1,27 @@
+{
+  "RepositoryPath": "./",
+  "MigrationsPath": "Migrations",
+  "OutputPath": "./reports",
+  "ReportFormat": "html",
+  "EnableDetailedLogging": false,
+  "MaxConcurrentAnalysis": 4,
+  "GenerateHtmlReport": true,
+  "GenerateJsonReport": true,
+  "DbContextNames": [],
+  "SourceBranch": "develop",
+  "TargetBranch": "main",
+  "SchemaDiff": {
+    "BaseLabel": "base",
+    "SourceLabel": "source",
+    "TargetLabel": "target",
+    "ContextLines": 3,
+    "IncludeSqlContent": true,
+    "IncludeMetadata": false,
+    "IgnoreWhitespace": false,
+    "MaxHunkLines": 0
+  },
+  "IgnoredMigrations": [
+    "InitialCreate",
+    "AddUsersTable"
+  ]
+}

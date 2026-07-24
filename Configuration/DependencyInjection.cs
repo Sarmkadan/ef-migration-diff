@@ -120,6 +120,40 @@ public static class DependencyInjection
     }
 
     /// <summary>
+    /// Creates a service provider with configuration from EfMigrationDiffOptions.
+    /// </summary>
+    /// <param name="repositoryPath">The path to the repository.</param>
+    /// <param name="options">The options to configure the application with.</param>
+    /// <returns>A configured service provider.</returns>
+    public static Microsoft.Extensions.DependencyInjection.ServiceProvider CreateServiceProviderWithConfig(
+        string repositoryPath,
+        EfMigrationDiffOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(repositoryPath);
+        ArgumentNullException.ThrowIfNull(options);
+
+        IServiceCollection services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+
+        services.AddApplicationServices(settings =>
+        {
+            settings.RepositoryPath = repositoryPath;
+            settings.MigrationsPath = options.MigrationsPath;
+            settings.OutputPath = options.OutputPath;
+            settings.ReportFormat = options.ReportFormat;
+            settings.EnableDetailedLogging = options.EnableDetailedLogging;
+            settings.MaxConcurrentAnalysis = options.MaxConcurrentAnalysis;
+            settings.GenerateHtmlReport = options.GenerateHtmlReport;
+            settings.GenerateJsonReport = options.GenerateJsonReport;
+            settings.DbContextNames = options.DbContextNames ?? Array.Empty<string>();
+            settings.SourceBranch = options.SourceBranch;
+            settings.TargetBranch = options.TargetBranch;
+            settings.SchemaDiff = options.SchemaDiff ?? SchemaDiffOptions.Default;
+        });
+
+        return services.BuildServiceProvider();
+    }
+
+    /// <summary>
     /// Gets a specific service from the provider.
     /// </summary>
     public static T? GetService<T>(this Microsoft.Extensions.DependencyInjection.ServiceProvider provider) where T : class
