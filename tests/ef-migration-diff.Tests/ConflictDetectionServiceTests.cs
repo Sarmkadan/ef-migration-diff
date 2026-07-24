@@ -329,6 +329,246 @@ public class ConflictDetectionServiceTests
     }
 
     /// <summary>
+    /// Tests that rename vs modify conflicts are detected when a column is renamed in one branch
+    /// and modified in another branch.
+    /// </summary>
+    [Fact]
+    public void DetectConflicts_RenameVsModifyColumn_DetectsCriticalConflict()
+    {
+        // Arrange - Branch A renames a column, Branch B modifies the same column
+        var sourceChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m1", SqlChangeType.Rename, "RENAME COLUMN Users.Email TO UserEmail")
+            {
+                TableName = "Users",
+                OldValue = "Email",
+                NewValue = "UserEmail"
+            }
+        };
+
+        var targetChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m2", SqlChangeType.ModifyColumn, "ALTER TABLE Users ALTER COLUMN UserEmail")
+            {
+                TableName = "Users",
+                ColumnName = "UserEmail"
+            }
+        };
+
+        // Act
+        var conflicts = _service.DetectConflicts(sourceChanges, targetChanges);
+
+        // Assert
+        conflicts.Should().ContainSingle();
+        conflicts.First().ConflictType.Should().Be(ConflictType.ColumnConflict);
+        conflicts.First().Severity.Should().Be(ConflictSeverity.Critical);
+        conflicts.First().Description.Should().Contain("renamed in one branch");
+        conflicts.First().AffectedElements.Should().ContainSingle().Which.Should().Be("Users.UserEmail");
+    }
+
+    /// <summary>
+    /// Tests that rename vs modify conflicts are detected in both directions.
+    /// </summary>
+    [Fact]
+    public void DetectConflicts_ModifyVsRenameColumn_DetectsCriticalConflict()
+    {
+        // Arrange - Branch A modifies a column, Branch B renames the same column
+        var sourceChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m1", SqlChangeType.ModifyColumn, "ALTER TABLE Users ALTER COLUMN Email")
+            {
+                TableName = "Users",
+                ColumnName = "Email"
+            }
+        };
+
+        var targetChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m2", SqlChangeType.Rename, "RENAME COLUMN Users.Email TO UserEmail")
+            {
+                TableName = "Users",
+                OldValue = "Email",
+                NewValue = "UserEmail"
+            }
+        };
+
+        // Act
+        var conflicts = _service.DetectConflicts(sourceChanges, targetChanges);
+
+        // Assert
+        conflicts.Should().ContainSingle();
+        conflicts.First().ConflictType.Should().Be(ConflictType.ColumnConflict);
+        conflicts.First().Severity.Should().Be(ConflictSeverity.Critical);
+    }
+
+    /// <summary>
+    /// Tests that rename operations conflict with other operations on the same table.
+    /// </summary>
+    [Fact]
+    public void DetectConflicts_RenameTableWithOtherOperations_DetectsConflict()
+    {
+        // Arrange - Branch A renames a table, Branch B alters the same table
+        var sourceChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m1", SqlChangeType.Rename, "RENAME TABLE Users TO AppUsers")
+            {
+                TableName = "Users",
+                OldValue = "Users",
+                NewValue = "AppUsers"
+            }
+        };
+
+        var targetChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m2", SqlChangeType.AlterTable, "ALTER TABLE Users ADD COLUMN IsActive")
+            {
+                TableName = "Users"
+            }
+        };
+
+        // Act
+        var conflicts = _service.DetectConflicts(sourceChanges, targetChanges);
+
+        // Assert
+        conflicts.Should().ContainSingle();
+        conflicts.First().ConflictType.Should().Be(ConflictType.TableConflict);
+        conflicts.First().Severity.Should().Be(ConflictSeverity.Error);
+    }
+
+    /// <summary>
+    /// Tests that identical operations in different order don't create false conflicts.
+    /// </summary>
+    [Fact]
+    public void DetectConflicts_IdenticalOperationsDifferentOrder_NoFalseConflicts()
+    {
+        // Arrange - Both branches add the same column, just in different order
+        var sourceChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m1", SqlChangeType.AddColumn, "ALTER TABLE Users ADD Email")
+            {
+                TableName = "Users",
+                ColumnName = "Email"
+            }
+        };
+
+        var targetChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m2", SqlChangeType.AddColumn, "ALTER TABLE Users ADD Email")
+            {
+                TableName = "Users",
+                ColumnName = "Email"
+            }
+        };
+
+        // Act
+        var conflicts = _service.DetectConflicts(sourceChanges, targetChanges);
+
+        // Assert - identical operations should not conflict
+        conflicts.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Tests that index definition conflicts are detected when the same index name
+    /// has different definitions in each branch.
+    /// </summary>
+    [Fact]
+    public void DetectConflicts_IndexWithSameNameDifferentDefinitions_DetectsConflict()
+    {
+        // Arrange - Both branches create an index with the same name but different definitions
+        var sourceChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m1", SqlChangeType.CreateIndex, "CREATE INDEX Idx_Users_Email ON Users(Email)")
+            {
+                TableName = "Users"
+            }
+        };
+        sourceChanges.First().AddMetadata("IndexName", "Idx_Users_Email");
+
+        var targetChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m2", SqlChangeType.CreateIndex, "CREATE INDEX Idx_Users_Email ON Users(Email, IsActive)")
+            {
+                TableName = "Users"
+            }
+        };
+        targetChanges.First().AddMetadata("IndexName", "Idx_Users_Email");
+
+        // Act
+        var conflicts = _service.DetectConflicts(sourceChanges, targetChanges);
+
+        // Assert
+        conflicts.Should().ContainSingle();
+        conflicts.First().ConflictType.Should().Be(ConflictType.IndexConflict);
+        conflicts.First().Severity.Should().Be(ConflictSeverity.Error);
+        conflicts.First().Description.Should().Contain("different definitions");
+    }
+
+    /// <summary>
+    /// Tests that drop operations on the same object in different branches don't conflict
+    /// as they are idempotent.
+    /// </summary>
+    [Fact]
+    public void DetectConflicts_DropOperationsSameObject_IdempotentNoConflict()
+    {
+        // Arrange - Both branches drop the same table
+        var sourceChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m1", SqlChangeType.DropTable, "DROP TABLE Users")
+            {
+                TableName = "Users"
+            }
+        };
+
+        var targetChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m2", SqlChangeType.DropTable, "DROP TABLE Users")
+            {
+                TableName = "Users"
+            }
+        };
+
+        // Act
+        var conflicts = _service.DetectConflicts(sourceChanges, targetChanges);
+
+        // Assert - drop operations are idempotent, should not conflict
+        conflicts.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Tests that rename operations are detected as conflicts when combined with other operations.
+    /// </summary>
+    [Fact]
+    public void DetectConflicts_RenameOperationWithDifferentOperation_DetectsConflict()
+    {
+        // Arrange - Branch A renames a column, Branch B drops a different column
+        var sourceChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m1", SqlChangeType.Rename, "RENAME COLUMN Users.Email TO UserEmail")
+            {
+                TableName = "Users",
+                OldValue = "Email",
+                NewValue = "UserEmail"
+            }
+        };
+
+        var targetChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m2", SqlChangeType.DropColumn, "ALTER TABLE Users DROP COLUMN Phone")
+            {
+                TableName = "Users",
+                ColumnName = "Phone"
+            }
+        };
+
+        // Act
+        var conflicts = _service.DetectConflicts(sourceChanges, targetChanges);
+
+        // Assert - rename conflicts with any operation on the same table
+        conflicts.Should().ContainSingle();
+        conflicts.First().ConflictType.Should().Be(ConflictType.TableConflict);
+    }
+
+    /// <summary>
     /// Tests that null source changes throws ArgumentNullException.
     /// </summary>
     [Fact]
@@ -476,5 +716,122 @@ public class ConflictDetectionServiceTests
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
             Times.Once);
+    }
+
+    /// <summary>
+    /// Tests that identical operations in different order don't create false conflicts.
+    /// This is the key improvement: identical operations should NOT conflict regardless of order.
+    /// </summary>
+    [Fact]
+    public void DetectConflicts_IdenticalOperationsDifferentOrder_ShouldNotConflict()
+    {
+        // Arrange - Both branches have identical operations but in different order
+        var sourceChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m1", SqlChangeType.AddColumn, "ALTER TABLE Users ADD Email")
+            {
+                TableName = "Users",
+                ColumnName = "Email"
+            },
+            new SchemaChange("m2", SqlChangeType.AddColumn, "ALTER TABLE Users ADD Phone")
+            {
+                TableName = "Users",
+                ColumnName = "Phone"
+            }
+        };
+
+        var targetChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m3", SqlChangeType.AddColumn, "ALTER TABLE Users ADD Phone")
+            {
+                TableName = "Users",
+                ColumnName = "Phone"
+            },
+            new SchemaChange("m4", SqlChangeType.AddColumn, "ALTER TABLE Users ADD Email")
+            {
+                TableName = "Users",
+                ColumnName = "Email"
+            }
+        };
+
+        // Act
+        var conflicts = _service.DetectConflicts(sourceChanges, targetChanges);
+
+        // Assert - identical operations in different order should NOT conflict
+        conflicts.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Tests that rename vs modify conflict detection when a column is renamed in one branch
+    /// and modified in another branch (the rename hides the target).
+    /// </summary>
+    [Fact]
+    public void DetectConflicts_RenameColumnVsModifyColumn_DetectsCriticalConflict()
+    {
+        // Arrange - Branch A renames Email to UserEmail, Branch B modifies the original Email column
+        var sourceChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m1", SqlChangeType.Rename, "RENAME COLUMN Users.Email TO UserEmail")
+            {
+                TableName = "Users",
+                OldValue = "Email",
+                NewValue = "UserEmail"
+            }
+        };
+
+        var targetChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m2", SqlChangeType.ModifyColumn, "ALTER TABLE Users ALTER COLUMN Email")
+            {
+                TableName = "Users",
+                ColumnName = "Email"
+            }
+        };
+
+        // Act
+        var conflicts = _service.DetectConflicts(sourceChanges, targetChanges);
+
+        // Assert
+        conflicts.Should().ContainSingle();
+        conflicts.First().ConflictType.Should().Be(ConflictType.ColumnConflict);
+        conflicts.First().Severity.Should().Be(ConflictSeverity.Critical);
+        conflicts.First().Description.Should().Contain("renamed in one branch");
+        conflicts.First().AffectedElements.Should().ContainSingle().Which.Should().Be("Users.Email");
+    }
+
+    /// <summary>
+    /// Tests that index definition conflicts are detected when the same index name
+    /// has different SQL definitions in each branch.
+    /// </summary>
+    [Fact]
+    public void DetectConflicts_IndexSameNameDifferentDefinitions_DetectsConflict()
+    {
+        // Arrange - Both branches create an index with the same name but different columns
+        var sourceChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m1", SqlChangeType.CreateIndex, "CREATE INDEX Idx_Users_Email ON Users(Email)")
+            {
+                TableName = "Users"
+            }
+        };
+        sourceChanges.First().AddMetadata("IndexName", "Idx_Users_Email");
+
+        var targetChanges = new List<SchemaChange>
+        {
+            new SchemaChange("m2", SqlChangeType.CreateIndex, "CREATE INDEX Idx_Users_Email ON Users(Email, IsActive)")
+            {
+                TableName = "Users"
+            }
+        };
+        targetChanges.First().AddMetadata("IndexName", "Idx_Users_Email");
+
+        // Act
+        var conflicts = _service.DetectConflicts(sourceChanges, targetChanges);
+
+        // Assert
+        conflicts.Should().ContainSingle();
+        conflicts.First().ConflictType.Should().Be(ConflictType.IndexConflict);
+        conflicts.First().Severity.Should().Be(ConflictSeverity.Error);
+        conflicts.First().Description.Should().Contain("different definitions");
     }
 }
