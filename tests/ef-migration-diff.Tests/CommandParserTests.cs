@@ -421,5 +421,85 @@ namespace EfMigrationDiff.Tests
             // Act & Assert
             Assert.Throws<ArgumentException>(() => _parser.Validate(context, commandName, args));
         }
+
+    [Fact]
+    /// <summary>
+    /// Tests that the parser rejects dot paths with directory traversal sequences (..).
+    /// Verifies that paths containing ".." are rejected to prevent directory traversal attacks.
+    /// </summary>
+    public void Validate_DotPathWithTraversal_ShouldReturnError()
+    {
+        // Arrange
+        var commandName = "compare";
+        var args = new[] { "develop", "main", "--dot", "../../etc/cron.d/evil" };
+        var context = _parser.Parse(commandName, args, _serviceProvider, TextWriter.Null, TextWriter.Null);
+
+        // Act
+        var validationError = _parser.Validate(context, commandName, args);
+
+        // Assert
+        Assert.NotNull(validationError);
+        Assert.Contains("directory traversal", validationError, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("..", validationError);
     }
+
+    [Fact]
+    /// <summary>
+    /// Tests that the parser rejects dot paths with absolute paths.
+    /// Verifies that absolute paths starting with "/" or "\\" are rejected.
+    /// </summary>
+    public void Validate_DotPathWithAbsolutePath_ShouldReturnError()
+    {
+        // Arrange
+        var commandName = "compare";
+        var args = new[] { "develop", "main", "--dot", "/etc/passwd" };
+        var context = _parser.Parse(commandName, args, _serviceProvider, TextWriter.Null, TextWriter.Null);
+
+        // Act
+        var validationError = _parser.Validate(context, commandName, args);
+
+        // Assert
+        Assert.NotNull(validationError);
+        Assert.Contains("directory traversal", validationError, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("/etc/passwd", validationError);
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that the parser accepts valid relative dot paths.
+    /// Verifies that normal relative paths are accepted.
+    /// </summary>
+    public void Validate_DotPathWithValidRelativePath_ShouldPass()
+    {
+        // Arrange
+        var commandName = "compare";
+        var args = new[] { "develop", "main", "--dot", "output.dot" };
+        var context = _parser.Parse(commandName, args, _serviceProvider, TextWriter.Null, TextWriter.Null);
+
+        // Act
+        var validationError = _parser.Validate(context, commandName, args);
+
+        // Assert
+        Assert.Null(validationError);
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that the parser accepts valid relative dot paths with subdirectories.
+    /// Verifies that relative paths with subdirectories are accepted.
+    /// </summary>
+    public void Validate_DotPathWithValidRelativeSubdirectory_ShouldPass()
+    {
+        // Arrange
+        var commandName = "compare";
+        var args = new[] { "develop", "main", "--dot", "graphs/output.dot" };
+        var context = _parser.Parse(commandName, args, _serviceProvider, TextWriter.Null, TextWriter.Null);
+
+        // Act
+        var validationError = _parser.Validate(context, commandName, args);
+
+        // Assert
+        Assert.Null(validationError);
+    }
+}
 }
