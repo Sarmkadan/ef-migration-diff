@@ -1,0 +1,1 @@
+Extract each resolution strategy into a private method in MigrationAutoResolverService

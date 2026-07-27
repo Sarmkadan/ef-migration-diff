@@ -120,7 +120,7 @@ public class MigrationAutoResolverService
         }
 
         // Refuse to auto-resolve anything that could cause data loss or deployment failures
-        if (conflict.Severity is ConflictSeverity.Error or ConflictSeverity.Critical)
+        if (conflict.Severity == ConflictSeverity.Error || conflict.Severity == ConflictSeverity.Critical)
         {
             attempt.Succeeded = false;
             attempt.FailureReason = $"Severity '{conflict.Severity}' requires manual resolution.";
