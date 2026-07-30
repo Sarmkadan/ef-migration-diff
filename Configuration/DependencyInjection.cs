@@ -1,6 +1,7 @@
 #nullable enable
 using EfMigrationDiff.Extensions;
 using EfMigrationDiff.Repositories;
+using EfMigrationDiff.Reports;
 using EfMigrationDiff.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
