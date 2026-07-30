@@ -37,6 +37,7 @@ public static class DependencyInjection
         services.AddSingleton<ReportGenerationService>();
         services.AddSingleton<MigrationDependencyGraphService>();
         services.AddSingleton<MigrationAutoResolverService>();
+        services.AddSingleton<IReportEngine, ReportEngine>();
 
         // Register visual diff v2 services
         services.AddSchemaDiffServices();

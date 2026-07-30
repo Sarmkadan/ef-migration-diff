@@ -9,10 +9,56 @@ using EfMigrationDiff.Formatters;
 namespace EfMigrationDiff.Reports;
 
 /// <summary>
+/// Interface for report generation engine supporting multiple formats and templates.
+/// </summary>
+public interface IReportEngine
+{
+    /// <summary>
+    /// Generates a report in the specified format.
+    /// </summary>
+    string GenerateReport(MigrationDiff diff, string format = "html");
+
+    /// <summary>
+    /// Generates a JSON report with complete migration data.
+    /// </>
+    string GenerateJsonReport(MigrationDiff diff);
+
+    /// <summary>
+    /// Generates a CSV report of migrations and changes.
+    /// </summary>
+    string GenerateCsvReport(MigrationDiff diff);
+
+    /// <summary>
+    /// Generates a text-based report suitable for console output.
+    /// </summary>
+    string GenerateTextReport(MigrationDiff diff);
+
+    /// <summary>
+    /// Generates an HTML report with styling and navigation.
+    /// </summary>
+    string GenerateHtmlReport(MigrationDiff diff);
+
+    /// <summary>
+    /// Generates a Markdown report using the MarkdownFormatter.
+    /// </summary>
+    string GenerateMarkdownReport(MigrationDiff diff);
+
+    /// <summary>
+    /// Registers a custom report template.
+    /// </summary>
+    void RegisterTemplate(string name, IReportTemplate template);
+
+    /// <summary>
+    /// Gets a custom report template.
+    /// </summary>
+    IReportTemplate? GetTemplate(string name);
+}
+
+/// <summary>
 /// Advanced report generation engine supporting multiple formats and templates.
 /// Generates comprehensive migration analysis reports with charts, summaries, and recommendations.
 /// </summary>
-public class ReportEngine
+public class ReportEngine : IReportEngine
 {
     private readonly JsonFormatter _jsonFormatter;
     private readonly CsvFormatter _csvFormatter;
