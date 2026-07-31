@@ -379,10 +379,39 @@ public class CommandParser
 /// <summary>
 /// Defines a command-line option with metadata for parsing and help generation.
 /// </summary>
-public class CommandOptionDefinition
+public class CommandOptionDefinition : IEquatable<CommandOptionDefinition>
 {
     public string ShortName { get; set; } = string.Empty;
     public string LongName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public bool IsFlag { get; set; }
+
+    public bool Equals(CommandOptionDefinition? other)
+    {
+        if (other is null) return false;
+        return ShortName == other.ShortName &&
+               LongName == other.LongName &&
+               Description == other.Description &&
+               IsFlag == other.IsFlag;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as CommandOptionDefinition);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(ShortName, LongName, Description, IsFlag);
+    }
+
+    public static bool operator ==(CommandOptionDefinition? left, CommandOptionDefinition? right)
+    {
+        return EqualityComparer<CommandOptionDefinition>.Default.Equals(left, right);
+    }
+
+    public static bool operator !=(CommandOptionDefinition? left, CommandOptionDefinition? right)
+    {
+        return !(left == right);
+    }
 }
