@@ -4,7 +4,7 @@ namespace EfMigrationDiff.Models;
 /// <summary>
 /// Represents a single schema change operation within a migration.
 /// </summary>
-public class SchemaChange
+public class SchemaChange : IEquatable<SchemaChange>
 {
     public string Id { get; set; } = string.Empty;
     public string MigrationId { get; set; } = string.Empty;
@@ -28,6 +28,53 @@ public class SchemaChange
         MigrationId = migrationId;
         ChangeType = changeType;
         Sql = sql;
+    }
+
+    public bool Equals(SchemaChange? other)
+    {
+        if (ReferenceEquals(null, other)) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Id == other.Id &&
+               MigrationId == other.MigrationId &&
+               ChangeType == other.ChangeType &&
+               TableName == other.TableName &&
+               ColumnName == other.ColumnName &&
+               Sql == other.Sql &&
+               Metadata.Count == other.Metadata.Count &&
+               !Metadata.Except(other.Metadata).Any() &&
+               LineNumber == other.LineNumber;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != this.GetType()) return false;
+        return Equals((SchemaChange)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        var hashCode = new HashCode();
+        hashCode.Add(Id);
+        hashCode.Add(MigrationId);
+        hashCode.Add((int)ChangeType);
+        hashCode.Add(TableName);
+        hashCode.Add(ColumnName);
+        hashCode.Add(Sql);
+        hashCode.Add(Metadata);
+        hashCode.Add(LineNumber);
+        return hashCode.ToHashCode();
+    }
+
+    public static bool operator ==(SchemaChange? left, SchemaChange? right)
+    {
+        return Equals(left, right);
+    }
+
+    public static bool operator !=(SchemaChange? left, SchemaChange? right)
+    {
+        return !Equals(left, right);
     }
 
     /// <summary>
