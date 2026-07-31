@@ -10,6 +10,15 @@ namespace EfMigrationDiff.Services;
 /// </summary>
 public class MigrationParserService
 {
+    private static readonly Regex ClassNameRegex = new(@"public\s+partial\s+class\s+(\w+)\s*:", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex TimestampRegex = new(@"name:\s*""(\d{14})""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex SqlOperationsRegex = new(@"migrationBuilder\.Sql\s*\(", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex CommentsRegex = new(@"//\s*(.+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex FileNameFormatRegex = new(@"\d{14}_\w+\.cs", RegexOptions.Compiled);
+    private static readonly Regex MigrationDependencyRegex = new(@"\.Annotation\s*\(\s*""([^""]+)""\s*,\s*""([^""]+)""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex UpMethodRegex = new(@"protected\s+override\s+void\s+Up\s*\(MigrationBuilder\s+migrationBuilder\)\s*\{(.*?)\}", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex OperationMatchesRegex = new(@"migrationBuilder\.\w+\s*\([^)]*\)", RegexOptions.Compiled);
+
     /// <summary>
     /// Parses a migration file and creates a Migration object.
     /// </summary>
@@ -83,14 +92,14 @@ public class MigrationParserService
     private void ExtractMetadata(string content, Migration migration)
     {
         // Extract class name
-        var classMatch = Regex.Match(content, @"public\s+partial\s+class\s+(\w+)\s*:", RegexOptions.IgnoreCase);
+        var classMatch = ClassNameRegex.Match(content);
         if (classMatch.Success)
         {
             migration.MetadataContent += $"ClassName: {classMatch.Groups[1].Value}\n";
         }
 
         // Extract timestamp
-        var timestampMatch = Regex.Match(content, @"name:\s*""(\d{14})""", RegexOptions.IgnoreCase);
+        var timestampMatch = TimestampRegex.Match(content);
         if (timestampMatch.Success)
         {
             migration.Timestamp = timestampMatch.Groups[1].Value;
@@ -103,11 +112,11 @@ public class MigrationParserService
         }
 
         // Extract custom SQL operations count
-        var sqlOpsCount = Regex.Matches(content, @"migrationBuilder\.Sql\s*\(", RegexOptions.IgnoreCase).Count;
+        var sqlOpsCount = SqlOperationsRegex.Matches(content).Count;
         migration.MetadataContent += $"SqlOperationsCount: {sqlOpsCount}\n";
 
         // Extract comments
-        var commentMatches = Regex.Matches(content, @"//\s*(.+)", RegexOptions.IgnoreCase);
+        var commentMatches = CommentsRegex.Matches(content);
         if (commentMatches.Count > 0)
         {
             migration.MetadataContent += $"Comments: {commentMatches.Count}\n";
@@ -193,13 +202,13 @@ public class MigrationParserService
             errors.Add("Missing Up method");
         }
 
-        var classMatches = Regex.Matches(migrationFile.Content, @"public\s+partial\s+class\s+\w+\s*:", RegexOptions.IgnoreCase);
+        var classMatches = ClassNameRegex.Matches(migrationFile.Content);
         if (classMatches.Count != 1)
         {
             errors.Add("Should contain exactly one public partial class");
         }
 
-        if (!Regex.IsMatch(migrationFile.FileName, @"\d{14}_\w+\.cs"))
+        if (!FileNameFormatRegex.IsMatch(migrationFile.FileName))
         {
             errors.Add("File name format should be: YYYYMMDDHHmmss_MigrationName.cs");
         }
@@ -215,7 +224,7 @@ public class MigrationParserService
         var dependencies = new List<string>();
 
         // Look for dependency declaration in the migration
-        var depMatch = Regex.Match(migration.Content, @"\.Annotation\s*\(\s*""([^""]+)""\s*,\s*""([^""]+)""", RegexOptions.IgnoreCase);
+        var depMatch = MigrationDependencyRegex.Match(migration.Content);
 
         if (depMatch.Success)
         {
@@ -249,12 +258,12 @@ public class MigrationParserService
     {
         var operations = new List<string>();
 
-        var upMethodMatch = Regex.Match(migration.Content, @"protected\s+override\s+void\s+Up\s*\(MigrationBuilder\s+migrationBuilder\)\s*\{(.*?)\}", RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        var upMethodMatch = UpMethodRegex.Match(migration.Content);
 
         if (upMethodMatch.Success)
         {
             var upMethodContent = upMethodMatch.Groups[1].Value;
-            var operationMatches = Regex.Matches(upMethodContent, @"migrationBuilder\.\w+\s*\([^)]*\)");
+            var operationMatches = OperationMatchesRegex.Matches(upMethodContent);
 
             foreach (Match opMatch in operationMatches)
             {
