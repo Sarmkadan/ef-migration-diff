@@ -22,7 +22,7 @@ public class DataTableHelper
         var columns = columnNames.Any() ? columnNames : properties.Select(p => p.Name).ToArray();
 
         // Calculate column widths
-        var columnWidths = new Dictionary<string, int>();
+        var columnWidths = new Dictionary<string, int>(columns.Length);
         foreach (var col in columns)
         {
             columnWidths[col] = col.Length;
@@ -49,7 +49,7 @@ public class DataTableHelper
         // Rows
         foreach (var item in itemList)
         {
-            var values = new List<string>();
+            var values = new List<string>(columns.Length);
             for (int i = 0; i < columns.Length && i < properties.Length; i++)
             {
                 var value = properties[i].GetValue(item)?.ToString() ?? string.Empty;
@@ -82,7 +82,7 @@ public class DataTableHelper
         // Rows
         foreach (var item in itemList)
         {
-            var values = new List<string>();
+            var values = new List<string>(columns.Length);
             for (int i = 0; i < columns.Length && i < properties.Length; i++)
             {
                 var value = properties[i].GetValue(item)?.ToString() ?? string.Empty;
