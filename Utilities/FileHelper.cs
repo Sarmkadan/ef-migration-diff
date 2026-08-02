@@ -1,4 +1,8 @@
 #nullable enable
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using EfMigrationDiff.Exceptions;
 
 namespace EfMigrationDiff.Utilities;
@@ -10,6 +14,7 @@ public static class FileHelper
 {
     /// <summary>
     /// Safely reads a file with error handling.
+    /// Reads using UTF-8 encoding with BOM detection.
     /// </summary>
     public static string? ReadFileAsync(string filePath)
     {
@@ -22,7 +27,9 @@ public static class FileHelper
             if (fileInfo.Length > Constants.FileSize.MaxMigrationFileSize)
                 throw new FileOperationException(filePath, "read - file too large");
 
-            return File.ReadAllText(filePath);
+            // Use StreamReader with detectEncodingFromByteOrderMarks = true
+            using var reader = new StreamReader(filePath, detectEncodingFromByteOrderMarks: true);
+            return reader.ReadToEnd();
         }
         catch (Exception ex) when (!(ex is FileOperationException))
         {
