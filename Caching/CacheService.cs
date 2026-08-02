@@ -121,10 +121,49 @@ public class CacheService : IDisposable
     /// <exception cref="KeyNotFoundException">Thrown when the key does not exist or has expired.</exception>
     public T Get<T>(string key)
     {
-        if (TryGet<T>(key, out var value))
-            return value!;
+        // Validate key
+        if (string.IsNullOrEmpty(key))
+            throw new ArgumentException("Cache key cannot be null or empty", nameof(key));
 
-        throw new KeyNotFoundException($"Cache key not found: {key}");
+        // Use an upgradeable read lock so we can promote to write lock if we need to remove an expired entry
+        _lock.EnterUpgradeableReadLock();
+        try
+        {
+            if (_cache.TryGetValue(key, out var entry))
+            {
+                if (entry.IsExpired)
+                {
+                    // Remove expired entry
+                    _lock.EnterWriteLock();
+                    try
+                    {
+                        _cache.Remove(key);
+                    }
+                    finally
+                    {
+                        _lock.ExitWriteLock();
+                    }
+
+                    throw new KeyNotFoundException($"Cache key not found or expired: {key}");
+                }
+
+                if (entry.Value is T typedValue)
+                {
+                    // Update last accessed timestamp
+                    entry.LastAccessedAt = DateTime.UtcNow;
+                    return typedValue;
+                }
+
+                // If the stored value cannot be cast to the requested type, treat it as a missing key
+                throw new InvalidCastException($"Cache entry for key '{key}' is not of type {typeof(T).FullName}");
+            }
+
+            throw new KeyNotFoundException($"Cache key not found: {key}");
+        }
+        finally
+        {
+            _lock.ExitUpgradeableReadLock();
+        }
     }
 
     /// <summary>
