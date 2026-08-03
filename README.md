@@ -1,3 +1,4 @@
+
 ## CommandParserTests
 
 The CommandParserTests class contains tests for the CommandParser class. These tests cover various scenarios, including:
@@ -14,4 +15,23 @@ public void Parse_ValidCommandWithAllFlags_ShouldPopulateOptionsAndArguments
 public void Parse_MissingOptionValue_ShouldTreatAsFlag
 public void Parse_UnknownFlag_ShouldBeAddedAsFlag
 public void Parse_HelpInvocation_ShouldBeRecognizedAsFlag
+```
+
+## MarkdownFormatter
+
+The `MarkdownFormatter` class is used to generate detailed, human-readable migration diff reports in Markdown format. It processes a `MigrationDiff` object to produce comprehensive tables summarizing migrations, conflicts, schema changes, and recommendations for branch management.
+
+Example usage:
+```csharp
+using EfMigrationDiff.Formatters;
+using EfMigrationDiff.Models;
+
+// Assuming 'diff' is an existing MigrationDiff object
+var formatter = new MarkdownFormatter(includeDestructiveWarnings: true);
+
+// Generate the report as a string
+string report = formatter.GenerateMarkdownReport(diff);
+
+// Alternatively, write directly to a file
+formatter.WriteToFile("migration-diff-report.md", diff);
 ```
