@@ -1,4 +1,5 @@
 
+
 ## CommandParserTests
 
 The CommandParserTests class contains tests for the CommandParser class. These tests cover various scenarios, including:
@@ -34,4 +35,26 @@ string report = formatter.GenerateMarkdownReport(diff);
 
 // Alternatively, write directly to a file
 formatter.WriteToFile("migration-diff-report.md", diff);
+```
+
+## BreakingChangeDetector
+
+The `BreakingChangeDetector` service analyses schema changes to identify breaking changes that could affect downstream applications. It classifies individual changes, provides a collection of classifications, and produces a summary of the overall diff.
+
+Example usage:
+```csharp
+using EfMigrationDiff.Services;
+using EfMigrationDiff.Models;
+
+// Create the detector (parameter‑less constructor)
+var detector = new BreakingChangeDetector();
+
+// Classify a collection of schema changes (returns a list of classifications)
+var classifications = detector.ClassifyChanges();
+
+// Classify a single schema change (example with a default‑constructed SchemaChange)
+var singleClassification = detector.ClassifyChange(new SchemaChange());
+
+// Get a summary of the breaking‑change analysis for the whole diff
+var summary = detector.ClassifyDiffResult();
 ```
