@@ -37,6 +37,8 @@ public class ConflictDetectionService
         ArgumentNullException.ThrowIfNull(sourceChanges);
         ArgumentNullException.ThrowIfNull(targetChanges);
 
+        _logger.LogInformation("DetectConflicts called with {SourceChangeCount} source changes and {TargetChangeCount} target changes", sourceChanges.Count, targetChanges.Count);
+
         var conflicts = new List<ConflictInfo>();
 
         // Check for rename vs modify conflicts (high priority)
@@ -69,6 +71,7 @@ public class ConflictDetectionService
             _logger.LogDebug("No conflicts detected during schema analysis");
         }
 
+        _logger.LogInformation("DetectConflicts finished, returning {ConflictCount} conflicts", conflicts.Count);
         return conflicts;
     }
 
