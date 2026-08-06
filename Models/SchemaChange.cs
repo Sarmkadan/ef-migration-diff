@@ -24,6 +24,9 @@ public class SchemaChange : IEquatable<SchemaChange>
 
     public SchemaChange(string migrationId, SqlChangeType changeType, string sql)
     {
+        ArgumentException.ThrowIfNullOrEmpty(migrationId);
+        ArgumentException.ThrowIfNullOrEmpty(sql);
+
         Id = Guid.NewGuid().ToString();
         MigrationId = migrationId;
         ChangeType = changeType;
@@ -118,6 +121,7 @@ public class SchemaChange : IEquatable<SchemaChange>
     /// </summary>
     public bool AffectsSameTable(SchemaChange other)
     {
+        ArgumentNullException.ThrowIfNull(other);
         if (string.IsNullOrEmpty(TableName) || string.IsNullOrEmpty(other.TableName))
             return false;
 
@@ -129,6 +133,7 @@ public class SchemaChange : IEquatable<SchemaChange>
     /// </summary>
     public bool ConflictsWith(SchemaChange other)
     {
+        ArgumentNullException.ThrowIfNull(other);
         // Cannot drop and create the same table in sequence
         if (ChangeType == SqlChangeType.DropTable && other.ChangeType == SqlChangeType.CreateTable &&
             AffectsSameTable(other))
@@ -147,6 +152,7 @@ public class SchemaChange : IEquatable<SchemaChange>
     /// </summary>
     public void AddMetadata(string key, object? value)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         Metadata[key] = value;
     }
 
@@ -155,6 +161,7 @@ public class SchemaChange : IEquatable<SchemaChange>
     /// </summary>
     public object? GetMetadata(string key)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         return Metadata.TryGetValue(key, out var value) ? value : null;
     }
 
