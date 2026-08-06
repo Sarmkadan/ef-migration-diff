@@ -27,6 +27,8 @@ public class MigrationDiff
 
     public MigrationDiff(string sourceBranchId, string targetBranchId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(sourceBranchId);
+        ArgumentException.ThrowIfNullOrEmpty(targetBranchId);
         Id = Guid.NewGuid().ToString();
         SourceBranchId = sourceBranchId;
         TargetBranchId = targetBranchId;
@@ -51,6 +53,7 @@ public class MigrationDiff
     /// <param name="migration">The migration to add.</param>
     public void AddSourceOnlyMigration(Migration migration)
     {
+        ArgumentNullException.ThrowIfNull(migration);
         OnlyInSource.Add(migration);
         UpdateComparisonResult();
     }
@@ -61,6 +64,7 @@ public class MigrationDiff
     /// <param name="migration">The migration to add.</param>
     public void AddTargetOnlyMigration(Migration migration)
     {
+        ArgumentNullException.ThrowIfNull(migration);
         OnlyInTarget.Add(migration);
         UpdateComparisonResult();
     }
@@ -71,6 +75,7 @@ public class MigrationDiff
     /// <param name="migration">The migration to add.</param>
     public void AddCommonMigration(Migration migration)
     {
+        ArgumentNullException.ThrowIfNull(migration);
         InBoth.Add(migration);
     }
 
@@ -80,6 +85,7 @@ public class MigrationDiff
     /// <param name="conflict">The conflict to add.</param>
     public void AddConflict(ConflictInfo conflict)
     {
+        ArgumentNullException.ThrowIfNull(conflict);
         if (conflict.IsValid())
         {
             Conflicts.Add(conflict);
