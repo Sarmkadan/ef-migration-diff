@@ -23,6 +23,8 @@ public class BranchInfo
 
     public BranchInfo(string branchName, string commitHash)
     {
+        ArgumentException.ThrowIfNullOrEmpty(branchName);
+        ArgumentException.ThrowIfNullOrEmpty(commitHash);
         Id = Guid.NewGuid().ToString();
         BranchName = branchName;
         CommitHash = commitHash;
@@ -43,6 +45,7 @@ public class BranchInfo
     /// </summary>
     public void AddMigration(string migrationId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(migrationId);
         if (!string.IsNullOrWhiteSpace(migrationId) && !MigrationIds.Contains(migrationId))
         {
             MigrationIds.Add(migrationId);
@@ -54,6 +57,7 @@ public class BranchInfo
     /// </summary>
     public void AddDbContext(string contextName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(contextName);
         if (!string.IsNullOrWhiteSpace(contextName) && !DbContexts.Contains(contextName))
         {
             DbContexts.Add(contextName);
