@@ -57,6 +57,7 @@ public sealed class ConflictResolutionEngine
     /// </summary>
     public ConflictResolution ResolveConflict(ConflictInfo conflict)
     {
+        ArgumentNullException.ThrowIfNull(conflict);
         var resolution = new ConflictResolution
         {
             ConflictId = conflict.Id,
@@ -88,6 +89,7 @@ public sealed class ConflictResolutionEngine
     /// </summary>
     public ConflictResolutionReport ResolveBatch(IEnumerable<ConflictInfo> conflicts)
     {
+        ArgumentNullException.ThrowIfNull(conflicts);
         var report = new ConflictResolutionReport
         {
             AnalyzedAt = DateTime.UtcNow
@@ -186,6 +188,7 @@ public sealed class ConflictResolutionEngine
     /// </summary>
     public void RegisterStrategy(EfMigrationDiff.Models.ConflictType type, Func<ConflictInfo, ResolutionStrategy> strategy)
     {
+        ArgumentNullException.ThrowIfNull(strategy);
         _strategies[type] = strategy;
     }
 }
