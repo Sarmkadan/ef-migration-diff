@@ -166,8 +166,11 @@ public sealed class MergeResolutionPlan
     /// Returns <c>true</c> when every region in <paramref name="regions"/> has a non-unresolved entry.
     /// </summary>
     /// <param name="regions">The conflict regions to check against.</param>
-    public bool IsComplete(IEnumerable<MergeConflictRegion> regions) =>
-        regions.All(r => Resolutions.TryGetValue(r.Id, out var s) && s != MergeResolutionStrategy.Unresolved);
+    public bool IsComplete(IEnumerable<MergeConflictRegion> regions)
+    {
+        ArgumentNullException.ThrowIfNull(regions);
+        return regions.All(r => Resolutions.TryGetValue(r.Id, out var s) && s != MergeResolutionStrategy.Unresolved);
+    }
 
     /// <summary>Counts how many regions were resolved with the given strategy.</summary>
     /// <param name="strategy">The strategy to count.</param>
