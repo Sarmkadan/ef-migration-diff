@@ -23,6 +23,8 @@ public class DbContextMetadata
 
     public DbContextMetadata(string contextName, string assemblyName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(contextName);
+        ArgumentException.ThrowIfNullOrEmpty(assemblyName);
         Id = Guid.NewGuid().ToString();
         ContextName = contextName;
         AssemblyName = assemblyName;
@@ -44,6 +46,7 @@ public class DbContextMetadata
     /// </summary>
     public void AddMigration(string migrationId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(migrationId);
         if (!string.IsNullOrWhiteSpace(migrationId) && !MigrationIds.Contains(migrationId))
         {
             MigrationIds.Add(migrationId);
@@ -55,6 +58,7 @@ public class DbContextMetadata
     /// </summary>
     public void AddEntityType(string entityTypeName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(entityTypeName);
         if (!string.IsNullOrWhiteSpace(entityTypeName) && !EntityTypes.Contains(entityTypeName))
         {
             EntityTypes.Add(entityTypeName);
@@ -66,6 +70,8 @@ public class DbContextMetadata
     /// </summary>
     public void AddProperty(string key, string value)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
+        ArgumentException.ThrowIfNullOrEmpty(value);
         Properties[key] = value;
     }
 
