@@ -79,6 +79,9 @@ public class ReportEngine : IReportEngine
     /// </summary>
     public string GenerateReport(MigrationDiff diff, string format = "html")
     {
+        ArgumentNullException.ThrowIfNull(diff);
+        ArgumentException.ThrowIfNullOrEmpty(format);
+
         return format.ToLowerInvariant() switch
         {
             "json" => GenerateJsonReport(diff),
@@ -95,6 +98,8 @@ public class ReportEngine : IReportEngine
     /// </summary>
     public string GenerateJsonReport(MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+
         var report = new
         {
             timestamp = DateTime.UtcNow,
@@ -127,6 +132,8 @@ public class ReportEngine : IReportEngine
     /// </summary>
     public string GenerateCsvReport(MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+
         var changes = diff.SourceSchemaChanges
             .Select(sc => new
             {
@@ -157,6 +164,8 @@ public class ReportEngine : IReportEngine
     /// </summary>
     public string GenerateTextReport(MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+
         var sb = new System.Text.StringBuilder();
 
         sb.AppendLine("\n╔════════════════════════════════════════════════════════════╗");
@@ -201,6 +210,8 @@ public class ReportEngine : IReportEngine
     /// </summary>
     public string GenerateHtmlReport(MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+
         var bodyContent = new System.Text.StringBuilder();
 
         // Title
@@ -250,6 +261,8 @@ public class ReportEngine : IReportEngine
     /// </summary>
     public string GenerateMarkdownReport(MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+
         return _markdownFormatter.Format(diff);
     }
 
@@ -258,6 +271,9 @@ public class ReportEngine : IReportEngine
     /// </summary>
     public void RegisterTemplate(string name, IReportTemplate template)
     {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        ArgumentNullException.ThrowIfNull(template);
+
         _templates[name] = template;
     }
 
@@ -266,6 +282,8 @@ public class ReportEngine : IReportEngine
     /// </summary>
     public IReportTemplate? GetTemplate(string name)
     {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+
         return _templates.TryGetValue(name, out var template) ? template : null;
     }
 }
