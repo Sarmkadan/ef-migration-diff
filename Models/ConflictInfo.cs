@@ -24,6 +24,8 @@ public class ConflictInfo
 
     public ConflictInfo(string firstMigrationId, string secondMigrationId, ConflictType conflictType)
     {
+        ArgumentException.ThrowIfNullOrEmpty(firstMigrationId);
+        ArgumentException.ThrowIfNullOrEmpty(secondMigrationId);
         Id = Guid.NewGuid().ToString();
         FirstMigrationId = firstMigrationId;
         SecondMigrationId = secondMigrationId;
