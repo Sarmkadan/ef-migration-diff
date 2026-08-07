@@ -39,6 +39,10 @@ public class CommandParser
     /// <returns>The parser instance for method chaining</returns>
     public CommandParser RegisterOption(string shortName, string longName, string description, bool isFlag = false)
     {
+        ArgumentException.ThrowIfNullOrEmpty(shortName);
+        ArgumentException.ThrowIfNullOrEmpty(longName);
+        ArgumentException.ThrowIfNullOrEmpty(description);
+
         var definition = new CommandOptionDefinition
         {
             ShortName = shortName,
