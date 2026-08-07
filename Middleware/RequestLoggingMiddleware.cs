@@ -24,6 +24,7 @@ public class RequestLoggingMiddleware : ICommandMiddleware
     /// </summary>
     public async Task<MiddlewareResult> InvokeAsync(CommandContext context)
     {
+        ArgumentNullException.ThrowIfNull(context);
         var startTime = DateTime.UtcNow;
         var executionId = Guid.NewGuid().ToString("N").Substring(0, 8);
 
