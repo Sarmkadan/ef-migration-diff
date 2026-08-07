@@ -14,6 +14,7 @@ public class SchemaChangeDetectorService
     /// </summary>
     public List<SchemaChange> DetectChanges(Migration migration)
     {
+        ArgumentNullException.ThrowIfNull(migration);
         var changes = new List<SchemaChange>();
 
         // Collapse multi-line method calls into single logical lines for regex matching
@@ -262,6 +263,7 @@ public class SchemaChangeDetectorService
     /// </summary>
     public List<SchemaChange> GetChangesByType(Migration migration, SqlChangeType changeType)
     {
+        ArgumentNullException.ThrowIfNull(migration);
         var changes = DetectChanges(migration);
         return changes.Where(c => c.ChangeType == changeType).ToList();
     }
@@ -271,6 +273,7 @@ public class SchemaChangeDetectorService
     /// </summary>
     public List<string> GetAffectedTables(Migration migration)
     {
+        ArgumentNullException.ThrowIfNull(migration);
         var changes = DetectChanges(migration);
         return changes.Where(c => !string.IsNullOrEmpty(c.TableName))
                      .Select(c => c.TableName)
@@ -283,6 +286,7 @@ public class SchemaChangeDetectorService
     /// </summary>
     public int CountDestructiveChanges(Migration migration)
     {
+        ArgumentNullException.ThrowIfNull(migration);
         var changes = DetectChanges(migration);
         return changes.Count(c => c.IsDestructive());
     }
@@ -292,6 +296,7 @@ public class SchemaChangeDetectorService
     /// </summary>
     public bool IsMigrationSafe(Migration migration)
     {
+        ArgumentNullException.ThrowIfNull(migration);
         if (CountDestructiveChanges(migration) > 0)
             return false;
 
@@ -315,6 +320,7 @@ public class SchemaChangeDetectorService
     /// </summary>
     public Dictionary<string, object> GetMigrationMetadata(Migration migration)
     {
+        ArgumentNullException.ThrowIfNull(migration);
         var changes = DetectChanges(migration);
         var metadata = new Dictionary<string, object>
         {
