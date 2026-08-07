@@ -24,6 +24,8 @@ public class CommandExecutor
     /// </summary>
     public CommandExecutor RegisterCommand(string name, ICommand command)
     {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        ArgumentNullException.ThrowIfNull(command);
         _commands[name.ToLowerInvariant()] = command;
         return this;
     }
@@ -34,6 +36,7 @@ public class CommandExecutor
     /// </summary>
     public CommandExecutor RegisterMiddleware(ICommandMiddleware middleware)
     {
+        ArgumentNullException.ThrowIfNull(middleware);
         _middlewares.Add(middleware);
         return this;
     }
@@ -51,15 +54,10 @@ public class CommandExecutor
     /// <returns>A CommandResult indicating success/failure and any output.</returns>
     /// <exception cref="ArgumentNullException">Thrown if commandName or serviceProvider is null.</exception>
     /// <exception cref="ArgumentException">Thrown if commandName is empty or whitespace.</exception>
-    public async Task<CommandResult> ExecuteAsync(
-        string commandName,
-        string[] args,
-        IServiceProvider serviceProvider,
-        TextWriter? output = null,
-        TextWriter? errorOutput = null,
-        bool verbose = false)
+    public async Task<CommandResult> ExecuteAsync(string commandName, string[] args, IServiceProvider serviceProvider, TextWriter? output = null, TextWriter? errorOutput = null, bool verbose = false)
     {
         ArgumentNullException.ThrowIfNull(commandName);
+        ArgumentException.ThrowIfNullOrEmpty(commandName);
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(serviceProvider);
 
