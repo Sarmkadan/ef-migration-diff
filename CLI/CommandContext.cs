@@ -25,6 +25,9 @@ public class CommandContext
         TextWriter? output = null,
         TextWriter? errorOutput = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(commandName);
+        ArgumentNullException.ThrowIfNull(rawArguments);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
         CommandName = commandName;
         RawArguments = rawArguments;
         ParsedOptions = new();
@@ -40,6 +43,8 @@ public class CommandContext
     /// </summary>
     public void SetMetadata(string key, object value)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
+        ArgumentNullException.ThrowIfNull(value);
         _metadata[key] = value;
     }
 
@@ -48,6 +53,7 @@ public class CommandContext
     /// </summary>
     public object? GetMetadata(string key)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         return _metadata.TryGetValue(key, out var value) ? value : null;
     }
 
@@ -56,6 +62,7 @@ public class CommandContext
     /// </summary>
     public bool TryGetMetadata<T>(string key, out T? value) where T : class
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         value = null;
         if (_metadata.TryGetValue(key, out var metadata) && metadata is T typedValue)
         {
@@ -70,6 +77,7 @@ public class CommandContext
     /// </summary>
     public string? GetOption(string optionName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(optionName);
         return ParsedOptions.TryGetValue(optionName, out var value) ? value : null;
     }
 
@@ -78,6 +86,7 @@ public class CommandContext
     /// </summary>
     public bool HasOption(string optionName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(optionName);
         return ParsedOptions.ContainsKey(optionName);
     }
 
@@ -86,6 +95,8 @@ public class CommandContext
     /// </summary>
     public string GetOptionOrDefault(string optionName, string defaultValue)
     {
+        ArgumentException.ThrowIfNullOrEmpty(optionName);
+        ArgumentException.ThrowIfNullOrEmpty(defaultValue);
         return GetOption(optionName) ?? defaultValue;
     }
 
@@ -94,6 +105,7 @@ public class CommandContext
     /// </summary>
     public void WriteOutput(string message)
     {
+        ArgumentException.ThrowIfNullOrEmpty(message);
         Output.WriteLine(message);
     }
 
@@ -102,6 +114,7 @@ public class CommandContext
     /// </summary>
     public void WriteError(string message)
     {
+        ArgumentException.ThrowIfNullOrEmpty(message);
         ErrorOutput.WriteLine($"ERROR: {message}");
     }
 
@@ -110,6 +123,7 @@ public class CommandContext
     /// </summary>
     public void WriteColoredOutput(string message, ConsoleColor color)
     {
+        ArgumentException.ThrowIfNullOrEmpty(message);
         var originalColor = Console.ForegroundColor;
         try
         {
