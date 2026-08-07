@@ -83,7 +83,7 @@ public class CommandParser
         TextWriter? errorOutput = null)
     {
         ArgumentNullException.ThrowIfNull(commandName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(commandName, nameof(commandName));
+        ArgumentException.ThrowIfNullOrEmpty(commandName, nameof(commandName));
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(serviceProvider);
 
