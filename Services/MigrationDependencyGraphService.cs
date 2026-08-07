@@ -26,6 +26,7 @@ public sealed class MigrationDependencyGraphService
     /// </returns>
     public MigrationDependencyGraph Build(IEnumerable<Migration> migrations)
     {
+        ArgumentNullException.ThrowIfNull(migrations);
         var list  = migrations.OrderBy(m => m.Sequence).ThenBy(m => m.Id).ToList();
         var graph = new MigrationDependencyGraph();
 
@@ -66,6 +67,7 @@ public sealed class MigrationDependencyGraphService
     /// <returns>A string containing the DOT representation.</returns>
     public string RenderDot(MigrationDependencyGraph graph)
     {
+        ArgumentNullException.ThrowIfNull(graph);
         var sb = new System.Text.StringBuilder();
         sb.AppendLine("digraph MigrationGraph {");
         sb.AppendLine("    node [shape=box];");
@@ -89,6 +91,7 @@ public sealed class MigrationDependencyGraphService
     /// <returns>A multi-line string with the graph topology.</returns>
     public string RenderText(MigrationDependencyGraph graph)
     {
+        ArgumentNullException.ThrowIfNull(graph);
         var sb = new System.Text.StringBuilder();
         sb.AppendLine($"Migration Dependency Graph  ({graph.Nodes.Count} nodes, {graph.Edges.Count} edges)");
         sb.AppendLine(new string('─', 60));
@@ -131,6 +134,8 @@ public sealed class MigrationDependencyGraphService
     /// <returns>A sorted list of impacted migration IDs.</returns>
     public IReadOnlyList<string> GetRollbackImpact(MigrationDependencyGraph graph, string migrationId)
     {
+        ArgumentNullException.ThrowIfNull(graph);
+        ArgumentException.ThrowIfNullOrEmpty(migrationId);
         var descendants = graph.GetDescendants(migrationId);
         var result      = new List<string> { migrationId };
         result.AddRange(descendants);
