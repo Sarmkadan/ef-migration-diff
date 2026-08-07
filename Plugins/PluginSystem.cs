@@ -14,7 +14,8 @@ public class PluginSystem
 
     public PluginSystem(params string[] pluginDirectories)
     {
-        _pluginDirectories.AddRange(pluginDirectories);
+            ArgumentNullException.ThrowIfNull(pluginDirectories);
+            _pluginDirectories.AddRange(pluginDirectories);
     }
 
     /// <summary>
@@ -76,6 +77,7 @@ public class PluginSystem
     /// <returns>The plugin instance if found; otherwise <c>null</c>.</returns>
     public IPlugin? GetPlugin(string name)
     {
+        ArgumentException.ThrowIfNullOrEmpty(name);
         return _loadedPlugins.TryGetValue(name, out var plugin) ? plugin : null;
     }
 
@@ -97,6 +99,10 @@ public class PluginSystem
     /// <param name="args">Arguments to pass to the hook method.</param>
     public async Task ExecuteHookAsync(string hookName, params object[] args)
     {
+        if (hookName == null)
+        {
+            throw new ArgumentNullException(nameof(hookName));
+        }
         foreach (var plugin in _loadedPlugins.Values)
         {
             var method = plugin.GetType().GetMethod(hookName);
