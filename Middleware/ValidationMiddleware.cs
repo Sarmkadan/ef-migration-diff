@@ -21,6 +21,8 @@ public class ValidationMiddleware : ICommandMiddleware
     /// </summary>
     public ValidationMiddleware RegisterValidator(string commandName, CommandValidator validator)
     {
+        ArgumentException.ThrowIfNullOrEmpty(commandName);
+        ArgumentNullException.ThrowIfNull(validator);
         _validatorsByCommand[commandName.ToLowerInvariant()] = validator;
         return this;
     }
@@ -31,6 +33,7 @@ public class ValidationMiddleware : ICommandMiddleware
     /// </summary>
     public async Task<MiddlewareResult> InvokeAsync(CommandContext context)
     {
+        ArgumentNullException.ThrowIfNull(context);
         var commandName = context.CommandName.ToLowerInvariant();
 
         // Get validator for this command if registered
@@ -65,6 +68,7 @@ public class CommandValidator
     /// </summary>
     public CommandValidator AddRule(Func<CommandContext, string?> rule)
     {
+        ArgumentNullException.ThrowIfNull(rule);
         _rules.Add(rule);
         return this;
     }
@@ -85,6 +89,7 @@ public class CommandValidator
     /// </summary>
     public CommandValidator RequireOption(string optionName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(optionName);
         _rules.Add(ctx => ctx.HasOption(optionName)
             ? null
             : $"Required option '{optionName}' is missing");
@@ -96,6 +101,7 @@ public class CommandValidator
     /// </summary>
     public CommandValidator ValidateOptionValue(string optionName, string errorMessage = "")
     {
+        ArgumentException.ThrowIfNullOrEmpty(optionName);
         _rules.Add(ctx =>
         {
             var value = ctx.GetOption(optionName);
