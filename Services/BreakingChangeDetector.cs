@@ -19,6 +19,7 @@ public class BreakingChangeDetector
 
     public BreakingChangeDetector(ILogger<BreakingChangeDetector> logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
     }
 
@@ -29,6 +30,7 @@ public class BreakingChangeDetector
     /// <returns>List of classified changes with severity and reason</returns>
     public List<BreakingChangeClassification> ClassifyChanges(IReadOnlyList<SchemaChange> changes)
     {
+        ArgumentNullException.ThrowIfNull(changes);
         _logger.LogInformation("Classifying {ChangeCount} schema changes for breaking changes", changes.Count);
 
         var classifications = new List<BreakingChangeClassification>(changes.Count);
@@ -49,6 +51,7 @@ public class BreakingChangeDetector
     /// <returns>Classification result with severity and reason</returns>
     public BreakingChangeClassification ClassifyChange(SchemaChange change)
     {
+        ArgumentNullException.ThrowIfNull(change);
         // Check for destructive changes (always breaking)
         if (change.IsDestructive())
         {
@@ -147,6 +150,7 @@ public class BreakingChangeDetector
     /// <returns>Classification summary with counts and details</returns>
     public BreakingChangeSummary ClassifyDiffResult(SchemaDiffResult diffResult)
     {
+        ArgumentNullException.ThrowIfNull(diffResult);
         var allChanges = new List<SchemaChange>();
         allChanges.AddRange(diffResult.SourceOnlyChanges);
         allChanges.AddRange(diffResult.TargetOnlyChanges);
