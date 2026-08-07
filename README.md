@@ -79,3 +79,36 @@ tests.Detect_Add_And_Drop_ForeignKey();
 tests.Detect_Raw_Sql_Create_Table();
 tests.Get_Affected_Tables_Returns_Distinct_List();
 ```
+
+## ConflictResolutionEngineTests
+
+The `ConflictResolutionEngineTests` class contains tests for the conflict resolution engine. These tests verify that the engine initializes with default strategies and maps each conflict type (table, column, index, constraint, operation, dependency, and name) to the appropriate resolution strategy with the expected severity, including critical severity for column conflicts and high or medium severity for blocking and non-blocking conflicts. They also confirm that batch resolution produces complete reports, that custom strategies can be registered to override the defaults, and that every resolution includes recommendations.
+
+Example usage:
+```csharp
+using EfMigrationDiff.Tests;
+
+// Create the test class instance
+var tests = new ConflictResolutionEngineTests();
+
+// Run the individual resolution tests
+tests.ConflictResolutionEngine_InitializesWithDefaultStrategies();
+tests.ResolveConflict_WithTableConflict_ReturnsManualResolutionStrategy();
+tests.ResolveConflict_WithColumnConflict_ReturnsReviewResolutionStrategyWithCriticalSeverity();
+tests.ResolveConflict_WithIndexConflict_ReturnsAutomaticResolutionStrategy();
+tests.ResolveConflict_WithConstraintConflict_ReturnsReviewResolutionStrategy();
+tests.ResolveConflict_WithOperationConflict_ReturnsManualResolutionStrategy();
+tests.ResolveConflict_WithDependencyConflict_ReturnsManualResolutionStrategy();
+tests.ResolveConflict_WithNameConflict_ReturnsManualResolutionStrategy();
+tests.ResolveConflict_WithUnknownConflictType_ReturnsDefaultManualStrategy();
+tests.ResolveConflict_ColumnConflictAlwaysHasCriticalSeverity();
+tests.ResolveConflict_WithBlockingConflict_ReturnsHighSeverity();
+tests.ResolveConflict_WithNonBlockingConflict_ReturnsMediumSeverity();
+tests.ResolveBatch_WithMultipleConflicts_ReturnsCompleteReport();
+tests.ResolveBatch_WithEmptyList_ReturnsEmptyReport();
+tests.ResolveBatch_CanProceedWithoutManualIntervention_ReturnsCorrectValue();
+tests.RegisterStrategy_WithCustomStrategy_OverridesDefaultStrategy();
+tests.ResolveConflict_AllConflictTypes_HaveResolutionStrategies();
+tests.ResolveConflict_RecommendationsGeneratedForEachConflictType();
+tests.ConflictResolution_AllPropertiesSetCorrectly();
+```
