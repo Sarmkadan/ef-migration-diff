@@ -30,6 +30,8 @@ public class MarkdownFormatter : IOutputFormatter
     /// </summary>
     public string Format(object? obj)
     {
+        ArgumentNullException.ThrowIfNull(obj);
+
         if (obj is not MigrationDiff diff)
         {
             throw new FormattingException($"Expected {nameof(MigrationDiff)} but got {obj?.GetType().Name ?? "null"}");
@@ -43,6 +45,7 @@ public class MarkdownFormatter : IOutputFormatter
     /// </summary>
     public string GenerateMarkdownReport(MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
         var sb = new StringBuilder();
 
         // Header with metadata
@@ -308,6 +311,8 @@ public class MarkdownFormatter : IOutputFormatter
     /// </summary>
     public void WriteToFile(string filePath, object? obj)
     {
+        ArgumentException.ThrowIfNullOrEmpty(filePath);
+        ArgumentNullException.ThrowIfNull(obj);
         try
         {
             var markdown = Format(obj);
@@ -324,6 +329,7 @@ public class MarkdownFormatter : IOutputFormatter
     /// </summary>
     public T? Deserialize<T>(string markdown)
     {
+        ArgumentException.ThrowIfNullOrEmpty(markdown);
         throw new NotSupportedException("Markdown format does not support deserialization");
     }
 
@@ -332,6 +338,7 @@ public class MarkdownFormatter : IOutputFormatter
     /// </summary>
     public object? Deserialize(string markdown, Type type)
     {
+        ArgumentException.ThrowIfNullOrEmpty(markdown);
         throw new NotSupportedException("Markdown format does not support deserialization");
     }
 
