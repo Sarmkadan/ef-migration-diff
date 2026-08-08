@@ -20,6 +20,7 @@ public class ConfigurationBuilder
     /// </summary>
     public ConfigurationBuilder WithAppSettings(Action<AppSettings> configure)
     {
+        ArgumentNullException.ThrowIfNull(configure);
         configure(_appSettings);
         _services.AddSingleton(_appSettings);
         return this;
@@ -30,6 +31,8 @@ public class ConfigurationBuilder
     /// </summary>
     public ConfigurationBuilder AddCommand(string name, ICommand command)
     {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        ArgumentNullException.ThrowIfNull(command);
         _commandExecutor.RegisterCommand(name, command);
         return this;
     }
@@ -39,6 +42,7 @@ public class ConfigurationBuilder
     /// </summary>
     public ConfigurationBuilder AddMiddleware(ICommandMiddleware middleware)
     {
+        ArgumentNullException.ThrowIfNull(middleware);
         _commandExecutor.RegisterMiddleware(middleware);
         return this;
     }
@@ -48,6 +52,8 @@ public class ConfigurationBuilder
     /// </summary>
     public ConfigurationBuilder AddCommandValidator(string commandName, Action<CommandValidator> configure)
     {
+        ArgumentException.ThrowIfNullOrEmpty(commandName);
+        ArgumentNullException.ThrowIfNull(configure);
         var validator = new CommandValidator();
         configure(validator);
         _validationMiddleware.RegisterValidator(commandName, validator);
@@ -59,6 +65,7 @@ public class ConfigurationBuilder
     /// </summary>
     public ConfigurationBuilder AddLogging(bool verbose = false)
     {
+        ArgumentException.ThrowIfNullOrEmpty(verbose.ToString());
         var logging = new RequestLoggingMiddleware(isVerbose: verbose);
         _commandExecutor.RegisterMiddleware(logging);
         return this;
@@ -78,6 +85,7 @@ public class ConfigurationBuilder
     /// </summary>
     public ConfigurationBuilder AddErrorHandling(bool includeStackTrace = false)
     {
+        ArgumentException.ThrowIfNullOrEmpty(includeStackTrace.ToString());
         var errorHandler = new ErrorHandlingMiddleware(includeStackTrace);
         // Error handling is typically done in CommandExecutor, not as middleware
         return this;
@@ -88,6 +96,7 @@ public class ConfigurationBuilder
     /// </summary>
     public ConfigurationBuilder AddSingleton<T>(T instance) where T : class
     {
+        ArgumentNullException.ThrowIfNull(instance);
         _services.AddSingleton(instance);
         return this;
     }
