@@ -18,6 +18,7 @@ public static class FileHelper
     /// </summary>
     public static string? ReadFileAsync(string filePath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(filePath);
         try
         {
             if (!File.Exists(filePath))
@@ -42,6 +43,8 @@ public static class FileHelper
     /// </summary>
     public static void WriteFile(string filePath, string content)
     {
+        ArgumentException.ThrowIfNullOrEmpty(filePath);
+        ArgumentException.ThrowIfNullOrEmpty(content);
         try
         {
             var directory = Path.GetDirectoryName(filePath);
@@ -63,6 +66,7 @@ public static class FileHelper
     /// </summary>
     public static List<string> GetMigrationFiles(string directoryPath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(directoryPath);
         try
         {
             if (!Directory.Exists(directoryPath))
@@ -83,6 +87,7 @@ public static class FileHelper
     /// </summary>
     public static bool IsValidMigrationDirectory(string directoryPath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(directoryPath);
         if (!Directory.Exists(directoryPath))
             return false;
 
@@ -102,6 +107,7 @@ public static class FileHelper
     /// </summary>
     public static long GetFileSize(string filePath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(filePath);
         try
         {
             if (!File.Exists(filePath))
@@ -138,6 +144,7 @@ public static class FileHelper
     /// </summary>
     public static void EnsureDirectoryExists(string directoryPath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(directoryPath);
         try
         {
             if (!Directory.Exists(directoryPath))
@@ -156,6 +163,8 @@ public static class FileHelper
     /// </summary>
     public static List<string> GetSubdirectories(string parentPath, string pattern = "*")
     {
+        ArgumentException.ThrowIfNullOrEmpty(parentPath);
+        ArgumentException.ThrowIfNullOrEmpty(pattern);
         try
         {
             if (!Directory.Exists(parentPath))
@@ -174,6 +183,7 @@ public static class FileHelper
     /// </summary>
     public static bool DeleteFile(string filePath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(filePath);
         try
         {
             if (File.Exists(filePath))
@@ -194,6 +204,8 @@ public static class FileHelper
     /// </summary>
     public static void CopyFile(string sourcePath, string destinationPath, bool overwrite = true)
     {
+        ArgumentException.ThrowIfNullOrEmpty(sourcePath);
+        ArgumentException.ThrowIfNullOrEmpty(destinationPath);
         try
         {
             if (!File.Exists(sourcePath))
@@ -218,6 +230,7 @@ public static class FileHelper
     /// </summary>
     public static DateTime GetLastModifiedTime(string filePath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(filePath);
         try
         {
             if (!File.Exists(filePath))
@@ -236,6 +249,7 @@ public static class FileHelper
     /// </summary>
     public static string CombinePath(params string[] segments)
     {
+        ArgumentNullException.ThrowIfNull(segments);
         return Path.Combine(segments);
     }
 
@@ -244,6 +258,8 @@ public static class FileHelper
     /// </summary>
     public static string GetRelativePath(string basePath, string targetPath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(basePath);
+        ArgumentException.ThrowIfNullOrEmpty(targetPath);
         try
         {
             return Path.GetRelativePath(basePath, targetPath);
