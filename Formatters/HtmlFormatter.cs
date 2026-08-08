@@ -39,6 +39,7 @@ public class HtmlFormatter
     /// <param name="customStyles">Custom CSS styles to include in the HTML output.</param>
     public HtmlFormatter(string language, string? customStyles = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(language);
         Language = language;
         DefaultStyles = customStyles ?? GetDefaultStyles();
     }
@@ -48,6 +49,8 @@ public class HtmlFormatter
     /// </summary>
     public string CreateDocument(string title, string bodyContent, string? customCss = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(title);
+        ArgumentException.ThrowIfNullOrEmpty(bodyContent);
         var html = new System.Text.StringBuilder();
 
         html.AppendLine(DocumentType);
@@ -79,6 +82,7 @@ public class HtmlFormatter
     /// </summary>
     public string GenerateTable<T>(IEnumerable<T> items, string? tableClass = null) where T : class
     {
+        ArgumentNullException.ThrowIfNull(items);
         var itemList = items.ToList();
         if (!itemList.Any())
             return "<p>No data to display</p>";
