@@ -12,6 +12,8 @@ public class DataTableHelper
     /// </summary>
     public static string FormatAsConsoleTable<T>(IEnumerable<T> items, params string[] columnNames)
     {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(columnNames);
         var itemList = items.ToList();
         if (!itemList.Any())
             return "No data to display";
@@ -66,6 +68,8 @@ public class DataTableHelper
     /// </summary>
     public static string FormatAsMarkdownTable<T>(IEnumerable<T> items, params string[] columnNames)
     {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(columnNames);
         var itemList = items.ToList();
         if (!itemList.Any())
             return "No data to display\n";
@@ -99,6 +103,9 @@ public class DataTableHelper
     /// </summary>
     public static string FormatKeyValueTable(Dictionary<string, object?> data, string keyHeader = "Key", string valueHeader = "Value")
     {
+        ArgumentNullException.ThrowIfNull(data);
+        ArgumentException.ThrowIfNullOrEmpty(keyHeader);
+        ArgumentException.ThrowIfNullOrEmpty(valueHeader);
         var sb = new System.Text.StringBuilder();
 
         if (data.Count == 0)
@@ -130,6 +137,7 @@ public class DataTableHelper
     /// </summary>
     public static string FormatStatistics(Dictionary<string, long> stats)
     {
+        ArgumentNullException.ThrowIfNull(stats);
         var sb = new System.Text.StringBuilder();
 
         sb.AppendLine("\n╔════════════════════════════════════════╗");
