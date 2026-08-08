@@ -15,6 +15,7 @@ public class ReportGenerationService
     /// </summary>
     public string GenerateTextReport(MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
         var sb = new StringBuilder();
 
         sb.AppendLine("╔══════════════════════════════════════════════════════════════╗");
@@ -381,6 +382,7 @@ public class ReportGenerationService
     /// </summary>
     public string GenerateHtmlReport(MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
         var sb = new StringBuilder();
 
         sb.AppendLine("<!DOCTYPE html>");
@@ -438,6 +440,7 @@ public class ReportGenerationService
     /// </summary>
     public string GenerateConflictSummary(MigrationDiff diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
         var sb = new StringBuilder();
 
         sb.AppendLine("CONFLICT ANALYSIS");
