@@ -37,6 +37,9 @@ public sealed class SchemaDiffPipelineService
         IVisualDiffRenderer renderer,
         BreakingChangeDetector? breakingChangeDetector = null)
     {
+        ArgumentNullException.ThrowIfNull(migrationDiffService);
+        ArgumentNullException.ThrowIfNull(diffEngine);
+        ArgumentNullException.ThrowIfNull(renderer);
         _migrationDiffService = migrationDiffService;
         _diffEngine = diffEngine;
         _renderer = renderer;
@@ -66,6 +69,8 @@ public sealed class SchemaDiffPipelineService
         BranchInfo targetBranch,
         SchemaDiffOptions? options = null)
     {
+        ArgumentNullException.ThrowIfNull(sourceBranch);
+        ArgumentNullException.ThrowIfNull(targetBranch);
         var effectiveOptions = options ?? SchemaDiffOptions.ForBranches(
             sourceBranch.BranchName,
             targetBranch.BranchName);
@@ -120,6 +125,9 @@ public sealed class SchemaDiffPipelineService
         BranchInfo targetBranch,
         SchemaDiffOptions? options = null)
     {
+        ArgumentNullException.ThrowIfNull(baseBranch);
+        ArgumentNullException.ThrowIfNull(sourceBranch);
+        ArgumentNullException.ThrowIfNull(targetBranch);
         var effectiveOptions = options ?? SchemaDiffOptions.ForMerge(
             baseBranch.BranchName,
             sourceBranch.BranchName,
@@ -180,6 +188,10 @@ public sealed class SchemaDiffPipelineService
         IMergeEditor mergeEditor,
         SchemaDiffOptions? options = null)
     {
+        ArgumentNullException.ThrowIfNull(baseBranch);
+        ArgumentNullException.ThrowIfNull(sourceBranch);
+        ArgumentNullException.ThrowIfNull(targetBranch);
+        ArgumentNullException.ThrowIfNull(mergeEditor);
         var result = RunThreeWayDiff(baseBranch, sourceBranch, targetBranch, options);
 
         if (result.ThreeWayDiff is null)
