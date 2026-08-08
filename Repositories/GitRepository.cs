@@ -15,6 +15,7 @@ public class GitRepository
 
     public GitRepository(string repositoryPath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(repositoryPath);
         _repositoryPath = repositoryPath;
     }
 
@@ -84,6 +85,7 @@ public class GitRepository
     /// </summary>
     public BranchInfo? GetBranch(string branchName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(branchName);
         if (_repository is null)
             return null;
 
@@ -132,6 +134,8 @@ public class GitRepository
     /// </summary>
     public List<string> GetCommitsBetween(string sourceBranch, string targetBranch)
     {
+        ArgumentException.ThrowIfNullOrEmpty(sourceBranch);
+        ArgumentException.ThrowIfNullOrEmpty(targetBranch);
         if (_repository is null)
             return [];
 
@@ -176,6 +180,8 @@ public class GitRepository
     /// </summary>
     public List<string> GetChangedFiles(string sourceBranch, string targetBranch, string? pathFilter = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(sourceBranch);
+        ArgumentException.ThrowIfNullOrEmpty(targetBranch);
         if (_repository is null)
             return [];
 
@@ -215,6 +221,8 @@ public class GitRepository
     /// </summary>
     public string? GetFileContent(string commitSha, string filePath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(commitSha);
+        ArgumentException.ThrowIfNullOrEmpty(filePath);
         if (_repository is null)
             return null;
 
