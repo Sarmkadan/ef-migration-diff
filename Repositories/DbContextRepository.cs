@@ -16,6 +16,8 @@ public class DbContextRepository
     /// </summary>
     public void Add(DbContextMetadata context)
     {
+        if (context == null)
+            throw new ArgumentNullException(nameof(context));
         if (!context.IsValid())
             throw new ArgumentException("DbContext metadata must be valid before adding to repository");
 
@@ -33,6 +35,7 @@ public class DbContextRepository
     /// </summary>
     public DbContextMetadata? GetById(string id)
     {
+        ArgumentException.ThrowIfNullOrEmpty(id);
         lock (_syncLock)
         {
             return _contexts.FirstOrDefault(c => c.Id == id);
@@ -44,6 +47,8 @@ public class DbContextRepository
     /// </summary>
     public DbContextMetadata? GetByName(string contextName)
     {
+        if (contextName == null)
+            throw new ArgumentNullException(nameof(contextName));
         lock (_syncLock)
         {
             return _contexts.FirstOrDefault(c => c.ContextName == contextName);
@@ -55,6 +60,8 @@ public class DbContextRepository
     /// </summary>
     public List<DbContextMetadata> GetByAssembly(string assemblyName)
     {
+        if (assemblyName == null)
+            throw new ArgumentNullException(nameof(assemblyName));
         lock (_syncLock)
         {
             return _contexts.Where(c => c.AssemblyName == assemblyName).ToList();
@@ -66,6 +73,8 @@ public class DbContextRepository
     /// </summary>
     public List<DbContextMetadata> GetByProvider(string provider)
     {
+        if (provider == null)
+            throw new ArgumentNullException(nameof(provider));
         lock (_syncLock)
         {
             return _contexts.Where(c => c.DatabaseProvider == provider).ToList();
@@ -77,6 +86,8 @@ public class DbContextRepository
     /// </summary>
     public void Update(DbContextMetadata context)
     {
+        if (context == null)
+            throw new ArgumentNullException(nameof(context));
         lock (_syncLock)
         {
             var existing = _contexts.FirstOrDefault(c => c.Id == context.Id);
@@ -93,6 +104,7 @@ public class DbContextRepository
     /// </summary>
     public bool Delete(string id)
     {
+        ArgumentException.ThrowIfNullOrEmpty(id);
         lock (_syncLock)
         {
             var context = _contexts.FirstOrDefault(c => c.Id == id);
@@ -130,6 +142,8 @@ public class DbContextRepository
     /// </summary>
     public List<DbContextMetadata> SearchByName(string searchTerm)
     {
+        if (searchTerm == null)
+            throw new ArgumentNullException(nameof(searchTerm));
         lock (_syncLock)
         {
             return _contexts.Where(c => c.ContextName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
