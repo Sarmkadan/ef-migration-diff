@@ -24,6 +24,7 @@ public class MigrationAutoResolverService
     /// </summary>
     public MigrationAutoResolverService(ILogger<MigrationAutoResolverService> logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
         _strategyMap = BuildDefaultStrategyMap();
     }
@@ -42,6 +43,10 @@ public class MigrationAutoResolverService
         IEnumerable<ConflictInfo> conflicts,
         CancellationToken cancellationToken = default)
     {
+        if (conflicts == null)
+        {
+            throw new ArgumentNullException(nameof(conflicts));
+        }
         var result = new MergeResult();
         var conflictList = conflicts.ToList();
 
