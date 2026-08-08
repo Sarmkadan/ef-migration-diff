@@ -69,11 +69,16 @@ public sealed record SchemaDiffOptions
     /// <param name="source">Source branch display name.</param>
     /// <param name="target">Target branch display name.</param>
     /// <returns>A new <see cref="SchemaDiffOptions"/> with the specified labels.</returns>
-    public static SchemaDiffOptions ForBranches(string source, string target) => new()
+    public static SchemaDiffOptions ForBranches(string source, string target)
     {
-        SourceLabel = source,
-        TargetLabel = target
-    };
+        ArgumentException.ThrowIfNullOrEmpty(source);
+        ArgumentException.ThrowIfNullOrEmpty(target);
+        return new()
+        {
+            SourceLabel = source,
+            TargetLabel = target
+        };
+    }
 
     /// <summary>
     /// Creates options pre-configured for a three-way merge scenario.
@@ -82,10 +87,16 @@ public sealed record SchemaDiffOptions
     /// <param name="source">Source branch display name.</param>
     /// <param name="target">Target branch display name.</param>
     /// <returns>A new <see cref="SchemaDiffOptions"/> with all three labels set.</returns>
-    public static SchemaDiffOptions ForMerge(string baseBranch, string source, string target) => new()
+    public static SchemaDiffOptions ForMerge(string baseBranch, string source, string target)
     {
-        BaseLabel   = baseBranch,
-        SourceLabel = source,
-        TargetLabel = target
-    };
+        ArgumentException.ThrowIfNullOrEmpty(baseBranch);
+        ArgumentException.ThrowIfNullOrEmpty(source);
+        ArgumentException.ThrowIfNullOrEmpty(target);
+        return new()
+        {
+            BaseLabel   = baseBranch,
+            SourceLabel = source,
+            TargetLabel = target
+        };
+    }
 }
