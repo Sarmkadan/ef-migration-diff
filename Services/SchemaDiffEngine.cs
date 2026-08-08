@@ -24,6 +24,8 @@ public sealed class SchemaDiffEngine : ISchemaDiffEngine, IMergeEditor
     /// <param name="logger">Logger instance.</param>
     public SchemaDiffEngine(ConflictDetectionService conflictDetection, ILogger<SchemaDiffEngine> logger)
     {
+        ArgumentNullException.ThrowIfNull(conflictDetection);
+        ArgumentNullException.ThrowIfNull(logger);
         _conflictDetection = conflictDetection;
         _logger = logger;
     }
@@ -41,7 +43,7 @@ public sealed class SchemaDiffEngine : ISchemaDiffEngine, IMergeEditor
         ArgumentNullException.ThrowIfNull(sourceChanges);
         ArgumentNullException.ThrowIfNull(targetChanges);
         ArgumentNullException.ThrowIfNull(options);
-        _logger.LogInformation("Computing schema diff with {SourceChangeCount} source changes and {TargetChangeCount} target changes", sourceChanges.Count, targetChanges.Count)
+        _logger.LogInformation("Computing schema diff with {SourceChangeCount} source changes and {TargetChangeCount} target changes", sourceChanges.Count, targetChanges.Count);;
         options ??= SchemaDiffOptions.Default;
 
         var sourceLines = ProjectToLines(sourceChanges, options);
@@ -87,6 +89,10 @@ public sealed class SchemaDiffEngine : ISchemaDiffEngine, IMergeEditor
         IReadOnlyList<SchemaChange> targetChanges,
         SchemaDiffOptions? options = null)
     {
+        ArgumentNullException.ThrowIfNull(baseChanges);
+        ArgumentNullException.ThrowIfNull(sourceChanges);
+        ArgumentNullException.ThrowIfNull(targetChanges);
+        ArgumentNullException.ThrowIfNull(options);
         options ??= SchemaDiffOptions.Default;
 
         var baseToSource = ComputeDiff(baseChanges, sourceChanges,
@@ -112,6 +118,8 @@ public sealed class SchemaDiffEngine : ISchemaDiffEngine, IMergeEditor
     /// <inheritdoc />
     public SchemaMergeResult ApplyMergeResolution(ThreeWayDiffResult diff, MergeResolutionPlan plan)
     {
+        ArgumentNullException.ThrowIfNull(diff);
+        ArgumentNullException.ThrowIfNull(plan);
         var resolved   = new List<SchemaChange>();
         var warnings   = new List<string>();
         int unresolved = 0;
@@ -167,16 +175,23 @@ public sealed class SchemaDiffEngine : ISchemaDiffEngine, IMergeEditor
     // =========================================================================
 
     /// <inheritdoc />
-    public MergeResolutionPlan AcceptSource(ThreeWayDiffResult diff) =>
-        BuildUniformPlan(diff, MergeResolutionStrategy.AcceptSource);
+    public MergeResolutionPlan AcceptSource(ThreeWayDiffResult diff)
+    {
+        ArgumentNullException.ThrowIfNull(diff);
+        return BuildUniformPlan(diff, MergeResolutionStrategy.AcceptSource);
+    }
 
     /// <inheritdoc />
-    public MergeResolutionPlan AcceptTarget(ThreeWayDiffResult diff) =>
-        BuildUniformPlan(diff, MergeResolutionStrategy.AcceptTarget);
+    public MergeResolutionPlan AcceptTarget(ThreeWayDiffResult diff)
+    {
+        ArgumentNullException.ThrowIfNull(diff);
+        return BuildUniformPlan(diff, MergeResolutionStrategy.AcceptTarget);
+    }
 
     /// <inheritdoc />
     public MergeResolutionPlan AutoMerge(ThreeWayDiffResult diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
         var plan = new MergeResolutionPlan();
 
         foreach (var region in diff.ConflictRegions)
