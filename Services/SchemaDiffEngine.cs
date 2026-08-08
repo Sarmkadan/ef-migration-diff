@@ -38,7 +38,10 @@ public sealed class SchemaDiffEngine : ISchemaDiffEngine, IMergeEditor
         IReadOnlyList<SchemaChange> targetChanges,
         SchemaDiffOptions? options = null)
     {
-        _logger.LogInformation("Computing schema diff with {SourceChangeCount} source changes and {TargetChangeCount} target changes", sourceChanges.Count, targetChanges.Count);
+        ArgumentNullException.ThrowIfNull(sourceChanges);
+        ArgumentNullException.ThrowIfNull(targetChanges);
+        ArgumentNullException.ThrowIfNull(options);
+        _logger.LogInformation("Computing schema diff with {SourceChangeCount} source changes and {TargetChangeCount} target changes", sourceChanges.Count, targetChanges.Count)
         options ??= SchemaDiffOptions.Default;
 
         var sourceLines = ProjectToLines(sourceChanges, options);
