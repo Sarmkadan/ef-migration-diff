@@ -19,6 +19,8 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         // Register repositories
         services.AddSingleton<MigrationRepository>();
         services.AddSingleton<DbContextRepository>();
