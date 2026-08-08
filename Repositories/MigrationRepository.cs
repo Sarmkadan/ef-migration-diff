@@ -16,6 +16,7 @@ public class MigrationRepository
     /// </summary>
     public void Add(Migration migration)
     {
+        ArgumentNullException.ThrowIfNull(migration);
         if (!migration.IsValid())
             throw new ArgumentException("Migration must be valid before adding to repository");
 
@@ -33,6 +34,7 @@ public class MigrationRepository
     /// </summary>
     public Migration? GetById(string id)
     {
+        ArgumentException.ThrowIfNullOrEmpty(id);
         lock (_syncLock)
         {
             return _migrations.FirstOrDefault(m => m.Id == id);
@@ -44,6 +46,7 @@ public class MigrationRepository
     /// </summary>
     public List<Migration> GetByDbContext(string dbContextName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(dbContextName);
         lock (_syncLock)
         {
             return _migrations.Where(m => m.DbContextName == dbContextName).ToList();
@@ -66,6 +69,7 @@ public class MigrationRepository
     /// </summary>
     public void Update(Migration migration)
     {
+        ArgumentNullException.ThrowIfNull(migration);
         lock (_syncLock)
         {
             var existing = _migrations.FirstOrDefault(m => m.Id == migration.Id);
@@ -82,6 +86,7 @@ public class MigrationRepository
     /// </summary>
     public bool Delete(string id)
     {
+        ArgumentException.ThrowIfNullOrEmpty(id);
         lock (_syncLock)
         {
             var migration = _migrations.FirstOrDefault(m => m.Id == id);
@@ -119,6 +124,7 @@ public class MigrationRepository
     /// </summary>
     public List<Migration> SearchByName(string searchTerm)
     {
+        ArgumentException.ThrowIfNullOrEmpty(searchTerm);
         lock (_syncLock)
         {
             return _migrations.Where(m => m.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -141,6 +147,7 @@ public class MigrationRepository
     /// </summary>
     public List<Migration> GetByDbContexts(params string[] contextNames)
     {
+        ArgumentNullException.ThrowIfNull(contextNames);
         lock (_syncLock)
         {
             return _migrations.Where(m => contextNames.Contains(m.DbContextName)).ToList();
@@ -174,6 +181,7 @@ public class MigrationRepository
     /// </summary>
     public bool Exists(string id)
     {
+        ArgumentException.ThrowIfNullOrEmpty(id);
         lock (_syncLock)
         {
             return _migrations.Any(m => m.Id == id);
@@ -185,6 +193,7 @@ public class MigrationRepository
     /// </summary>
     public Migration? GetLatestByDbContext(string dbContextName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(dbContextName);
         lock (_syncLock)
         {
             return _migrations.Where(m => m.DbContextName == dbContextName)
