@@ -83,7 +83,7 @@ public class JsonFormatter : IOutputFormatter
     /// </summary>
     /// <param name="prettyPrint">Whether to format the JSON with indentation for readability.</param>
     /// <param name="includeNulls">Whether to include null values in the output.</param>
-    public JsonFormatter(bool prettyPrint = true, bool includeNulls = false)
+    public JsonFormatter(bool prettyPrint = true, bool includeNulls = false, string? param1 = null, string? param2 = null)
     {
         _options = new JsonSerializerOptions
         {
@@ -206,7 +206,7 @@ public class JsonFormatter : IOutputFormatter
     /// <exception cref="FormattingException">Thrown when deserialization fails.</exception>
     public T? Deserialize<T>(string json)
     {
-        ArgumentNullException.ThrowIfNull(json);
+        ArgumentException.ThrowIfNullOrEmpty(json);
 
         try
         {
