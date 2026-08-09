@@ -1,6 +1,7 @@
 #nullable enable
 using System.Net;
 using System.Text;
+using System;
 using EfMigrationDiff.Interfaces;
 using EfMigrationDiff.Models;
 
@@ -20,6 +21,7 @@ public sealed class VisualDiffFormatter : IVisualDiffRenderer
     /// <inheritdoc />
     public string RenderSideBySide(SchemaDiffResult diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
         var body = new StringBuilder();
 
         body.Append(RenderDiffHeader(diff.SourceLabel, diff.TargetLabel, diff));
@@ -52,6 +54,7 @@ public sealed class VisualDiffFormatter : IVisualDiffRenderer
     /// <inheritdoc />
     public string RenderUnified(SchemaDiffResult diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
         var body = new StringBuilder();
 
         body.Append(RenderDiffHeader(diff.SourceLabel, diff.TargetLabel, diff));
@@ -106,6 +109,7 @@ public sealed class VisualDiffFormatter : IVisualDiffRenderer
     /// <inheritdoc />
     public string RenderMergeEditor(ThreeWayDiffResult diff)
     {
+        ArgumentNullException.ThrowIfNull(diff);
         var body = new StringBuilder();
 
         body.Append($"<h2 class=\"diff-title\">Merge Editor</h2>");
