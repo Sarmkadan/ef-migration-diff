@@ -28,6 +28,7 @@ public static class ValidationHelper
     /// </summary>
     public static bool IsValidMigrationId(string migrationId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(migrationId);
         if (string.IsNullOrWhiteSpace(migrationId))
             return false;
 
@@ -39,6 +40,7 @@ public static class ValidationHelper
     /// </summary>
     public static bool IsValidTableName(string tableName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(tableName);
         if (string.IsNullOrWhiteSpace(tableName))
             return false;
 
@@ -54,6 +56,7 @@ public static class ValidationHelper
     /// </summary>
     public static bool IsValidColumnName(string columnName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(columnName);
         if (string.IsNullOrWhiteSpace(columnName))
             return false;
 
@@ -68,6 +71,7 @@ public static class ValidationHelper
     /// </summary>
     public static bool IsValidIndexName(string indexName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(indexName);
         if (string.IsNullOrWhiteSpace(indexName))
             return false;
 
@@ -82,6 +86,7 @@ public static class ValidationHelper
     /// </summary>
     public static bool IsValidMigrationName(string migrationName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(migrationName);
         if (string.IsNullOrWhiteSpace(migrationName))
             return false;
 
