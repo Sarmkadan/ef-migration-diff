@@ -13,6 +13,7 @@ public static class ValidationHelper
     /// </summary>
     public static bool IsValidMigrationTimestamp(string timestamp)
     {
+        ArgumentException.ThrowIfNullOrEmpty(timestamp);
         if (string.IsNullOrWhiteSpace(timestamp))
             return false;
 
