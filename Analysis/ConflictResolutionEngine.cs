@@ -14,6 +14,15 @@ namespace EfMigrationDiff.Analysis;
 /// </summary>
 public sealed class ConflictResolutionEngine
 {
+    private ResolutionType Type { get; set; }
+    private string Description { get; set; } = string.Empty;
+    private int Priority { get; set; }
+    private bool IsHighRisk { get; set; }
+    private string ConflictId { get; set; } = string.Empty;
+    private DateTime AnalyzedAt { get; set; }
+
+    public override string ToString() => $"ConflictResolutionEngine {{ Type = {Type}, Description = {Description}, Priority = {Priority}, IsHighRisk = {IsHighRisk}, ConflictId = {ConflictId}, AnalyzedAt = {AnalyzedAt} }}";
+
     private readonly Dictionary<EfMigrationDiff.Models.ConflictType, Func<ConflictInfo, ResolutionStrategy>> _strategies = new();
 
     /// <summary>
