@@ -163,6 +163,8 @@ public class ServiceDescriptor
         ServiceType = serviceType;
         Factory = factory;
     }
+
+    public override string ToString() => $"ServiceDescriptor {{ ServiceType = {ServiceType}, Instance = {Instance}, Factory = {Factory} }}";
 }
 
 /// <summary>
