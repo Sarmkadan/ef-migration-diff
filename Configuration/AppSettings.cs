@@ -76,6 +76,11 @@ public class AppSettings
     public SchemaDiffOptions SchemaDiff { get; set; } = SchemaDiffOptions.Default;
 
     /// <summary>
+    /// Returns a string representation of the app settings.
+    /// </summary>
+    public override string ToString() => $"AppSettings {{ RepositoryPath = {RepositoryPath}, MigrationsPath = {MigrationsPath}, OutputPath = {OutputPath}, ReportFormat = {ReportFormat}, EnableDetailedLogging = {EnableDetailedLogging}, MaxConcurrentAnalysis = {MaxConcurrentAnalysis} }}";
+
+    /// <summary>
     /// Validates the settings configuration.
     /// </summary>
     /// <returns>A list of validation errors, or empty list if valid.</returns>
