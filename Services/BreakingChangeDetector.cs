@@ -18,10 +18,11 @@ public class BreakingChangeDetector
     private readonly ILogger<BreakingChangeDetector> _logger;
 
     public BreakingChangeDetector(ILogger<BreakingChangeDetector> logger)
-    {
-        ArgumentNullException.ThrowIfNull(logger);
-        _logger = logger;
-    }
+        {
+            ArgumentNullException.ThrowIfNull(logger);
+            _logger = logger;
+            _logger.LogInformation("Initializing BreakingChangeDetector", new { });
+        }
 
     /// <summary>
     /// Classifies schema changes from a diff result as Breaking vs Safe.
@@ -39,6 +40,7 @@ public class BreakingChangeDetector
         {
             var classification = ClassifyChange(change);
             classifications.Add(classification);
+            _logger.LogInformation("Classification result: {ClassificationResult}", classification);
         }
 
         return classifications;
