@@ -28,6 +28,9 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_DropColumn_IsBreaking()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName} with change {ChangeType} on table {TableName}",
+            nameof(ClassifyChange_DropColumn_IsBreaking), SqlChangeType.DropColumn, "Users");
+
         var change = new SchemaChange("test1", SqlChangeType.DropColumn, "DROP COLUMN [Email]")
         {
             TableName = "Users",
@@ -36,6 +39,9 @@ public class BreakingChangeDetectorTests
 
         var result = _detector.ClassifyChange(change);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Severity} and reason {Reason}",
+            nameof(ClassifyChange_DropColumn_IsBreaking), result.Severity, result.Reason);
+
         result.Severity.Should().Be(BreakingChangeSeverity.Breaking);
         result.Reason.Should().Contain("column 'Email' is dropped");
     }
@@ -43,12 +49,18 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_DropTable_IsBreaking()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName} with change {ChangeType} on table {TableName}",
+            nameof(ClassifyChange_DropTable_IsBreaking), SqlChangeType.DropTable, "LegacyData");
+
         var change = new SchemaChange("test2", SqlChangeType.DropTable, "DROP TABLE [LegacyData]")
         {
             TableName = "LegacyData"
         };
 
         var result = _detector.ClassifyChange(change);
+
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Severity} and reason {Reason}",
+            nameof(ClassifyChange_DropTable_IsBreaking), result.Severity, result.Reason);
 
         result.Severity.Should().Be(BreakingChangeSeverity.Breaking);
         result.Reason.Should().Contain("table 'LegacyData' is dropped");
@@ -57,12 +69,18 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_DropIndex_IsBreaking()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName} with change {ChangeType} on table {TableName}",
+            nameof(ClassifyChange_DropIndex_IsBreaking), SqlChangeType.DropIndex, "Users");
+
         var change = new SchemaChange("test3", SqlChangeType.DropIndex, "DROP INDEX [IX_Users_Email]")
         {
             TableName = "Users"
         };
 
         var result = _detector.ClassifyChange(change);
+
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Severity} and reason {Reason}",
+            nameof(ClassifyChange_DropIndex_IsBreaking), result.Severity, result.Reason);
 
         result.Severity.Should().Be(BreakingChangeSeverity.Breaking);
         result.Reason.Should().Contain("index on table 'Users' is dropped");
@@ -71,12 +89,18 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_DropForeignKey_IsBreaking()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName} with change {ChangeType} on table {TableName}",
+            nameof(ClassifyChange_DropForeignKey_IsBreaking), SqlChangeType.DropForeignKey, "Users");
+
         var change = new SchemaChange("test4", SqlChangeType.DropForeignKey, "DROP FOREIGN KEY [FK_Users_Orders]")
         {
             TableName = "Users"
         };
 
         var result = _detector.ClassifyChange(change);
+
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Severity} and reason {Reason}",
+            nameof(ClassifyChange_DropForeignKey_IsBreaking), result.Severity, result.Reason);
 
         result.Severity.Should().Be(BreakingChangeSeverity.Breaking);
         result.Reason.Should().Contain("foreign key on table 'Users' is dropped");
@@ -89,6 +113,7 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_AddNullableColumn_IsSafe()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyChange_AddNullableColumn_IsSafe));
         var change = new SchemaChange("test5", SqlChangeType.AddColumn, "ADD COLUMN [OptionalField] nvarchar(255) NULL")
         {
             TableName = "Users",
@@ -98,6 +123,7 @@ public class BreakingChangeDetectorTests
 
         var result = _detector.ClassifyChange(change);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Severity}", nameof(ClassifyChange_AddNullableColumn_IsSafe), result.Severity);
         result.Severity.Should().Be(BreakingChangeSeverity.Safe);
         result.Reason.Should().Contain("added nullable column 'OptionalField' - backward compatible");
     }
@@ -105,6 +131,7 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_AddNonNullableColumnWithoutDefault_IsBreaking()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyChange_AddNonNullableColumnWithoutDefault_IsBreaking));
         var change = new SchemaChange("test6", SqlChangeType.AddColumn, "ADD COLUMN [RequiredField] nvarchar(255) NOT NULL")
         {
             TableName = "Users",
@@ -114,6 +141,7 @@ public class BreakingChangeDetectorTests
 
         var result = _detector.ClassifyChange(change);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Severity}", nameof(ClassifyChange_AddNonNullableColumnWithoutDefault_IsBreaking), result.Severity);
         result.Severity.Should().Be(BreakingChangeSeverity.Breaking);
         result.Reason.Should().Contain("added non-nullable column 'RequiredField' without default value");
     }
@@ -121,6 +149,7 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_AddNonNullableColumnWithDefault_IsSafe()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyChange_AddNonNullableColumnWithDefault_IsSafe));
         var change = new SchemaChange("test7", SqlChangeType.AddColumn, "ADD COLUMN [RequiredField] nvarchar(255) NOT NULL")
         {
             TableName = "Users",
@@ -131,6 +160,7 @@ public class BreakingChangeDetectorTests
 
         var result = _detector.ClassifyChange(change);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Result}", nameof(ClassifyChange_AddNonNullableColumnWithDefault_IsSafe), result.Severity);
         result.Severity.Should().Be(BreakingChangeSeverity.Safe);
         result.Reason.Should().Be("backward compatible change");
     }
@@ -142,6 +172,7 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_ModifyColumn_NarrowingVarcharMaxToVarchar_IsBreaking()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyChange_ModifyColumn_NarrowingVarcharMaxToVarchar_IsBreaking));
         var change = new SchemaChange("test8", SqlChangeType.ModifyColumn, "ALTER COLUMN [Description] varchar(MAX) -> varchar(255)")
         {
             TableName = "Products",
@@ -152,6 +183,7 @@ public class BreakingChangeDetectorTests
 
         var result = _detector.ClassifyChange(change);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Result}", nameof(ClassifyChange_ModifyColumn_NarrowingVarcharMaxToVarchar_IsBreaking), result.Severity);
         result.Severity.Should().Be(BreakingChangeSeverity.Breaking);
         result.Reason.Should().Contain("column type narrowed from varchar(max) to varchar(255)");
     }
@@ -159,6 +191,7 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_ModifyColumn_NarrowingNvarcharMaxToNvarchar_IsBreaking()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyChange_ModifyColumn_NarrowingNvarcharMaxToNvarchar_IsBreaking));
         var change = new SchemaChange("test9", SqlChangeType.ModifyColumn, "ALTER COLUMN [LongText] nvarchar(MAX) -> nvarchar(500)")
         {
             TableName = "Posts",
@@ -169,6 +202,7 @@ public class BreakingChangeDetectorTests
 
         var result = _detector.ClassifyChange(change);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Result}", nameof(ClassifyChange_ModifyColumn_NarrowingNvarcharMaxToNvarchar_IsBreaking), result.Severity);
         result.Severity.Should().Be(BreakingChangeSeverity.Breaking);
         result.Reason.Should().Contain("column type narrowed from nvarchar(max) to nvarchar(500)");
     }
@@ -176,6 +210,7 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_ModifyColumn_NarrowingIntToSmallint_IsBreaking()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyChange_ModifyColumn_NarrowingIntToSmallint_IsBreaking));
         var change = new SchemaChange("test10", SqlChangeType.ModifyColumn, "ALTER COLUMN [StatusId] int -> smallint")
         {
             TableName = "Orders",
@@ -186,6 +221,7 @@ public class BreakingChangeDetectorTests
 
         var result = _detector.ClassifyChange(change);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Result}", nameof(ClassifyChange_ModifyColumn_NarrowingIntToSmallint_IsBreaking), result.Severity);
         result.Severity.Should().Be(BreakingChangeSeverity.Breaking);
         result.Reason.Should().Contain("column type narrowed from int to smallint");
     }
@@ -193,6 +229,7 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_ModifyColumn_NarrowingDecimalPrecision_IsBreaking()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyChange_ModifyColumn_NarrowingDecimalPrecision_IsBreaking));
         var change = new SchemaChange("test11", SqlChangeType.ModifyColumn, "ALTER COLUMN [Price] decimal(18,2) -> decimal(10,2)")
         {
             TableName = "Products",
@@ -205,6 +242,7 @@ public class BreakingChangeDetectorTests
 
         var result = _detector.ClassifyChange(change);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Result}", nameof(ClassifyChange_ModifyColumn_NarrowingDecimalPrecision_IsBreaking), result.Severity);
         result.Severity.Should().Be(BreakingChangeSeverity.Breaking);
         result.Reason.Should().Contain("column precision reduced from 18 to 10");
     }
@@ -212,6 +250,7 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_ModifyColumn_WideningDecimal_IsSafe()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyChange_ModifyColumn_WideningDecimal_IsSafe));
         var change = new SchemaChange("test12", SqlChangeType.ModifyColumn, "ALTER COLUMN [Price] decimal(10,2) -> decimal(18,2)")
         {
             TableName = "Products",
@@ -224,6 +263,7 @@ public class BreakingChangeDetectorTests
 
         var result = _detector.ClassifyChange(change);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Result}", nameof(ClassifyChange_ModifyColumn_WideningDecimal_IsSafe), result.Severity);
         result.Severity.Should().Be(BreakingChangeSeverity.Safe);
         result.Reason.Should().Be("backward compatible change");
     }
@@ -235,6 +275,7 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_Rename_IsWarning()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyChange_Rename_IsWarning));
         var change = new SchemaChange("test13", SqlChangeType.Rename, "sp_rename 'OldProcedure', 'NewProcedure'")
         {
             OldValue = "OldProcedure",
@@ -243,6 +284,7 @@ public class BreakingChangeDetectorTests
 
         var result = _detector.ClassifyChange(change);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Result}", nameof(ClassifyChange_Rename_IsWarning), result.Severity);
         result.Severity.Should().Be(BreakingChangeSeverity.Warning);
         result.Reason.Should().Contain("object renamed - may affect application code that references old name");
     }
@@ -254,6 +296,7 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_AddForeignKey_IsWarning()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyChange_AddForeignKey_IsWarning));
         var change = new SchemaChange("test14", SqlChangeType.AddForeignKey, "ADD CONSTRAINT [FK_Orders_Customers] FOREIGN KEY")
         {
             TableName = "Orders"
@@ -261,6 +304,7 @@ public class BreakingChangeDetectorTests
 
         var result = _detector.ClassifyChange(change);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Result}", nameof(ClassifyChange_AddForeignKey_IsWarning), result.Severity);
         result.Severity.Should().Be(BreakingChangeSeverity.Warning);
         result.Reason.Should().Contain("foreign key added - may affect data integrity constraints");
     }
@@ -272,6 +316,7 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChanges_ProcessesMultipleChanges()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyChanges_ProcessesMultipleChanges));
         var changes = new List<SchemaChange>
         {
             new SchemaChange("test15", SqlChangeType.DropColumn, "DROP COLUMN [OldField]")
@@ -299,6 +344,7 @@ public class BreakingChangeDetectorTests
 
         var results = _detector.ClassifyChanges(changes);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with count {Count}", nameof(ClassifyChanges_ProcessesMultipleChanges), results.Count);
         results.Should().HaveCount(3);
         results[0].Severity.Should().Be(BreakingChangeSeverity.Breaking);
         results[1].Severity.Should().Be(BreakingChangeSeverity.Safe);
@@ -312,6 +358,7 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyDiffResult_CalculatesCorrectCounts()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyDiffResult_CalculatesCorrectCounts));
         var diffResult = new SchemaDiffResult
         {
             Id = Guid.NewGuid(),
@@ -351,6 +398,7 @@ public class BreakingChangeDetectorTests
 
         var summary = _detector.ClassifyDiffResult(diffResult);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Result}", nameof(ClassifyDiffResult_CalculatesCorrectCounts), summary.IsSafe);
         summary.TotalChanges.Should().Be(3);
         summary.BreakingChanges.Should().Be(1);
         summary.SafeChanges.Should().Be(2);
@@ -362,6 +410,7 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyDiffResult_IsSafe_WhenNoBreakingOrWarnings()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyDiffResult_IsSafe_WhenNoBreakingOrWarnings));
         var diffResult = new SchemaDiffResult
         {
             Id = Guid.NewGuid(),
@@ -382,6 +431,7 @@ public class BreakingChangeDetectorTests
 
         var summary = _detector.ClassifyDiffResult(diffResult);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Result}", nameof(ClassifyDiffResult_IsSafe_WhenNoBreakingOrWarnings), summary.IsSafe);
         summary.HasBreakingChanges.Should().BeFalse();
         summary.IsSafe.Should().BeTrue();
     }
@@ -393,6 +443,7 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_UnknownChangeType_DefaultsToSafe()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyChange_UnknownChangeType_DefaultsToSafe));
         var change = new SchemaChange("test22", SqlChangeType.Unknown, "SOME UNKNOWN OPERATION")
         {
             TableName = "TestTable"
@@ -400,6 +451,7 @@ public class BreakingChangeDetectorTests
 
         var result = _detector.ClassifyChange(change);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Result}", nameof(ClassifyChange_UnknownChangeType_DefaultsToSafe), result.Severity);
         result.Severity.Should().Be(BreakingChangeSeverity.Safe);
         result.Reason.Should().Be("backward compatible change");
     }
@@ -407,6 +459,7 @@ public class BreakingChangeDetectorTests
     [Fact]
     public void ClassifyChange_DropProcedure_IsBreaking()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyChange_DropProcedure_IsBreaking));
         var change = new SchemaChange("test23", SqlChangeType.DropProcedure, "DROP PROCEDURE [OldProc]")
         {
             TableName = "Test"
@@ -414,12 +467,14 @@ public class BreakingChangeDetectorTests
 
         var result = _detector.ClassifyChange(change);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Result}", nameof(ClassifyChange_DropProcedure_IsBreaking), result.Severity);
         result.Severity.Should().Be(BreakingChangeSeverity.Breaking);
     }
 
     [Fact]
     public void ClassifyChange_DropView_IsBreaking()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ClassifyChange_DropView_IsBreaking));
         var change = new SchemaChange("test24", SqlChangeType.DropView, "DROP VIEW [OldView]")
         {
             TableName = "Test"
@@ -427,6 +482,7 @@ public class BreakingChangeDetectorTests
 
         var result = _detector.ClassifyChange(change);
 
+        _loggerMock.Object.LogInformation("Completed test {TestName} with result {Result}", nameof(ClassifyChange_DropView_IsBreaking), result.Severity);
         result.Severity.Should().Be(BreakingChangeSeverity.Breaking);
     }
 
