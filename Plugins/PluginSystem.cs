@@ -9,6 +9,8 @@ namespace EfMigrationDiff.Plugins;
 /// </summary>
 public class PluginSystem
 {
+    public override string ToString() => $"PluginSystem {{ TotalPlugins = {GetStats().TotalPlugins}, PluginNames = {GetStats().PluginNames} }}";
+
     private readonly Dictionary<string, IPlugin> _loadedPlugins = new();
     private readonly List<string> _pluginDirectories = new();
 
