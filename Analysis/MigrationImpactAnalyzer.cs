@@ -10,6 +10,8 @@ namespace EfMigrationDiff.Analysis;
 /// </summary>
 public class MigrationImpactAnalyzer
 {
+    public override string ToString() => "MigrationImpactAnalyzer { }";
+
     private readonly Dictionary<string, double> _riskScores = new();
 
     /// <summary>
@@ -161,6 +163,8 @@ public class MigrationImpactAnalyzer
 /// </summary>
 public class MigrationImpactReport
 {
+    public override string ToString() => $"MigrationImpactReport {{ MigrationName = {MigrationName}, AnalyzedAt = {AnalyzedAt}, IssuesDetected = {IssuesDetected.Count}, RiskScore = {RiskScore}, RiskLevel = {RiskLevel}, HasCriticalIssues = {HasCriticalIssues} }}";
+
     /// <summary>
     /// Gets or sets the migration name.
     /// </summary>
