@@ -304,6 +304,11 @@ public class CommandResult
             ExitCode = exitCode
         };
     }
+
+    public override string ToString()
+    {
+        return $"CommandResult {{ Success = {Success}, Message = {Message}, ExitCode = {ExitCode}, Data = {Data} }}";
+    }
 }
 
 /// <summary>
