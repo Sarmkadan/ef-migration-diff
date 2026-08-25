@@ -253,4 +253,10 @@ public class EfMigrationDiffOptions
             throw new ValidationException(string.Join(Environment.NewLine, errors));
         }
     }
+
+    /// <summary>
+    /// Returns a concise, informative representation of the configuration options.
+    /// </summary>
+    public override string ToString() =>
+        $"{nameof(EfMigrationDiffOptions)} {{ RepositoryPath = {RepositoryPath}, MigrationsPath = {MigrationsPath}, OutputPath = {OutputPath}, ReportFormat = {ReportFormat}, EnableDetailedLogging = {EnableDetailedLogging}, MaxConcurrentAnalysis = {MaxConcurrentAnalysis} }}";
 }
