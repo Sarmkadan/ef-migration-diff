@@ -135,4 +135,6 @@ public class CommandContext
             Console.ForegroundColor = originalColor;
         }
     }
+
+    public override string ToString() => $"{nameof(CommandContext)} {{ CommandName = {CommandName}, RawArguments = {RawArguments}, ParsedOptions = {ParsedOptions}, ParsedArguments = {ParsedArguments}, ServiceProvider = {ServiceProvider}, Output = {Output} }}";
 }
