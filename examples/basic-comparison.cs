@@ -80,4 +80,6 @@ public class ComparisonOptions
 {
     public bool IncludeSchemaPreview { get; set; }
     public bool DetectBreakingChanges { get; set; }
+
+    public override string ToString() => $"ComparisonOptions {{ IncludeSchemaPreview = {IncludeSchemaPreview}, DetectBreakingChanges = {DetectBreakingChanges} }}";
 }
