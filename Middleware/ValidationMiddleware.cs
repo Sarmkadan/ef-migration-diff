@@ -49,7 +49,9 @@ public class ValidationMiddleware : ICommandMiddleware
                 return MiddlewareResult.ShortCircuit(CommandResult.Error(
                     $"Validation failed: {validationResult.Errors.First()}",
                     1));
-            }
+            public override string ToString() => $"ValidationMiddleware {{ IsValid = IsValid, Errors = string.Join(\"\n\t\", Errors) }}";
+        }
+        public override string ToString() => $"ValidationMiddleware {{ IsValid = IsValid, Errors = string.Join(\"\n\t\", Errors) }}";
         }
 
         return MiddlewareResult.Continue();
@@ -108,6 +110,7 @@ public class CommandValidator
             return !string.IsNullOrWhiteSpace(value)
                 ? null
                 : string.IsNullOrEmpty(errorMessage) ? $"Option '{optionName}' has an invalid value" : errorMessage;
+        public override string ToString() => $"ValidationMiddleware {{ IsValid = IsValid, Errors = string.Join(\"\n\t\", Errors) }}";
         });
         return this;
     }
@@ -125,7 +128,9 @@ public class CommandValidator
             if (!string.IsNullOrEmpty(error))
             {
                 errors.Add(error);
-            }
+            public override string ToString() => $"ValidationMiddleware {{ IsValid = IsValid, Errors = string.Join(\"\n\t\", Errors) }}";
+        }
+        public override string ToString() => $"ValidationMiddleware {{ IsValid = IsValid, Errors = string.Join(\"\n\t\", Errors) }}";
         }
 
         return new ValidationResult { IsValid = errors.Count == 0, Errors = errors };
@@ -139,4 +144,6 @@ public class ValidationResult
 {
     public bool IsValid { get; set; }
     public List<string> Errors { get; set; } = new();
+
+    public override string ToString() => $"ValidationResult {{ IsValid = {IsValid}, Errors = [{string.Join(\", \", Errors)}] }}";
 }
