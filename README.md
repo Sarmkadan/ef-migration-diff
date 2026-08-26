@@ -59,6 +59,28 @@ var singleClassification = detector.ClassifyChange(new SchemaChange());
 var summary = detector.ClassifyDiffResult();
 ```
 
+## BreakingChangeDetectorTests
+
+The `BreakingChangeDetectorTests` class contains tests for the breaking change detector service. These tests verify how schema changes are classified: dropping columns, tables, indexes, foreign keys, or stored procedures is reported as breaking, while adding nullable columns or widening data types is considered safe. They also cover warning-level classifications such as renames and newly added foreign keys, batch processing of multiple changes, and the correctness of the overall diff result counts and safety summary.
+
+Example usage:
+```csharp
+using EfMigrationDiff.Tests;
+
+// Create the test class instance
+var tests = new BreakingChangeDetectorTests();
+
+// Run the individual classification tests
+tests.ClassifyChange_DropColumn_IsBreaking();
+tests.ClassifyChange_DropTable_IsBreaking();
+tests.ClassifyChange_AddNullableColumn_IsSafe();
+tests.ClassifyChange_ModifyColumn_NarrowingIntToSmallint_IsBreaking();
+tests.ClassifyChange_Rename_IsWarning();
+tests.ClassifyChanges_ProcessesMultipleChanges();
+tests.ClassifyDiffResult_CalculatesCorrectCounts();
+tests.ClassifyDiffResult_IsSafe_WhenNoBreakingOrWarnings();
+```
+
 ## SchemaChangeDetectorServiceTests
 
 The `SchemaChangeDetectorServiceTests` class contains tests for the schema change detector service. These tests verify that creating and dropping tables, columns, indexes, and foreign keys are detected correctly, including table renames and raw SQL statements. They also confirm that the detector reports the affected tables as a distinct list.
