@@ -276,6 +276,26 @@ public class CacheService : IDisposable
         }
     }
 
+    public override string ToString()
+    {
+        var stats = GetStatistics();
+        object? value = null;
+        DateTime? expiresAt = null;
+        DateTime createdAt = DateTime.MinValue;
+        DateTime? lastAccessedAt = null;
+
+        if (_cache.Count > 0)
+        {
+            var firstEntry = _cache.First().Value;
+            value = firstEntry.Value;
+            expiresAt = firstEntry.ExpiresAt;
+            createdAt = firstEntry.CreatedAt;
+            lastAccessedAt = firstEntry.LastAccessedAt;
+        }
+
+        return $"{nameof(CacheService)} {{ Value = {value}, ExpiresAt = {expiresAt}, CreatedAt = {createdAt}, LastAccessedAt = {lastAccessedAt}, TotalEntries = {stats.TotalEntries}, ValidEntries = {stats.ValidEntries} }}";
+    }
+
     public void Dispose()
     {
         _cleanupTimer?.Dispose();
