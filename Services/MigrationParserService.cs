@@ -1,6 +1,8 @@
 #nullable enable
 using EfMigrationDiff.Models;
 using EfMigrationDiff.Exceptions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Text.RegularExpressions;
 
 namespace EfMigrationDiff.Services;
@@ -10,6 +12,8 @@ namespace EfMigrationDiff.Services;
 /// </summary>
 public class MigrationParserService
 {
+    private readonly ILogger<MigrationParserService> _logger;
+
     private static readonly Regex ClassNameRegex = new(@"public\s+partial\s+class\s+(\w+)\s*:", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex TimestampRegex = new(@"name:\s*""(\d{14})""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex SqlOperationsRegex = new(@"migrationBuilder\.Sql\s*\(", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -20,18 +24,35 @@ public class MigrationParserService
     private static readonly Regex OperationMatchesRegex = new(@"migrationBuilder\.\w+\s*\([^)]*\)", RegexOptions.Compiled);
 
     /// <summary>
+    /// Initializes a new instance of <see cref="MigrationParserService"/>.
+    /// </summary>
+    /// <param name="logger">Optional logger instance for diagnostic output.</param>
+    public MigrationParserService(ILogger<MigrationParserService>? logger = null)
+    {
+        _logger = logger ?? NullLogger<MigrationParserService>.Instance;
+    }
+
+    /// <summary>
     /// Parses a migration file and creates a Migration object.
     /// </summary>
     public Migration? ParseMigrationFile(MigrationFile migrationFile)
     {
         ArgumentNullException.ThrowIfNull(migrationFile);
 
+        _logger.LogDebug("Parsing migration file {FileName}", migrationFile.FileName);
+
         if (!migrationFile.IsValid())
+        {
+            _logger.LogWarning("Could not parse migration file {FileName}: {Reason}", migrationFile.FileName, "invalid file");
             return null;
+        }
 
         var id = ExtractMigrationId(migrationFile.FileName);
         if (string.IsNullOrEmpty(id))
+        {
+            _logger.LogWarning("Could not parse migration file {FileName}: {Reason}", migrationFile.FileName, "missing timestamp id");
             return null;
+        }
 
         var name = ExtractMigrationName(migrationFile.FileName);
         var dbContextName = migrationFile.DbContextName;
@@ -114,6 +135,7 @@ public class MigrationParserService
         // Extract custom SQL operations count
         var sqlOpsCount = SqlOperationsRegex.Matches(content).Count;
         migration.MetadataContent += $"SqlOperationsCount: {sqlOpsCount}\n";
+        _logger.LogDebug("Extracted {SqlOperationCount} SQL operations for migration {MigrationId}", sqlOpsCount, migration.Id);
 
         // Extract comments
         var commentMatches = CommentsRegex.Matches(content);
@@ -230,6 +252,8 @@ public class MigrationParserService
         {
             dependencies.Add(depMatch.Groups[2].Value);
         }
+
+        _logger.LogDebug("Extracted {DependencyCount} dependencies for migration {MigrationId}", dependencies.Count, migration.Id);
 
         return dependencies;
     }
