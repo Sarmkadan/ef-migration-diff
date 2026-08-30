@@ -16,6 +16,21 @@ namespace EfMigrationDiff.CLI;
 public class CommandParser
 {
     private const int MaxArgumentLength = 32 * 1024; // 32KB maximum argument length
+
+    private static class Defaults
+    {
+        public const string ShortOptionPrefix = "-";
+        public const string LongOptionPrefix = "--";
+        public const char ValueSeparator = '=';
+        public const string FormatShortName = "f";
+        public const string FormatLongName = "format";
+        public const string FormatDescription = "Specifies output format (json, csv, text, html, markdown)";
+        public const string DotName = "dot";
+        public const string DotDescription = "Exports migration dependency graph to a DOT file";
+        public const string SummaryName = "summary";
+        public const string SummaryDescription = "Display summary statistics instead of full report";
+    }
+
     private readonly Dictionary<string, CommandOptionDefinition> _knownOptions = new();
     private readonly HashSet<string> _flagOptions = new();
     private readonly StringBuilder _usageBuilder = new();
@@ -24,9 +39,9 @@ public class CommandParser
     {
         // Register the common "format" option used by ReportEngine.
         // Allows callers to specify: --format=json, -f csv, etc.
-        RegisterOption("f", "format", "Specifies output format (json, csv, text, html, markdown)", isFlag: false);
-        RegisterOption(string.Empty, "dot", "Exports migration dependency graph to a DOT file", isFlag: false);
-        RegisterOption(string.Empty, "summary", "Display summary statistics instead of full report", isFlag: true);
+        RegisterOption(Defaults.FormatShortName, Defaults.FormatLongName, Defaults.FormatDescription, isFlag: false);
+        RegisterOption(string.Empty, Defaults.DotName, Defaults.DotDescription, isFlag: false);
+        RegisterOption(string.Empty, Defaults.SummaryName, Defaults.SummaryDescription, isFlag: true);
     }
 
     /// <summary>
@@ -116,12 +131,12 @@ public class CommandParser
             var arg = args[i];
 
             // Handle long options (--option or --option=value)
-            if (arg.StartsWith("--", StringComparison.Ordinal))
+            if (arg.StartsWith(Defaults.LongOptionPrefix, StringComparison.Ordinal))
             {
                 i = ParseLongOption(arg, args, i, context);
             }
             // Handle short options (-o or -ovalue)
-            else if (arg.StartsWith("-", StringComparison.Ordinal) && arg.Length > 1 && arg[1] != '-')
+            else if (arg.StartsWith(Defaults.ShortOptionPrefix, StringComparison.Ordinal) && arg.Length > 1 && arg[1] != Defaults.ShortOptionPrefix[0])
             {
                 i = ParseShortOption(arg, args, i, context);
             }
@@ -149,15 +164,15 @@ public class CommandParser
         string? optionValue = null;
 
         // Check for --option=value format
-        if (arg.Contains("=", StringComparison.Ordinal))
+        if (arg.Contains(Defaults.ValueSeparator))
         {
-            var parts = arg.Substring(2).Split('=', 2);
+            var parts = arg.Substring(Defaults.LongOptionPrefix.Length).Split(Defaults.ValueSeparator, 2);
             optionName = parts[0];
             optionValue = parts.Length > 1 ? parts[1] : null;
         }
         else
         {
-            optionName = arg.Substring(2);
+            optionName = arg.Substring(Defaults.LongOptionPrefix.Length);
         }
 
         // Check if this is a flag option that doesn't take a value
@@ -169,7 +184,7 @@ public class CommandParser
         {
             context.ParsedOptions[optionName] = optionValue;
         }
-        else if (currentIndex + 1 < args.Length && !args[currentIndex + 1].StartsWith("-", StringComparison.Ordinal))
+        else if (currentIndex + 1 < args.Length && !args[currentIndex + 1].StartsWith(Defaults.ShortOptionPrefix, StringComparison.Ordinal))
         {
             // Next arg is the value for this option
             optionValue = args[currentIndex + 1];
@@ -194,7 +209,7 @@ public class CommandParser
     /// <returns>Updated argument index after parsing</returns>
     private int ParseShortOption(string arg, string[] args, int currentIndex, CommandContext context)
     {
-        var optionChars = arg.Substring(1);
+        var optionChars = arg.Substring(Defaults.ShortOptionPrefix.Length);
 
         // -o value format
         if (optionChars.Length == 1)
@@ -205,7 +220,7 @@ public class CommandParser
             {
                 context.ParsedOptions[optionName] = "true";
             }
-            else if (currentIndex + 1 < args.Length && !args[currentIndex + 1].StartsWith("-", StringComparison.Ordinal))
+            else if (currentIndex + 1 < args.Length && !args[currentIndex + 1].StartsWith(Defaults.ShortOptionPrefix, StringComparison.Ordinal))
             {
                 context.ParsedOptions[optionName] = args[currentIndex + 1];
                 return currentIndex + 1;
@@ -238,10 +253,10 @@ public class CommandParser
         ArgumentNullException.ThrowIfNull(args);
 
         // Extract validation parameters from parsed context and arguments
-        var formatOption = context.GetOption("format");
-        var hasSummary = context.HasOption("summary");
-        var hasDot = context.HasOption("dot");
-        var dotPath = context.GetOption("dot");
+        var formatOption = context.GetOption(Defaults.FormatLongName);
+        var hasSummary = context.HasOption(Defaults.SummaryName);
+        var hasDot = context.HasOption(Defaults.DotName);
+        var dotPath = context.GetOption(Defaults.DotName);
 
         // Collect unknown options for validation
         var knownOptions = _knownOptions.Keys.ToHashSet(StringComparer.Ordinal);
@@ -249,11 +264,11 @@ public class CommandParser
 
         foreach (var arg in args)
         {
-            if (arg.StartsWith("--", StringComparison.Ordinal) && arg.Length > 2)
+            if (arg.StartsWith(Defaults.LongOptionPrefix, StringComparison.Ordinal) && arg.Length > Defaults.LongOptionPrefix.Length)
             {
-                var optionName = arg.Substring(2);
+                var optionName = arg.Substring(Defaults.LongOptionPrefix.Length);
                 // Handle --option=value format
-                var equalsIndex = optionName.IndexOf('=');
+                var equalsIndex = optionName.IndexOf(Defaults.ValueSeparator);
                 if (equalsIndex >= 0)
                 {
                     optionName = optionName.Substring(0, equalsIndex);
@@ -264,7 +279,7 @@ public class CommandParser
                     unknownOptions.Add(optionName);
                 }
             }
-            else if (arg.StartsWith("-", StringComparison.Ordinal) && arg.Length > 1 && arg[1] != '-')
+            else if (arg.StartsWith(Defaults.ShortOptionPrefix, StringComparison.Ordinal) && arg.Length > Defaults.ShortOptionPrefix.Length && arg[1] != Defaults.ShortOptionPrefix[0])
             {
                 // Handle short options like -f or -ovalue
                 var optionChar = arg[1].ToString();
@@ -282,11 +297,11 @@ public class CommandParser
 
         foreach (var arg in args)
         {
-            if (arg.StartsWith("--", StringComparison.Ordinal) && arg.Length > 2)
+            if (arg.StartsWith(Defaults.LongOptionPrefix, StringComparison.Ordinal) && arg.Length > Defaults.LongOptionPrefix.Length)
             {
-                var optionName = arg.Substring(2);
+                var optionName = arg.Substring(Defaults.LongOptionPrefix.Length);
                 // Handle --option=value format
-                var equalsIndex = optionName.IndexOf('=');
+                var equalsIndex = optionName.IndexOf(Defaults.ValueSeparator);
                 if (equalsIndex >= 0)
                 {
                     optionName = optionName.Substring(0, equalsIndex);
@@ -347,8 +362,8 @@ public class CommandParser
 
         foreach (var option in GetRegisteredOptions())
         {
-            var shortPart = !string.IsNullOrEmpty(option.ShortName) ? $"-{option.ShortName}, " : " ";
-            var longPart = !string.IsNullOrEmpty(option.LongName) ? $"--{option.LongName}" : "";
+            var shortPart = !string.IsNullOrEmpty(option.ShortName) ? $"{Defaults.ShortOptionPrefix}{option.ShortName}, " : " ";
+            var longPart = !string.IsNullOrEmpty(option.LongName) ? $"{Defaults.LongOptionPrefix}{option.LongName}" : "";
             var separator = option.IsFlag ? "" : " <value>";
 
             usage.AppendLine($" {shortPart}{longPart}{separator} - {option.Description}");
@@ -356,9 +371,9 @@ public class CommandParser
 
         usage.AppendLine("\nExamples:");
         usage.AppendLine($" {commandName} compare develop main");
-        usage.AppendLine($" {commandName} compare develop main --format json");
-        usage.AppendLine($" {commandName} compare develop main --summary");
-        usage.AppendLine($" {commandName} compare develop main --dot output.dot");
+        usage.AppendLine($" {commandName} compare develop main {Defaults.LongOptionPrefix}{Defaults.FormatLongName} json");
+        usage.AppendLine($" {commandName} compare develop main {Defaults.LongOptionPrefix}{Defaults.SummaryName}");
+        usage.AppendLine($" {commandName} compare develop main {Defaults.LongOptionPrefix}{Defaults.DotName} output.dot");
 
         return usage.ToString();
     }
