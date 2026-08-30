@@ -37,9 +37,11 @@ public class HtmlFormatter
     /// </summary>
     /// <param name="language">The language code for the HTML document (e.g., "en", "ru").</param>
     /// <param name="customStyles">Custom CSS styles to include in the HTML output.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="language"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="language"/> is empty or consists only of white-space characters.</exception>
     public HtmlFormatter(string language, string? customStyles = null)
     {
-        ArgumentException.ThrowIfNullOrEmpty(language);
+        ArgumentException.ThrowIfNullOrWhiteSpace(language);
         Language = language;
         DefaultStyles = customStyles ?? GetDefaultStyles();
     }
@@ -47,10 +49,16 @@ public class HtmlFormatter
     /// <summary>
     /// Generates a complete HTML document with title and body content.
     /// </summary>
+    /// <param name="title">The document title.</param>
+    /// <param name="bodyContent">The HTML content for the document body.</param>
+    /// <param name="customCss">Optional CSS styles to append to the default styles.</param>
+    /// <returns>The complete HTML document.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="title"/> or <paramref name="bodyContent"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="title"/> or <paramref name="bodyContent"/> is empty or consists only of white-space characters.</exception>
     public string CreateDocument(string title, string bodyContent, string? customCss = null)
     {
-        ArgumentException.ThrowIfNullOrEmpty(title);
-        ArgumentException.ThrowIfNullOrEmpty(bodyContent);
+        ArgumentException.ThrowIfNullOrWhiteSpace(title);
+        ArgumentException.ThrowIfNullOrWhiteSpace(bodyContent);
         var html = new System.Text.StringBuilder();
 
         html.AppendLine(DocumentType);
@@ -80,6 +88,10 @@ public class HtmlFormatter
     /// <summary>
     /// Generates an HTML table from a collection of objects.
     /// </summary>
+    /// <param name="items">The objects to include in the table.</param>
+    /// <param name="tableClass">An optional CSS class for the table.</param>
+    /// <returns>An HTML table, or a message when <paramref name="items"/> is empty.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="items"/> is <see langword="null"/>.</exception>
     public string GenerateTable<T>(IEnumerable<T> items, string? tableClass = null) where T : class
     {
         ArgumentNullException.ThrowIfNull(items);
@@ -126,18 +138,29 @@ public class HtmlFormatter
     /// <summary>
     /// Creates a heading element.
     /// </summary>
+    /// <param name="text">The heading text.</param>
+    /// <param name="level">The heading level, from 1 through 6.</param>
+    /// <returns>The HTML heading element.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="text"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="level"/> is less than 1 or greater than 6.</exception>
     public string CreateHeading(string text, int level = 1)
     {
-        if (level < 1 || level > 6)
-            level = 1;
+        ArgumentNullException.ThrowIfNull(text);
+        ArgumentOutOfRangeException.ThrowIfLessThan(level, 1);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(level, 6);
         return $"<h{level}>{HtmlEncode(text)}</h{level}>";
     }
 
     /// <summary>
     /// Creates a paragraph element.
     /// </summary>
+    /// <param name="text">The paragraph text.</param>
+    /// <param name="cssClass">An optional CSS class for the paragraph.</param>
+    /// <returns>The HTML paragraph element.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="text"/> is <see langword="null"/>.</exception>
     public string CreateParagraph(string text, string? cssClass = null)
     {
+        ArgumentNullException.ThrowIfNull(text);
         var classAttr = string.IsNullOrEmpty(cssClass) ? string.Empty : $" class=\"{cssClass}\"";
         return $"<p{classAttr}>{HtmlEncode(text)}</p>";
     }
@@ -145,8 +168,13 @@ public class HtmlFormatter
     /// <summary>
     /// Creates an alert/notification box.
     /// </summary>
+    /// <param name="message">The alert message.</param>
+    /// <param name="type">The alert type.</param>
+    /// <returns>The HTML alert element.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="message"/> is <see langword="null"/>.</exception>
     public string CreateAlert(string message, AlertType type = AlertType.Info)
     {
+        ArgumentNullException.ThrowIfNull(message);
         var cssClass = type switch
         {
             AlertType.Success => "alert alert-success",
@@ -161,9 +189,13 @@ public class HtmlFormatter
     /// <summary>
     /// HTML-encodes a string to prevent XSS.
     /// </summary>
+    /// <param name="text">The text to encode.</param>
+    /// <returns>The HTML-encoded text.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="text"/> is <see langword="null"/>.</exception>
     public string HtmlEncode(string text)
     {
-        if (string.IsNullOrEmpty(text))
+        ArgumentNullException.ThrowIfNull(text);
+        if (text.Length == 0)
             return text;
 
         return System.Net.WebUtility.HtmlEncode(text);
