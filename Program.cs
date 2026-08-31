@@ -7,16 +7,17 @@ using EfMigrationDiff.Services;
 using EfMigrationDiff.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 
-var application = new MigrationDiffApplication();
+await using var application = new MigrationDiffApplication();
 await application.RunAsync(args);
 
 /// <summary>
 /// Main application class for EF Migration Diff.
 /// </summary>
-internal class MigrationDiffApplication
+internal class MigrationDiffApplication : IAsyncDisposable
 {
     private readonly Microsoft.Extensions.DependencyInjection.ServiceProvider _serviceProvider;
     private readonly AppSettings _appSettings;
+    private readonly Dictionary<string, Func<string[], Task>> _commandHandlers;
 
     public MigrationDiffApplication()
         : this(null)
@@ -34,6 +35,53 @@ internal class MigrationDiffApplication
             Environment.CurrentDirectory,
             optionsWithPrecedence);
         _appSettings = _serviceProvider.GetService<AppSettings>() ?? throw new InvalidOperationException("Failed to initialize AppSettings");
+        _commandHandlers = new Dictionary<string, Func<string[], Task>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["compare"] = CompareCommand,
+            ["diff"] = CompareCommand,
+            ["check"] = ValidateCommand,
+            ["validate"] = ValidateCommand,
+            ["report"] = ReportCommand,
+            ["visual-diff"] = args =>
+            {
+                VisualDiffCommand(args);
+                return Task.CompletedTask;
+            },
+            ["visual"] = args =>
+            {
+                VisualDiffCommand(args);
+                return Task.CompletedTask;
+            },
+            ["graph"] = DependencyGraphCommand,
+            ["dependency-graph"] = DependencyGraphCommand,
+            ["auto-merge"] = AutoMergeCommand,
+            ["suggest"] = AutoMergeCommand,
+            ["--help"] = _ =>
+            {
+                ShowHelp();
+                return Task.CompletedTask;
+            },
+            ["-h"] = _ =>
+            {
+                ShowHelp();
+                return Task.CompletedTask;
+            },
+            ["help"] = _ =>
+            {
+                ShowHelp();
+                return Task.CompletedTask;
+            },
+            ["--version"] = _ =>
+            {
+                ShowVersion();
+                return Task.CompletedTask;
+            },
+            ["-v"] = _ =>
+            {
+                ShowVersion();
+                return Task.CompletedTask;
+            }
+        };
     }
 
     /// <summary>
@@ -52,55 +100,16 @@ internal class MigrationDiffApplication
                 return;
             }
 
-            var command = args[0].ToLowerInvariant();
-
-            switch (command)
+            var command = args[0];
+            if (_commandHandlers.TryGetValue(command, out var handler))
             {
-                case "compare":
-                case "diff":
-                    await CompareCommand(args);
-                    break;
-
-                case "check":
-                case "validate":
-                    await ValidateCommand(args);
-                    break;
-
-                case "report":
-                    await ReportCommand(args);
-                    break;
-
-                case "visual-diff":
-                case "visual":
-                    VisualDiffCommand(args);
-                    break;
-
-                case "graph":
-                case "dependency-graph":
-                    await DependencyGraphCommand(args);
-                    break;
-
-                case "auto-merge":
-                case "suggest":
-                    await AutoMergeCommand(args);
-                    break;
-
-                case "--help":
-                case "-h":
-                case "help":
-                    ShowHelp();
-                    break;
-
-                case "--version":
-                case "-v":
-                    ShowVersion();
-                    break;
-
-                default:
-                    Console.WriteLine($"Unknown command: {command}");
-                    ShowUsage();
-                    break;
+                await handler(args[1..]);
+                return;
             }
+
+            Console.WriteLine($"Unknown command: {command.ToLowerInvariant()}");
+            Console.WriteLine($"Valid commands: {string.Join(", ", _commandHandlers.Keys)}");
+            ShowUsage();
         }
         catch (EfMigrationDiffException ex)
         {
@@ -137,8 +146,8 @@ internal class MigrationDiffApplication
             throw new GitRepositoryException("Failed to initialize git repository", _appSettings.RepositoryPath);
         }
 
-        var sourceBranch = args.Length > 1 ? args[1] : _appSettings.SourceBranch;
-        var targetBranch = args.Length > 2 ? args[2] : _appSettings.TargetBranch;
+        var sourceBranch = args.Length > 0 ? args[0] : _appSettings.SourceBranch;
+        var targetBranch = args.Length > 1 ? args[1] : _appSettings.TargetBranch;
 
         Console.WriteLine($"Source Branch: {sourceBranch}");
         Console.WriteLine($"Target Branch: {targetBranch}");
@@ -248,7 +257,7 @@ internal class MigrationDiffApplication
     {
         Console.WriteLine("\nGenerating report...");
 
-        var format = args.Length > 1 ? args[1] : "text";
+        var format = args.Length > 0 ? args[0] : "text";
         _appSettings.ReportFormat = format;
         _appSettings.EnsureOutputDirectory();
 
@@ -269,9 +278,9 @@ internal class MigrationDiffApplication
 
         _appSettings.RepositoryPath = Environment.CurrentDirectory;
 
-        var sourceBranch = args.Length > 1 ? args[1] : _appSettings.SourceBranch;
-        var targetBranch = args.Length > 2 ? args[2] : _appSettings.TargetBranch;
-        var format       = args.Length > 3 ? args[3] : "sidebyside";
+        var sourceBranch = args.Length > 0 ? args[0] : _appSettings.SourceBranch;
+        var targetBranch = args.Length > 1 ? args[1] : _appSettings.TargetBranch;
+        var format       = args.Length > 2 ? args[2] : "sidebyside";
 
         Console.WriteLine($"Source Branch: {sourceBranch}");
         Console.WriteLine($"Target Branch: {targetBranch}");
@@ -372,8 +381,8 @@ internal class MigrationDiffApplication
 
         _appSettings.RepositoryPath = Environment.CurrentDirectory;
 
-        var sourceBranch = args.Length > 1 ? args[1] : _appSettings.SourceBranch;
-        var targetBranch = args.Length > 2 ? args[2] : _appSettings.TargetBranch;
+        var sourceBranch = args.Length > 0 ? args[0] : _appSettings.SourceBranch;
+        var targetBranch = args.Length > 1 ? args[1] : _appSettings.TargetBranch;
 
         Console.WriteLine($"Source Branch: {sourceBranch}");
         Console.WriteLine($"Target Branch: {targetBranch}");
@@ -476,5 +485,10 @@ internal class MigrationDiffApplication
     {
         Console.WriteLine($"{Constants.ApplicationName} {Constants.ApplicationVersion}");
         Console.WriteLine($"Author: {Constants.Author}");
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        return _serviceProvider.DisposeAsync();
     }
 }
