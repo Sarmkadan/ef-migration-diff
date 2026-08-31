@@ -20,8 +20,7 @@ public class MigrationParserService
     private static readonly Regex CommentsRegex = new(@"//\s*(.+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex FileNameFormatRegex = new(@"\d{14}_\w+\.cs", RegexOptions.Compiled);
     private static readonly Regex MigrationDependencyRegex = new(@"\.Annotation\s*\(\s*""([^""]+)""\s*,\s*""([^""]+)""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex UpMethodRegex = new(@"protected\s+override\s+void\s+Up\s*\(MigrationBuilder\s+migrationBuilder\)\s*\{(.*?)\}", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex OperationMatchesRegex = new(@"migrationBuilder\.\w+\s*\([^)]*\)", RegexOptions.Compiled);
+    private static readonly Regex UpMethodSignatureRegex = new(@"protected\s+override\s+void\s+Up\s*\(\s*MigrationBuilder\s+(?<parameter>[A-Za-z_][A-Za-z0-9_]*)\s*\)\s*\{", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     /// <summary>
     /// Initializes a new instance of <see cref="MigrationParserService"/>.
@@ -282,12 +281,10 @@ public class MigrationParserService
     {
         var operations = new List<string>();
 
-        var upMethodMatch = UpMethodRegex.Match(migration.Content);
-
-        if (upMethodMatch.Success)
+        var upMethodContent = ExtractUpMethodBody(migration.Content, out var parameterName);
+        if (upMethodContent is not null)
         {
-            var upMethodContent = upMethodMatch.Groups[1].Value;
-            var operationMatches = OperationMatchesRegex.Matches(upMethodContent);
+            var operationMatches = Regex.Matches(upMethodContent, $@"{Regex.Escape(parameterName!)}\.\w+\s*\([^)]*\)");
 
             foreach (Match opMatch in operationMatches)
             {
@@ -296,6 +293,158 @@ public class MigrationParserService
         }
 
         return operations;
+    }
+
+    private static string? ExtractUpMethodBody(string content, out string? parameterName)
+    {
+        var signatureMatch = UpMethodSignatureRegex.Match(content);
+        if (!signatureMatch.Success)
+        {
+            parameterName = null;
+            return null;
+        }
+
+        parameterName = signatureMatch.Groups["parameter"].Value;
+        var bodyStart = signatureMatch.Index + signatureMatch.Length;
+        var depth = 1;
+
+        for (var index = bodyStart; index < content.Length; index++)
+        {
+            if (content[index] == '/' && index + 1 < content.Length)
+            {
+                if (content[index + 1] == '/')
+                {
+                    index = SkipLineComment(content, index + 2);
+                    continue;
+                }
+
+                if (content[index + 1] == '*')
+                {
+                    index = SkipBlockComment(content, index + 2);
+                    continue;
+                }
+            }
+
+            if (content[index] == '\'')
+            {
+                index = SkipCharacterLiteral(content, index + 1);
+                continue;
+            }
+
+            if (content[index] == '"')
+            {
+                index = SkipStringLiteral(content, index);
+                continue;
+            }
+
+            if (content[index] == '{')
+            {
+                depth++;
+            }
+            else if (content[index] == '}' && --depth == 0)
+            {
+                return content[bodyStart..index];
+            }
+        }
+
+        return null;
+    }
+
+    private static int SkipLineComment(string content, int index)
+    {
+        while (index < content.Length && content[index] != '\n')
+        {
+            index++;
+        }
+
+        return index;
+    }
+
+    private static int SkipBlockComment(string content, int index)
+    {
+        while (index + 1 < content.Length)
+        {
+            if (content[index] == '*' && content[index + 1] == '/')
+            {
+                return index + 1;
+            }
+
+            index++;
+        }
+
+        return content.Length - 1;
+    }
+
+    private static int SkipCharacterLiteral(string content, int index)
+    {
+        while (index < content.Length)
+        {
+            if (content[index] == '\\')
+            {
+                index += 2;
+                continue;
+            }
+
+            if (content[index] == '\'')
+            {
+                return index;
+            }
+
+            index++;
+        }
+
+        return content.Length - 1;
+    }
+
+    private static int SkipStringLiteral(string content, int quoteIndex)
+    {
+        var quoteCount = 1;
+        while (quoteIndex + quoteCount < content.Length && content[quoteIndex + quoteCount] == '"')
+        {
+            quoteCount++;
+        }
+
+        if (quoteCount >= 3)
+        {
+            for (var index = quoteIndex + quoteCount; index < content.Length; index++)
+            {
+                var closingQuoteCount = 0;
+                while (index + closingQuoteCount < content.Length && content[index + closingQuoteCount] == '"')
+                {
+                    closingQuoteCount++;
+                }
+
+                if (closingQuoteCount >= quoteCount)
+                {
+                    return index + quoteCount - 1;
+                }
+            }
+
+            return content.Length - 1;
+        }
+
+        var isVerbatim = quoteIndex > 0 && content[quoteIndex - 1] == '@';
+        for (var index = quoteIndex + 1; index < content.Length; index++)
+        {
+            if (isVerbatim && content[index] == '"' && index + 1 < content.Length && content[index + 1] == '"')
+            {
+                index++;
+                continue;
+            }
+
+            if (!isVerbatim && content[index] == '\\')
+            {
+                index++;
+                continue;
+            }
+
+            if (content[index] == '"')
+            {
+                return index;
+            }
+        }
+
+        return content.Length - 1;
     }
 
     /// <summary>
