@@ -52,7 +52,7 @@ public class CommandParser
     /// <param name="description">Description for help text</param>
     /// <param name="isFlag">Whether this is a flag option that doesn't take a value</param>
     /// <returns>The parser instance for method chaining</returns>
-    /// <exception cref="ArgumentException">Thrown when both <paramref name="shortName"/> and <paramref name="longName"/> are empty.</exception>
+    /// <exception cref="ArgumentException">Thrown when both <paramref name="shortName"/> and <paramref name="longName"/> are empty or whitespace.</exception>
     public CommandParser RegisterOption(string shortName, string longName, string description, bool isFlag = false)
     {
         if (string.IsNullOrWhiteSpace(shortName) && string.IsNullOrWhiteSpace(longName))
@@ -84,8 +84,9 @@ public class CommandParser
 
     /// <summary>
     /// Parses raw command-line arguments into a CommandContext with structured options and positional args.
-    /// Handles various formats: --option=value, --option value, -o value, --flag
-    /// Treats all tokens after a bare "--" as positional arguments.
+    /// Handles various formats: --option=value, --option value, -o value, --flag.
+    /// Supports the '--' end-of-options separator: once a bare "--" token is encountered, 
+    /// all subsequent tokens are treated as positional arguments, even if they start with '-' or '--'.
     /// </summary>
     /// <param name="commandName">Name of the command being executed. Cannot be null or whitespace.</param>
     /// <param name="args">Raw command line arguments. Cannot be null.</param>
@@ -362,7 +363,9 @@ public class CommandParser
     }
 
     /// <summary>
-    /// Generates usage text for all registered options using the internal StringBuilder.
+    /// Generates usage text for all registered options.
+    /// Renders short name, long name, description, and flag/value indicator into aligned help text.
+    /// Uses the internal <see cref="_usageBuilder"/> to construct the output.
     /// </summary>
     /// <returns>Formatted usage text with aligned columns.</returns>
     public string GenerateUsageText()
