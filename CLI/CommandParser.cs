@@ -52,16 +52,20 @@ public class CommandParser
     /// <param name="description">Description for help text</param>
     /// <param name="isFlag">Whether this is a flag option that doesn't take a value</param>
     /// <returns>The parser instance for method chaining</returns>
+    /// <exception cref="ArgumentException">Thrown when both <paramref name="shortName"/> and <paramref name="longName"/> are empty.</exception>
     public CommandParser RegisterOption(string shortName, string longName, string description, bool isFlag = false)
     {
-        ArgumentException.ThrowIfNullOrEmpty(shortName);
-        ArgumentException.ThrowIfNullOrEmpty(longName);
+        if (string.IsNullOrWhiteSpace(shortName) && string.IsNullOrWhiteSpace(longName))
+        {
+            throw new ArgumentException("Both shortName and longName cannot be empty.", nameof(shortName));
+        }
+
         ArgumentException.ThrowIfNullOrEmpty(description);
 
         var definition = new CommandOptionDefinition
         {
-            ShortName = shortName,
-            LongName = longName,
+            ShortName = shortName ?? string.Empty,
+            LongName = longName ?? string.Empty,
             Description = description,
             IsFlag = isFlag
         };
@@ -72,7 +76,7 @@ public class CommandParser
         if (!string.IsNullOrEmpty(longName))
             _knownOptions[longName] = definition;
 
-        if (isFlag)
+        if (isFlag && !string.IsNullOrEmpty(longName))
             _flagOptions.Add(longName);
 
         return this;
@@ -81,6 +85,7 @@ public class CommandParser
     /// <summary>
     /// Parses raw command-line arguments into a CommandContext with structured options and positional args.
     /// Handles various formats: --option=value, --option value, -o value, --flag
+    /// Treats all tokens after a bare "--" as positional arguments.
     /// </summary>
     /// <param name="commandName">Name of the command being executed. Cannot be null or whitespace.</param>
     /// <param name="args">Raw command line arguments. Cannot be null.</param>
@@ -129,6 +134,17 @@ public class CommandParser
         for (int i = 0; i < args.Length; i++)
         {
             var arg = args[i];
+
+            // Handle end-of-options separator
+            if (arg == "--")
+            {
+                // All remaining arguments are positional
+                for (int j = i + 1; j < args.Length; j++)
+                {
+                    context.ParsedArguments.Add(args[j]);
+                }
+                break;
+            }
 
             // Handle long options (--option or --option=value)
             if (arg.StartsWith(Defaults.LongOptionPrefix, StringComparison.Ordinal))
@@ -343,6 +359,27 @@ public class CommandParser
     public IEnumerable<CommandOptionDefinition> GetRegisteredOptions()
     {
         return _knownOptions.Values.Distinct(new OptionDefinitionComparer());
+    }
+
+    /// <summary>
+    /// Generates usage text for all registered options using the internal StringBuilder.
+    /// </summary>
+    /// <returns>Formatted usage text with aligned columns.</returns>
+    public string GenerateUsageText()
+    {
+        _usageBuilder.Clear();
+        _usageBuilder.AppendLine("\nOptions:");
+
+        foreach (var option in GetRegisteredOptions())
+        {
+            var shortPart = !string.IsNullOrEmpty(option.ShortName) ? $"{Defaults.ShortOptionPrefix}{option.ShortName}, " : "   ";
+            var longPart = !string.IsNullOrEmpty(option.LongName) ? $"{Defaults.LongOptionPrefix}{option.LongName}" : "";
+            var separator = option.IsFlag ? "" : " <value>";
+
+            _usageBuilder.AppendLine($" {shortPart}{longPart}{separator} - {option.Description}");
+        }
+
+        return _usageBuilder.ToString();
     }
 
     /// <summary>
