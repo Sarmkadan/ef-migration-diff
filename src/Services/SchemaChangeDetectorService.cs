@@ -17,6 +17,10 @@ namespace Services
         /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
         public async Task DetectChangesAsync(string schemaName, string tableName, string columnName, CancellationToken cancellationToken = default)
         {
+            ArgumentNullException.ThrowIfNull(schemaName);
+            ArgumentNullException.ThrowIfNull(tableName);
+            ArgumentNullException.ThrowIfNull(columnName);
+
             try
             {
                 // ... existing code ...
