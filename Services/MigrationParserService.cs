@@ -19,8 +19,9 @@ public class MigrationParserService
     private static readonly Regex SqlOperationsRegex = new(@"migrationBuilder\.Sql\s*\(", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex CommentsRegex = new(@"//\s*(.+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex FileNameFormatRegex = new(@"\d{14}_\w+\.cs", RegexOptions.Compiled);
-    private static readonly Regex MigrationDependencyRegex = new(@"\.Annotation\s*\(\s*""([^""]+)""\s*,\s*""([^""]+)""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex MigrationDependencyRegex = new(@"\.(?:Has)?Annotation\s*\(\s*""([^""]+)""\s*,\s*""([^""]+)""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex UpMethodSignatureRegex = new(@"protected\s+override\s+void\s+Up\s*\(\s*MigrationBuilder\s+(?<parameter>[A-Za-z_][A-Za-z0-9_]*)\s*\)\s*\{", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex DownMethodSignatureRegex = new(@"protected\s+override\s+void\s+Down\s*\(\s*MigrationBuilder\s+(?<parameter>[A-Za-z_][A-Za-z0-9_]*)\s*\)\s*\{", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     /// <summary>
     /// Initializes a new instance of <see cref="MigrationParserService"/>.
@@ -275,18 +276,25 @@ public class MigrationParserService
     }
 
     /// <summary>
-    /// Extracts SQL operations from migration Up method.
+    /// Extracts SQL operations from migration Up and Down methods.
     /// </summary>
     public List<string> ExtractSqlOperations(Migration migration)
     {
         var operations = new List<string>();
 
-        var upMethodContent = ExtractUpMethodBody(migration.Content, out var parameterName);
+        var upMethodContent = ExtractMethodBody(migration.Content, UpMethodSignatureRegex, out var upParam);
         if (upMethodContent is not null)
         {
-            var operationMatches = Regex.Matches(upMethodContent, $@"{Regex.Escape(parameterName!)}\.\w+\s*\([^)]*\)");
+            foreach (Match opMatch in Regex.Matches(upMethodContent, $@"{Regex.Escape(upParam!)}\.\w+\s*\([^)]*\)"))
+            {
+                operations.Add(opMatch.Value);
+            }
+        }
 
-            foreach (Match opMatch in operationMatches)
+        var downMethodContent = ExtractMethodBody(migration.Content, DownMethodSignatureRegex, out var downParam);
+        if (downMethodContent is not null)
+        {
+            foreach (Match opMatch in Regex.Matches(downMethodContent, $@"{Regex.Escape(downParam!)}\.\w+\s*\([^)]*\)"))
             {
                 operations.Add(opMatch.Value);
             }
@@ -296,8 +304,11 @@ public class MigrationParserService
     }
 
     private static string? ExtractUpMethodBody(string content, out string? parameterName)
+        => ExtractMethodBody(content, UpMethodSignatureRegex, out parameterName);
+
+    private static string? ExtractMethodBody(string content, Regex signatureRegex, out string? parameterName)
     {
-        var signatureMatch = UpMethodSignatureRegex.Match(content);
+        var signatureMatch = signatureRegex.Match(content);
         if (!signatureMatch.Success)
         {
             parameterName = null;
