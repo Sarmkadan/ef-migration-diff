@@ -414,12 +414,12 @@ namespace EfMigrationDiff.Tests
         public void Validate_EmptyCommandName_ShouldThrowArgumentException()
         {
             // Arrange
-            var commandName = "";
             var args = Array.Empty<string>();
-            var context = new CommandContext(commandName, args, _serviceProvider);
+            // Create a valid context, then call Validate with an empty command name
+            var context = new CommandContext("valid", args, _serviceProvider);
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => _parser.Validate(context, commandName, args));
+            Assert.Throws<ArgumentException>(() => _parser.Validate(context, "", args));
         }
 
     [Fact]

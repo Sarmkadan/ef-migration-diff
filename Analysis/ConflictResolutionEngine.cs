@@ -41,7 +41,7 @@ public sealed class ConflictResolutionEngine
         _strategies[EfMigrationDiff.Models.ConflictType.TableConflict] = conflict => new ResolutionStrategy
         {
             Type = ResolutionType.Manual,
-            Description = "Manually review and merge the conflicting table operations",
+            Description = "You must manually review and merge the conflicting table operations",
             Priority = 2
         };
 

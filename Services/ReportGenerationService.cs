@@ -372,8 +372,7 @@ public class ReportGenerationService
         return JsonSerializer.Serialize(report, new JsonSerializerOptions
         {
             WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
         });
     }
 

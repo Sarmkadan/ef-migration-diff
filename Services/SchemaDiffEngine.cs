@@ -42,9 +42,8 @@ public sealed class SchemaDiffEngine : ISchemaDiffEngine, IMergeEditor
     {
         ArgumentNullException.ThrowIfNull(sourceChanges);
         ArgumentNullException.ThrowIfNull(targetChanges);
-        ArgumentNullException.ThrowIfNull(options);
-        _logger.LogInformation("Computing schema diff with {SourceChangeCount} source changes and {TargetChangeCount} target changes", sourceChanges.Count, targetChanges.Count);;
         options ??= SchemaDiffOptions.Default;
+        _logger.LogInformation("Computing schema diff with {SourceChangeCount} source changes and {TargetChangeCount} target changes", sourceChanges.Count, targetChanges.Count);
 
         var sourceLines = ProjectToLines(sourceChanges, options);
         var targetLines = ProjectToLines(targetChanges, options);
@@ -92,7 +91,6 @@ public sealed class SchemaDiffEngine : ISchemaDiffEngine, IMergeEditor
         ArgumentNullException.ThrowIfNull(baseChanges);
         ArgumentNullException.ThrowIfNull(sourceChanges);
         ArgumentNullException.ThrowIfNull(targetChanges);
-        ArgumentNullException.ThrowIfNull(options);
         options ??= SchemaDiffOptions.Default;
 
         var baseToSource = ComputeDiff(baseChanges, sourceChanges,
