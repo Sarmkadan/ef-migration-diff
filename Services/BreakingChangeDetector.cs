@@ -180,24 +180,7 @@ public class BreakingChangeDetector
     /// </summary>
     private string? CheckTypeNarrowing(SchemaChange change)
     {
-        // Check metadata for type changes
-        if (change.Metadata.TryGetValue("OldType", out var oldTypeObj) &&
-            change.Metadata.TryGetValue("NewType", out var newTypeObj))
-        {
-            var oldType = oldTypeObj?.ToString();
-            var newType = newTypeObj?.ToString();
-
-            if (!string.IsNullOrEmpty(oldType) && !string.IsNullOrEmpty(newType))
-            {
-                // Common narrowing patterns
-                if (IsNarrowingType(oldType, newType))
-                {
-                    return $"column type narrowed from {oldType} to {newType}";
-                }
-            }
-        }
-
-        // Check for precision/scale reductions
+        // Check for precision/scale reductions first (more specific message)
         if (change.Metadata.TryGetValue("OldPrecision", out var oldPrecisionObj) &&
             change.Metadata.TryGetValue("NewPrecision", out var newPrecisionObj))
         {
@@ -217,6 +200,22 @@ public class BreakingChangeDetector
                 newScale < oldScale)
             {
                 return $"column scale reduced from {oldScale} to {newScale}";
+            }
+        }
+
+        // Check metadata for type changes
+        if (change.Metadata.TryGetValue("OldType", out var oldTypeObj) &&
+            change.Metadata.TryGetValue("NewType", out var newTypeObj))
+        {
+            var oldType = oldTypeObj?.ToString();
+            var newType = newTypeObj?.ToString();
+
+            if (!string.IsNullOrEmpty(oldType) && !string.IsNullOrEmpty(newType))
+            {
+                if (IsNarrowingType(oldType, newType))
+                {
+                    return $"column type narrowed from {oldType} to {newType}";
+                }
             }
         }
 
@@ -266,6 +265,11 @@ public class BreakingChangeDetector
         oldType = oldType.Replace(" ", "").ToLowerInvariant();
         newType = newType.Replace(" ", "").ToLowerInvariant();
 
+        // varchar(max)/nvarchar(max) narrowed to any fixed length
+        if ((oldType == "varchar(max)" && newType.StartsWith("varchar(") && newType != "varchar(max)") ||
+            (oldType == "nvarchar(max)" && newType.StartsWith("nvarchar(") && newType != "nvarchar(max)"))
+            return true;
+
         // Common narrowing patterns
         return (oldType, newType) switch
         {
@@ -273,7 +277,6 @@ public class BreakingChangeDetector
             ("varchar(max)", "varchar") => true,
             ("nvarchar", "nvarchar(255)") => true,
             ("varchar", "varchar(255)") => true,
-            ("decimal(18,2)", "decimal(10,2)") => true,
             ("decimal(19,4)", "decimal(18,2)") => true,
             ("int", "smallint") => true,
             ("bigint", "int") => true,

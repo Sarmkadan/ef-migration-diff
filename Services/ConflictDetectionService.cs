@@ -111,6 +111,56 @@ public class ConflictDetectionService
             }
         }
 
+        // Rename operations conflict with any operation on the same table, including column ops
+        var sourceRenameOps = sourceChanges.Where(c => c.ChangeType == SqlChangeType.Rename).ToList();
+        var targetNonRenameOps = targetChanges.Where(c => c.ChangeType != SqlChangeType.Rename &&
+            c.ChangeType is SqlChangeType.AddColumn or SqlChangeType.DropColumn or SqlChangeType.ModifyColumn).ToList();
+
+        foreach (var renameOp in sourceRenameOps)
+        {
+            var conflictingOps = targetNonRenameOps.Where(t => t.TableName == renameOp.TableName).ToList();
+            foreach (var targetOp in conflictingOps)
+            {
+                // Skip if already detected as a rename-vs-modify conflict
+                if (targetOp.ChangeType == SqlChangeType.ModifyColumn)
+                    continue;
+
+                var conflict = new ConflictInfo(renameOp.MigrationId, targetOp.MigrationId, ConflictType.TableConflict)
+                {
+                    Description = $"Table [{renameOp.TableName}] has conflicting operations: {renameOp.ChangeType} vs {targetOp.ChangeType}",
+                    Severity = ConflictSeverity.Error
+                };
+                conflict.AddAffectedElement(renameOp.TableName);
+                conflict.AddDetail("SourceOperation", renameOp.ChangeType.ToString());
+                conflict.AddDetail("TargetOperation", targetOp.ChangeType.ToString());
+                conflicts.Add(conflict);
+            }
+        }
+
+        var targetRenameOps = targetChanges.Where(c => c.ChangeType == SqlChangeType.Rename).ToList();
+        var sourceNonRenameOps = sourceChanges.Where(c => c.ChangeType != SqlChangeType.Rename &&
+            c.ChangeType is SqlChangeType.AddColumn or SqlChangeType.DropColumn or SqlChangeType.ModifyColumn).ToList();
+
+        foreach (var renameOp in targetRenameOps)
+        {
+            var conflictingOps = sourceNonRenameOps.Where(t => t.TableName == renameOp.TableName).ToList();
+            foreach (var sourceOp in conflictingOps)
+            {
+                if (sourceOp.ChangeType == SqlChangeType.ModifyColumn)
+                    continue;
+
+                var conflict = new ConflictInfo(sourceOp.MigrationId, renameOp.MigrationId, ConflictType.TableConflict)
+                {
+                    Description = $"Table [{renameOp.TableName}] has conflicting operations: {sourceOp.ChangeType} vs {renameOp.ChangeType}",
+                    Severity = ConflictSeverity.Error
+                };
+                conflict.AddAffectedElement(renameOp.TableName);
+                conflict.AddDetail("SourceOperation", sourceOp.ChangeType.ToString());
+                conflict.AddDetail("TargetOperation", renameOp.ChangeType.ToString());
+                conflicts.Add(conflict);
+            }
+        }
+
         return conflicts;
     }
 

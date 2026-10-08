@@ -47,12 +47,9 @@ namespace EfMigrationDiff.Tests
         private MigrationFile BuildMigrationFile(string fileName, string dbContextName, string content)
         {
             var path = CreateTempMigrationFile(fileName, content);
-            var migrationFile = new MigrationFile
-            {
-                FileName = path,
-                DbContextName = dbContextName
-            };
-            // Load the content from the temporary file.
+            var migrationFile = new MigrationFile(path, dbContextName);
+            // Override FileName to the original migration name so parsing extracts the correct ID.
+            migrationFile.FileName = fileName;
             migrationFile.LoadContentAsync().GetAwaiter().GetResult();
             return migrationFile;
         }

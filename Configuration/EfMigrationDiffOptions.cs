@@ -174,7 +174,7 @@ public class EfMigrationDiffOptions
             }
             else if (dotExportPath.Contains("..") || dotExportPath.StartsWith("/") || dotExportPath.StartsWith("\\"))
             {
-                errors.Add("The --dot option value contains directory traversal sequences or absolute paths. Use a relative path within the working directory.");
+                errors.Add($"The --dot option value '{dotExportPath}' contains directory traversal sequences or absolute paths. Use a relative path within the working directory.");
             }
         }
 
@@ -187,11 +187,8 @@ public class EfMigrationDiffOptions
         // Validate unknown options if provided
         if (unknownOptions is not null && unknownOptions.Count > 0)
         {
-            foreach (var unknownOption in unknownOptions)
-            {
-                errors.Add($"Unknown option(s) specified: --{unknownOption}. Use --help for available options.");
-                break; // Return first unknown option error for consistency
-            }
+            var optionsList = string.Join(", ", unknownOptions.Select(o => $"--{o}"));
+            errors.Add($"Unknown option(s) specified: {optionsList}. Use --help for available options.");
         }
 
         // Validate duplicate flags if provided
@@ -204,8 +201,9 @@ public class EfMigrationDiffOptions
             }
         }
 
-        // Validate minimum positional arguments (commands typically need at least 2 positional arguments)
-        if (positionalArgumentCount is not null && positionalArgumentCount < 2)
+        // Validate minimum positional arguments only when DOT or format options suggest a compare command
+        if (positionalArgumentCount is not null && positionalArgumentCount < 2 &&
+            (reportFormat is not null || enableSummaryMode == true || dotExportPath is not null))
         {
             errors.Add("Missing required arguments. Expected at least 2 positional arguments (source migration/branch and target migration/branch).");
         }

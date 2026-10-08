@@ -185,7 +185,7 @@ public class SchemaChangeDetectorService
         }
 
         // Extract ADD FOREIGN KEY
-        var addFkMatch = Regex.Match(line, @"AddForeignKey\s*\([^)]*table:\s*""([^""]+)""", RegexOptions.IgnoreCase);
+        var addFkMatch = Regex.Match(line, @"AddForeignKey\s*\([^)]*?(?<!\w)table:\s*""([^""]+)""", RegexOptions.IgnoreCase);
         if (addFkMatch.Success)
         {
             return new SchemaChange(migrationId, SqlChangeType.AddForeignKey, line)
@@ -196,7 +196,7 @@ public class SchemaChangeDetectorService
         }
 
         // Extract DROP FOREIGN KEY
-        var dropFkMatch = Regex.Match(line, @"DropForeignKey\s*\([^)]*table:\s*""([^""]+)""", RegexOptions.IgnoreCase);
+        var dropFkMatch = Regex.Match(line, @"DropForeignKey\s*\([^)]*?(?<!\w)table:\s*""([^""]+)""", RegexOptions.IgnoreCase);
         if (dropFkMatch.Success)
         {
             return new SchemaChange(migrationId, SqlChangeType.DropForeignKey, line)
