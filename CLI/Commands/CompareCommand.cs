@@ -15,6 +15,66 @@ namespace EfMigrationDiff.CLI.Commands;
 /// </summary>
 public class CompareCommand : ICommand
 {
+    private static class OptionNames
+    {
+        public const string Format = "format";
+        public const string DotExport = "dot";
+        public const string Summary = "summary";
+    }
+
+    private static class ReportNames
+    {
+        public const string ComparisonBase = "migration-comparison";
+    }
+
+    private static class PathRules
+    {
+        public const string ParentDirectorySequence = "..";
+        public const string HomeDirectoryPrefix = "~";
+        public const string ForwardSlashPrefix = "/";
+        public const string BackslashPrefix = "\\";
+    }
+
+    private static class ExitCodes
+    {
+        // Blocking conflicts keep the historical exit code 1 (distinct from Constants.ExitCodes.ConflictsFound).
+        public const int BlockingConflicts = 1;
+    }
+
+    private static class Messages
+    {
+        public const string ExportPathEmpty = "The export path cannot be null or whitespace.";
+        public const string ExportPathInvalidChars = "The export path '{0}' contains invalid path characters.";
+        public const string ExportPathInvalid = "The export path '{0}' is invalid: {1}";
+        public const string ExportPathNotResolved = "The export path '{0}' could not be resolved to an absolute path.";
+        public const string ExportPathOutsideRepository =
+            "The export path '{0}' would write outside the repository directory '{1}'. " +
+            "Use a relative path within the working directory.";
+        public const string ExportPathTraversal =
+            "The export path '{0}' contains directory traversal sequences or absolute paths. " +
+            "Use a relative path within the working directory.";
+
+        public const string AppSettingsNotFound = "AppSettings not found in service provider";
+        public const string DiffServiceNotFound = "MigrationDiffService not found";
+        public const string ReportServiceNotFound = "ReportGenerationService not found";
+        public const string GraphServiceNotFound = "MigrationDependencyGraphService not found";
+
+        public const string Comparing = "Comparing {0} → {1}";
+        public const string RepositoryInitFailed = "Failed to initialize git repository at {0}";
+        public const string SourceBranchNotFound = "Source branch not found: {0}";
+        public const string TargetBranchNotFound = "Target branch not found: {0}";
+        public const string DotExported = "✓ DOT graph exported to: {0}";
+        public const string ComparisonCompleted = "\n✓ Comparison completed";
+        public const string ConflictsDetected = " Conflicts detected: {0}";
+        public const string SchemaChanges = " Schema changes: {0}";
+        public const string Result = " Result: {0}";
+        public const string SummaryLine = " Summary: Added: {0}, Removed: {1}, Conflicts: {2}";
+        public const string ReportSaved = "✓ Report saved to: {0}";
+        public const string BlockingConflictsWarning = "⚠️ Blocking conflicts detected - deployment would be blocked";
+        public const string BlockingConflictsError = "Blocking conflicts detected";
+        public const string ComparisonSucceeded = "Migration comparison completed successfully";
+    }
+
     /// <summary>
     /// Validates and resolves a file path to ensure it stays within the repository directory.
     /// </summary>
@@ -32,14 +92,14 @@ public class CompareCommand : ICommand
         // Check for null or whitespace after trimming
         if (string.IsNullOrWhiteSpace(path))
         {
-            throw new ArgumentException("The export path cannot be null or whitespace.", nameof(path));
+            throw new ArgumentException(Messages.ExportPathEmpty, nameof(path));
         }
 
         // Check for invalid path characters
         if (path.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
         {
             throw new ArgumentException(
-                $"The export path '{path}' contains invalid path characters.",
+                string.Format(Messages.ExportPathInvalidChars, path),
                 nameof(path));
         }
 
@@ -52,7 +112,7 @@ public class CompareCommand : ICommand
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
         {
             throw new ArgumentException(
-                $"The export path '{path}' is invalid: {ex.Message}",
+                string.Format(Messages.ExportPathInvalid, path, ex.Message),
                 nameof(path),
                 ex);
         }
@@ -74,7 +134,7 @@ public class CompareCommand : ICommand
         {
             // This shouldn't happen with GetFullPath, but let's be defensive
             throw new ArgumentException(
-                $"The export path '{path}' could not be resolved to an absolute path.");
+                string.Format(Messages.ExportPathNotResolved, path));
         }
 
         // Ensure the resolved path stays within the repository directory
@@ -82,17 +142,18 @@ public class CompareCommand : ICommand
         if (!fullPath.StartsWith(repositoryPath, StringComparison.OrdinalIgnoreCase))
         {
             throw new ArgumentException(
-                $"The export path '{path}' would write outside the repository directory '{repositoryPath}'. " +
-                "Use a relative path within the working directory.");
+                string.Format(Messages.ExportPathOutsideRepository, path, repositoryPath));
         }
 
         // Check if the path contains directory traversal sequences that could bypass our validation
         // This is a defense-in-depth check
-        if (path.Contains("..") || path.Contains("~") || path.StartsWith("/") || path.StartsWith("\\"))
+        if (path.Contains(PathRules.ParentDirectorySequence)
+            || path.Contains(PathRules.HomeDirectoryPrefix)
+            || path.StartsWith(PathRules.ForwardSlashPrefix)
+            || path.StartsWith(PathRules.BackslashPrefix))
         {
             throw new ArgumentException(
-                $"The export path '{path}' contains directory traversal sequences or absolute paths. " +
-                "Use a relative path within the working directory.");
+                string.Format(Messages.ExportPathTraversal, path));
         }
 
         return fullPath;
@@ -107,13 +168,13 @@ public class CompareCommand : ICommand
     public async Task<CommandResult> ExecuteAsync(CommandContext context)
     {
         var appSettings = context.ServiceProvider.GetService<AppSettings>()
-        ?? throw new InvalidOperationException("AppSettings not found in service provider");
+        ?? throw new InvalidOperationException(Messages.AppSettingsNotFound);
 
         var diffService = context.ServiceProvider.GetService<MigrationDiffService>()
-        ?? throw new InvalidOperationException("MigrationDiffService not found");
+        ?? throw new InvalidOperationException(Messages.DiffServiceNotFound);
 
         var reportService = context.ServiceProvider.GetService<ReportGenerationService>()
-        ?? throw new InvalidOperationException("ReportGenerationService not found");
+        ?? throw new InvalidOperationException(Messages.ReportServiceNotFound);
 
         // Get source and target branches from arguments
         string sourceBranch = context.ParsedArguments.Count > 0
@@ -125,9 +186,9 @@ public class CompareCommand : ICommand
             : appSettings.TargetBranch;
 
         // Check for optional format override
-        string? format = context.GetOption("format");
+        string? format = context.GetOption(OptionNames.Format);
 
-        context.WriteColoredOutput($"Comparing {sourceBranch} → {targetBranch}", ConsoleColor.Cyan);
+        context.WriteColoredOutput(string.Format(Messages.Comparing, sourceBranch, targetBranch), ConsoleColor.Cyan);
 
         appSettings.RepositoryPath = Environment.CurrentDirectory;
 
@@ -135,27 +196,27 @@ public class CompareCommand : ICommand
         var gitRepo = new GitRepository(appSettings.RepositoryPath);
         if (!gitRepo.Initialize())
         {
-            return CommandResult.Error($"Failed to initialize git repository at {appSettings.RepositoryPath}");
+            return CommandResult.Error(string.Format(Messages.RepositoryInitFailed, appSettings.RepositoryPath));
         }
 
         var source = gitRepo.GetBranch(sourceBranch);
         var target = gitRepo.GetBranch(targetBranch);
 
         if (source is null)
-            return CommandResult.Error($"Source branch not found: {sourceBranch}");
+            return CommandResult.Error(string.Format(Messages.SourceBranchNotFound, sourceBranch));
 
         if (target is null)
-            return CommandResult.Error($"Target branch not found: {targetBranch}");
+            return CommandResult.Error(string.Format(Messages.TargetBranchNotFound, targetBranch));
 
         // Perform comparison
         var diff = diffService.CompareBranches(source, target);
 
         // Optional DOT graph export
-        string? dotExportPath = context.GetOption("dot");
+        string? dotExportPath = context.GetOption(OptionNames.DotExport);
         if (!string.IsNullOrEmpty(dotExportPath))
         {
             var graphService = context.ServiceProvider.GetService<MigrationDependencyGraphService>()
-            ?? throw new InvalidOperationException("MigrationDependencyGraphService not found");
+            ?? throw new InvalidOperationException(Messages.GraphServiceNotFound);
 
             // Validate and resolve the export path to prevent directory traversal attacks
             string resolvedPath;
@@ -181,21 +242,25 @@ public class CompareCommand : ICommand
             var graph = graphService.Build(allMigrations);
             var dotContent = graphService.RenderDot(graph);
             File.WriteAllText(resolvedPath, dotContent);
-            context.WriteColoredOutput($"✓ DOT graph exported to: {resolvedPath}", ConsoleColor.Green);
+            context.WriteColoredOutput(string.Format(Messages.DotExported, resolvedPath), ConsoleColor.Green);
         }
 
         // Check for summary mode
-        bool isSummary = context.GetOption("summary") is not null;
+        bool isSummary = context.GetOption(OptionNames.Summary) is not null;
 
         // Display summary
-        context.WriteColoredOutput($"\n✓ Comparison completed", ConsoleColor.Green);
-        context.WriteOutput($" Conflicts detected: {diff.Conflicts.Count}");
-        context.WriteOutput($" Schema changes: {diff.GetTotalSchemaChanges()}");
-        context.WriteOutput($" Result: {diff.Result}");
+        context.WriteColoredOutput(Messages.ComparisonCompleted, ConsoleColor.Green);
+        context.WriteOutput(string.Format(Messages.ConflictsDetected, diff.Conflicts.Count));
+        context.WriteOutput(string.Format(Messages.SchemaChanges, diff.GetTotalSchemaChanges()));
+        context.WriteOutput(string.Format(Messages.Result, diff.Result));
 
         if (isSummary)
         {
-            context.WriteOutput($" Summary: Added: {diff.OnlyInSource.Count}, Removed: {diff.OnlyInTarget.Count}, Conflicts: {diff.Conflicts.Count}");
+            context.WriteOutput(string.Format(
+                Messages.SummaryLine,
+                diff.OnlyInSource.Count,
+                diff.OnlyInTarget.Count,
+                diff.Conflicts.Count));
         }
         else
         {
@@ -209,12 +274,12 @@ public class CompareCommand : ICommand
 
             var reportPath = Path.Combine(
                 appSettings.GetOutputDirectory(),
-                appSettings.GetReportFilename("migration-comparison"));
+                appSettings.GetReportFilename(ReportNames.ComparisonBase));
 
             var reportContent = appSettings.ReportFormat switch
             {
-                "json" => reportService.GenerateJsonReport(diff),
-                "html" => reportService.GenerateHtmlReport(diff),
+                Constants.ReportFormats.Json => reportService.GenerateJsonReport(diff),
+                Constants.ReportFormats.Html => reportService.GenerateHtmlReport(diff),
                 _ => reportService.GenerateTextReport(diff)
             };
 
@@ -223,14 +288,14 @@ public class CompareCommand : ICommand
             // When JSON format is requested, emit the report to stdout so callers can pipe
             // or capture it directly without locating the output file. Status messages are
             // sent to stderr to keep stdout clean for machine consumption.
-            if (appSettings.ReportFormat == "json")
+            if (appSettings.ReportFormat == Constants.ReportFormats.Json)
             {
-                context.ErrorOutput.WriteLine($"✓ Report saved to: {reportPath}");
+                context.ErrorOutput.WriteLine(string.Format(Messages.ReportSaved, reportPath));
                 context.WriteOutput(reportContent);
             }
             else
             {
-                context.WriteColoredOutput($"✓ Report saved to: {reportPath}", ConsoleColor.Green);
+                context.WriteColoredOutput(string.Format(Messages.ReportSaved, reportPath), ConsoleColor.Green);
             }
         }
 
@@ -239,10 +304,10 @@ public class CompareCommand : ICommand
         // Exit with error if blocking conflicts exist
         if (diff.HasBlockingConflicts())
         {
-            context.WriteColoredOutput("⚠️ Blocking conflicts detected - deployment would be blocked", ConsoleColor.Yellow);
-            return CommandResult.Error("Blocking conflicts detected", 1);
+            context.WriteColoredOutput(Messages.BlockingConflictsWarning, ConsoleColor.Yellow);
+            return CommandResult.Error(Messages.BlockingConflictsError, ExitCodes.BlockingConflicts);
         }
 
-        return CommandResult.Ok("Migration comparison completed successfully");
+        return CommandResult.Ok(Messages.ComparisonSucceeded);
     }
 }

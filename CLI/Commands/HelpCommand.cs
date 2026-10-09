@@ -13,6 +13,8 @@ public class HelpCommand : ICommand
 
     public async Task<CommandResult> ExecuteAsync(CommandContext context)
     {
+        ArgumentNullException.ThrowIfNull(context);
+
         var helpText = new System.Text.StringBuilder();
 
         helpText.AppendLine("\n╔════════════════════════════════════════════════════════════╗");
