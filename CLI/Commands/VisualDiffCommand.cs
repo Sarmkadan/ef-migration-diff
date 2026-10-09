@@ -38,6 +38,10 @@ public sealed class VisualDiffCommand
         IMergeEditor              mergeEditor,
         AppSettings               settings)
     {
+        ArgumentNullException.ThrowIfNull(pipeline);
+        ArgumentNullException.ThrowIfNull(mergeEditor);
+        ArgumentNullException.ThrowIfNull(settings);
+
         _pipeline    = pipeline;
         _mergeEditor = mergeEditor;
         _settings    = settings;
@@ -58,6 +62,8 @@ public sealed class VisualDiffCommand
     /// </returns>
     public int Execute(CommandContext context)
     {
+        ArgumentNullException.ThrowIfNull(context);
+
         var sourceName = context.GetOption("source") ?? _settings.SourceBranch;
         var targetName = context.GetOption("target") ?? _settings.TargetBranch;
         var baseName   = context.GetOption("base");
