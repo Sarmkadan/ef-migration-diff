@@ -8,6 +8,12 @@ namespace EfMigrationDiff.Caching;
 /// </summary>
 public class CacheService : IDisposable
 {
+    private const string EmptyKeyMessage = "Cache key cannot be null or empty";
+    private const string KeyNotFoundOrExpiredMessage = "Cache key not found or expired: ";
+    private const string KeyNotFoundMessage = "Cache key not found: ";
+    private const string InvalidCastMessagePrefix = "Cache entry for key '";
+    private const string InvalidCastMessageSuffix = "' is not of type ";
+
     private readonly Dictionary<string, CacheEntry> _cache = new();
     private readonly ReaderWriterLockSlim _lock = new();
     private Timer? _cleanupTimer;
@@ -40,7 +46,7 @@ public class CacheService : IDisposable
     public void Set<T>(string key, T value, TimeSpan? expiration = null)
     {
         if (string.IsNullOrEmpty(key))
-            throw new ArgumentException("Cache key cannot be null or empty", nameof(key));
+            throw new ArgumentException(EmptyKeyMessage, nameof(key));
 
         _lock.EnterWriteLock();
         try
@@ -123,7 +129,7 @@ public class CacheService : IDisposable
     {
         // Validate key
         if (string.IsNullOrEmpty(key))
-            throw new ArgumentException("Cache key cannot be null or empty", nameof(key));
+            throw new ArgumentException(EmptyKeyMessage, nameof(key));
 
         // Use an upgradeable read lock so we can promote to write lock if we need to remove an expired entry
         _lock.EnterUpgradeableReadLock();
@@ -144,7 +150,7 @@ public class CacheService : IDisposable
                         _lock.ExitWriteLock();
                     }
 
-                    throw new KeyNotFoundException($"Cache key not found or expired: {key}");
+                    throw new KeyNotFoundException($"{KeyNotFoundOrExpiredMessage}{key}");
                 }
 
                 if (entry.Value is T typedValue)
@@ -155,10 +161,10 @@ public class CacheService : IDisposable
                 }
 
                 // If the stored value cannot be cast to the requested type, treat it as a missing key
-                throw new InvalidCastException($"Cache entry for key '{key}' is not of type {typeof(T).FullName}");
+                throw new InvalidCastException($"{InvalidCastMessagePrefix}{key}{InvalidCastMessageSuffix}{typeof(T).FullName}");
             }
 
-            throw new KeyNotFoundException($"Cache key not found: {key}");
+            throw new KeyNotFoundException($"{KeyNotFoundMessage}{key}");
         }
         finally
         {
