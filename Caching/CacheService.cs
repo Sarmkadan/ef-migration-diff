@@ -45,6 +45,8 @@ public class CacheService : IDisposable
     /// <exception cref="ArgumentException">Thrown when <paramref name="key"/> is null or empty.</exception>
     public void Set<T>(string key, T value, TimeSpan? expiration = null)
     {
+        ArgumentNullException.ThrowIfNull(key);
+
         if (string.IsNullOrEmpty(key))
             throw new ArgumentException(EmptyKeyMessage, nameof(key));
 
@@ -75,6 +77,8 @@ public class CacheService : IDisposable
     /// <returns><c>true</c> if a valid, non-expired entry was found and successfully cast; otherwise <c>false</c>.</returns>
     public bool TryGet<T>(string key, out T? value)
     {
+        ArgumentNullException.ThrowIfNull(key);
+
         value = default;
 
         if (string.IsNullOrEmpty(key))
@@ -128,6 +132,8 @@ public class CacheService : IDisposable
     public T Get<T>(string key)
     {
         // Validate key
+        ArgumentNullException.ThrowIfNull(key);
+
         if (string.IsNullOrEmpty(key))
             throw new ArgumentException(EmptyKeyMessage, nameof(key));
 
@@ -185,6 +191,8 @@ public class CacheService : IDisposable
     /// </summary>
     public bool Remove(string key)
     {
+        ArgumentNullException.ThrowIfNull(key);
+
         if (string.IsNullOrEmpty(key))
             return false;
 
@@ -204,6 +212,8 @@ public class CacheService : IDisposable
     /// </summary>
     public int RemoveByPattern(string pattern)
     {
+        ArgumentNullException.ThrowIfNull(pattern);
+
         _lock.EnterWriteLock();
         try
         {
