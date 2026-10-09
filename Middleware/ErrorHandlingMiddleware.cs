@@ -9,6 +9,12 @@ namespace EfMigrationDiff.Middleware;
 /// </summary>
 public class ErrorHandlingMiddleware : ICommandMiddleware
 {
+    private const string InvalidArgumentMessage = "Invalid argument";
+    private const string OperationFailedMessage = "Operation failed";
+    private const string OperationTimedOutMessage = "Operation timed out";
+    private const string UnexpectedErrorMessage = "An unexpected error occurred";
+    private const string NoStackTraceMessage = "No stack trace available";
+
     private readonly bool _includeStackTrace;
 
     public ErrorHandlingMiddleware(bool includeStackTrace = false)
@@ -29,15 +35,15 @@ public class ErrorHandlingMiddleware : ICommandMiddleware
     {
         var result = exception switch
         {
-            ArgumentException or ArgumentNullException => CreateResult(400, "Invalid argument", exception),
-            InvalidOperationException => CreateResult(500, "Operation failed", exception),
-            TimeoutException => CreateResult(504, "Operation timed out", exception),
-            _ => CreateResult(500, "An unexpected error occurred", exception)
+            ArgumentException or ArgumentNullException => CreateResult(400, InvalidArgumentMessage, exception),
+            InvalidOperationException => CreateResult(500, OperationFailedMessage, exception),
+            TimeoutException => CreateResult(504, OperationTimedOutMessage, exception),
+            _ => CreateResult(500, UnexpectedErrorMessage, exception)
         };
 
         if (_includeStackTrace)
         {
-            context.WriteError(exception.StackTrace ?? "No stack trace available");
+            context.WriteError(exception.StackTrace ?? NoStackTraceMessage);
         }
 
         return result;
