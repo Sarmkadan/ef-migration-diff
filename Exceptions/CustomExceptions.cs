@@ -6,8 +6,15 @@ namespace EfMigrationDiff.Exceptions;
 /// </summary>
 public class EfMigrationDiffException : Exception
 {
-    public EfMigrationDiffException(string message) : base(message) { }
-    public EfMigrationDiffException(string message, Exception innerException) : base(message, innerException) { }
+    public EfMigrationDiffException(string message) : base(message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+    }
+    public EfMigrationDiffException(string message, Exception innerException) : base(message, innerException)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(innerException);
+    }
 }
 
 /// <summary>
@@ -15,8 +22,15 @@ public class EfMigrationDiffException : Exception
 /// </summary>
 public class RepositoryException : EfMigrationDiffException
 {
-    public RepositoryException(string message) : base(message) { }
-    public RepositoryException(string message, Exception innerException) : base(message, innerException) { }
+    public RepositoryException(string message) : base(message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+    }
+    public RepositoryException(string message, Exception innerException) : base(message, innerException)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(innerException);
+    }
 }
 
 /// <summary>
@@ -27,13 +41,20 @@ public class MigrationParsingException : EfMigrationDiffException
     public string? FilePath { get; set; }
     public int? LineNumber { get; set; }
 
-    public MigrationParsingException(string message) : base(message) { }
+    public MigrationParsingException(string message) : base(message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+    }
     public MigrationParsingException(string message, string filePath) : base(message)
     {
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(filePath);
         FilePath = filePath;
     }
     public MigrationParsingException(string message, string filePath, int lineNumber) : base(message)
     {
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(filePath);
         FilePath = filePath;
         LineNumber = lineNumber;
     }
@@ -46,12 +67,21 @@ public class GitRepositoryException : EfMigrationDiffException
 {
     public string? RepositoryPath { get; set; }
 
-    public GitRepositoryException(string message) : base(message) { }
+    public GitRepositoryException(string message) : base(message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+    }
     public GitRepositoryException(string message, string repositoryPath) : base(message)
     {
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(repositoryPath);
         RepositoryPath = repositoryPath;
     }
-    public GitRepositoryException(string message, Exception innerException) : base(message, innerException) { }
+    public GitRepositoryException(string message, Exception innerException) : base(message, innerException)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(innerException);
+    }
 }
 
 /// <summary>
@@ -61,9 +91,14 @@ public class MigrationConflictException : EfMigrationDiffException
 {
     public List<string> ConflictingMigrations { get; set; } = [];
 
-    public MigrationConflictException(string message) : base(message) { }
+    public MigrationConflictException(string message) : base(message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+    }
     public MigrationConflictException(string message, List<string> conflicts) : base(message)
     {
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(conflicts);
         ConflictingMigrations = conflicts;
     }
 }
@@ -77,6 +112,7 @@ public class BranchNotFoundException : EfMigrationDiffException
 
     public BranchNotFoundException(string branchName) : base($"Branch '{branchName}' not found")
     {
+        ArgumentNullException.ThrowIfNull(branchName);
         BranchName = branchName;
     }
 }
@@ -89,9 +125,14 @@ public class InvalidMigrationException : EfMigrationDiffException
     public string? MigrationId { get; set; }
     public List<string> ValidationErrors { get; set; } = [];
 
-    public InvalidMigrationException(string message) : base(message) { }
+    public InvalidMigrationException(string message) : base(message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+    }
     public InvalidMigrationException(string migrationId, List<string> errors) : base($"Migration {migrationId} is invalid")
     {
+        ArgumentNullException.ThrowIfNull(migrationId);
+        ArgumentNullException.ThrowIfNull(errors);
         MigrationId = migrationId;
         ValidationErrors = errors;
     }
@@ -106,6 +147,7 @@ public class DbContextNotFoundException : EfMigrationDiffException
 
     public DbContextNotFoundException(string contextName) : base($"DbContext '{contextName}' not found")
     {
+        ArgumentNullException.ThrowIfNull(contextName);
         ContextName = contextName;
     }
 }
@@ -117,9 +159,13 @@ public class ConfigurationException : EfMigrationDiffException
 {
     public List<string> ValidationErrors { get; set; } = [];
 
-    public ConfigurationException(string message) : base(message) { }
+    public ConfigurationException(string message) : base(message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+    }
     public ConfigurationException(List<string> errors) : base("Configuration validation failed")
     {
+        ArgumentNullException.ThrowIfNull(errors);
         ValidationErrors = errors;
     }
 }
@@ -131,9 +177,14 @@ public class ValidationException : EfMigrationDiffException
 {
     public List<string> ValidationErrors { get; set; } = [];
 
-    public ValidationException(string message) : base(message) { }
+    public ValidationException(string message) : base(message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+    }
     public ValidationException(string message, List<string> errors) : base(message)
     {
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(errors);
         ValidationErrors = errors;
     }
 }
@@ -146,16 +197,28 @@ public class FileOperationException : EfMigrationDiffException
     public string? FilePath { get; set; }
     public string? Operation { get; set; }
 
-    public FileOperationException(string message) : base(message) { }
+    public FileOperationException(string message) : base(message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+    }
     public FileOperationException(string filePath, string operation) : base($"Failed to {operation} file: {filePath}")
     {
+        ArgumentNullException.ThrowIfNull(filePath);
+        ArgumentNullException.ThrowIfNull(operation);
         FilePath = filePath;
         Operation = operation;
     }
-    public FileOperationException(string message, Exception innerException) : base(message, innerException) { }
+    public FileOperationException(string message, Exception innerException) : base(message, innerException)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(innerException);
+    }
     public FileOperationException(string filePath, string operation, Exception innerException)
         : base($"Failed to {operation} file: {filePath}", innerException)
     {
+        ArgumentNullException.ThrowIfNull(filePath);
+        ArgumentNullException.ThrowIfNull(operation);
+        ArgumentNullException.ThrowIfNull(innerException);
         FilePath = filePath;
         Operation = operation;
     }
@@ -168,10 +231,19 @@ public class ConfigFileException : EfMigrationDiffException
 {
     public string? FilePath { get; set; }
 
-    public ConfigFileException(string message) : base(message) { }
-    public ConfigFileException(string message, Exception innerException) : base(message, innerException) { }
+    public ConfigFileException(string message) : base(message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+    }
+    public ConfigFileException(string message, Exception innerException) : base(message, innerException)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(innerException);
+    }
     public ConfigFileException(string filePath, string message) : base($"{message} (file: {filePath})")
     {
+        ArgumentNullException.ThrowIfNull(filePath);
+        ArgumentNullException.ThrowIfNull(message);
         FilePath = filePath;
     }
 }
