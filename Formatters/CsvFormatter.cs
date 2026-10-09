@@ -11,11 +11,20 @@ namespace EfMigrationDiff.Formatters;
 /// </summary>
 public class CsvFormatter
 {
+    private const string DefaultDelimiter = ",";
+    private const string Quote = "\"";
+    private const string EscapedQuote = "\"\"";
+    private const string CollectionSeparator = ";";
+    private const string TrueValue = "true";
+    private const string FalseValue = "false";
+    private const string ErrorValue = "[Error]";
+    private const string DateTimeFormat = "O";
+
     private readonly string _delimiter;
     private readonly string _lineSeparator;
     private readonly bool _includeHeaders;
 
-    public CsvFormatter(string delimiter = ",", bool includeHeaders = true, string? lineSeparator = null)
+    public CsvFormatter(string delimiter = DefaultDelimiter, bool includeHeaders = true, string? lineSeparator = null)
     {
         _delimiter = delimiter;
         _includeHeaders = includeHeaders;
@@ -82,9 +91,9 @@ public class CsvFormatter
             return string.Empty;
 
         // If value contains delimiter, quotes, or line breaks, wrap in quotes and escape quotes
-        if (value.Contains(_delimiter) || value.Contains("\"") || value.Contains('\n') || value.Contains('\r'))
+        if (value.Contains(_delimiter) || value.Contains(Quote) || value.Contains('\n') || value.Contains('\r'))
         {
-            return $"\"{value.Replace("\"", "\"\"")}\"";
+            return $"{Quote}{value.Replace(Quote, EscapedQuote)}{Quote}";
         }
 
         return value;
@@ -103,19 +112,19 @@ public class CsvFormatter
 
             // Format special types
             if (value is DateTime dt)
-                return dt.ToString("O");
+                return dt.ToString(DateTimeFormat);
 
             if (value is bool b)
-                return b ? "true" : "false";
+                return b ? TrueValue : FalseValue;
 
             if (value is IEnumerable<object> enumerable && !(value is string))
-                return string.Join(";", enumerable);
+                return string.Join(CollectionSeparator, enumerable);
 
             return value.ToString() ?? string.Empty;
         }
         catch
         {
-            return "[Error]";
+            return ErrorValue;
         }
     }
 }
