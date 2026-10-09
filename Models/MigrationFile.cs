@@ -23,6 +23,9 @@ public class MigrationFile
 
     public MigrationFile(string filePath, string dbContextName)
     {
+        ArgumentNullException.ThrowIfNull(filePath);
+        ArgumentNullException.ThrowIfNull(dbContextName);
+
         FilePath = filePath;
         FileName = Path.GetFileName(filePath);
         DirectoryPath = Path.GetDirectoryName(filePath) ?? string.Empty;
@@ -91,6 +94,8 @@ public class MigrationFile
     /// </summary>
     public bool HasSameContent(MigrationFile other)
     {
+        ArgumentNullException.ThrowIfNull(other);
+
         if (string.IsNullOrEmpty(Hash) || string.IsNullOrEmpty(other.Hash))
         {
             return Content == other.Content;
