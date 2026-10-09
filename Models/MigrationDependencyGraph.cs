@@ -287,6 +287,12 @@ public sealed class MigrationDependencyGraph
             .ToList();
     }
 
+    /// <summary>
+    /// Returns a concise summary of the graph: node count, edge count, and cycle state.
+    /// </summary>
+    public override string ToString() =>
+        $"MigrationDependencyGraph(Nodes: {_nodes.Count}, Edges: {_edges.Count}, HasCycles: {HasCycles})";
+
     // =========================================================================
     // Private helpers
     // =========================================================================
