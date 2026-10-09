@@ -26,6 +26,8 @@ public class CsvFormatter
 
     public CsvFormatter(string delimiter = DefaultDelimiter, bool includeHeaders = true, string? lineSeparator = null)
     {
+        ArgumentNullException.ThrowIfNull(delimiter);
+
         _delimiter = delimiter;
         _includeHeaders = includeHeaders;
         _lineSeparator = lineSeparator ?? Environment.NewLine;
@@ -36,6 +38,8 @@ public class CsvFormatter
     /// </summary>
     public string Format<T>(IEnumerable<T> items)
     {
+        ArgumentNullException.ThrowIfNull(items);
+
         var itemList = items.ToList();
         if (!itemList.Any())
             return string.Empty;
@@ -67,6 +71,8 @@ public class CsvFormatter
     /// </summary>
     public string FormatRow<T>(T item)
     {
+        ArgumentNullException.ThrowIfNull(item);
+
         var type = typeof(T);
         var properties = type.GetPublicProperties();
         var values = properties.Select(p => EscapeCsvValue(GetPropertyValueAsString(item, p)));
@@ -78,6 +84,9 @@ public class CsvFormatter
     /// </summary>
     public void WriteToFile<T>(string filePath, IEnumerable<T> items)
     {
+        ArgumentNullException.ThrowIfNull(filePath);
+        ArgumentNullException.ThrowIfNull(items);
+
         var csv = Format(items);
         File.WriteAllText(filePath, csv);
     }
