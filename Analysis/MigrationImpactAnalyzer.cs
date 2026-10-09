@@ -10,6 +10,38 @@ namespace EfMigrationDiff.Analysis;
 /// </summary>
 public class MigrationImpactAnalyzer
 {
+    // Migration content markers (matched case-insensitively)
+    private const string DropColumnMarker = "DropColumn";
+    private const string DropTableMarker = "DropTable";
+    private const string CreateIndexMarker = "CreateIndex";
+    private const string IsNullableMarker = "IsNullable";
+
+    // Issue messages
+    private const string DropColumnMessage = "Column drop detected - potential data loss";
+    private const string DropTableMessage = "Table drop detected - potential data loss";
+    private const string CreateIndexMessage = "Index creation detected - may impact performance during migration";
+    private const string IsNullableMessage = "Nullable constraint change detected";
+
+    // Risk scoring weights
+    private const double CriticalIssueScoreWeight = 25;
+    private const double WarningIssueScoreWeight = 10;
+    private const double RecentMigrationScoreReduction = 5;
+    private const double MinRiskScore = 0;
+    private const double MaxRiskScore = 100;
+
+    // Risk level thresholds (inclusive lower bounds)
+    private const double CriticalRiskThreshold = 75;
+    private const double HighRiskThreshold = 50;
+    private const double MediumRiskThreshold = 25;
+
+    // Recent migration window and timestamp format
+    private const int RecentMigrationWindowDays = 7;
+    private const string MigrationTimestampFormat = "yyyyMMddHHmmss";
+
+    // Line numbers are 1-based; FindLineWithContent returns this when not found
+    private const int FirstLineNumber = 1;
+    private const int LineNotFound = 0;
+
     public override string ToString() => "MigrationImpactAnalyzer { }";
 
     private readonly Dictionary<string, double> _riskScores = new();
@@ -40,46 +72,46 @@ public class MigrationImpactAnalyzer
         var content = migration.Content ?? string.Empty;
 
         // Check for column drops (potential data loss)
-        if (content.Contains("DropColumn", StringComparison.OrdinalIgnoreCase))
+        if (content.Contains(DropColumnMarker, StringComparison.OrdinalIgnoreCase))
         {
             report.IssuesDetected.Add(new MigrationIssue
             {
                 Severity = IssueSeverity.Critical,
-                Message = "Column drop detected - potential data loss",
-                LineNumber = FindLineWithContent(content, "DropColumn")
+                Message = DropColumnMessage,
+                LineNumber = FindLineWithContent(content, DropColumnMarker)
             });
         }
 
         // Check for table drops
-        if (content.Contains("DropTable", StringComparison.OrdinalIgnoreCase))
+        if (content.Contains(DropTableMarker, StringComparison.OrdinalIgnoreCase))
         {
             report.IssuesDetected.Add(new MigrationIssue
             {
                 Severity = IssueSeverity.Critical,
-                Message = "Table drop detected - potential data loss",
-                LineNumber = FindLineWithContent(content, "DropTable")
+                Message = DropTableMessage,
+                LineNumber = FindLineWithContent(content, DropTableMarker)
             });
         }
 
         // Check for index changes
-        if (content.Contains("CreateIndex", StringComparison.OrdinalIgnoreCase))
+        if (content.Contains(CreateIndexMarker, StringComparison.OrdinalIgnoreCase))
         {
             report.IssuesDetected.Add(new MigrationIssue
             {
                 Severity = IssueSeverity.Warning,
-                Message = "Index creation detected - may impact performance during migration",
-                LineNumber = FindLineWithContent(content, "CreateIndex")
+                Message = CreateIndexMessage,
+                LineNumber = FindLineWithContent(content, CreateIndexMarker)
             });
         }
 
         // Check for nullable column changes
-        if (content.Contains("IsNullable", StringComparison.OrdinalIgnoreCase))
+        if (content.Contains(IsNullableMarker, StringComparison.OrdinalIgnoreCase))
         {
             report.IssuesDetected.Add(new MigrationIssue
             {
                 Severity = IssueSeverity.Info,
-                Message = "Nullable constraint change detected",
-                LineNumber = FindLineWithContent(content, "IsNullable")
+                Message = IsNullableMessage,
+                LineNumber = FindLineWithContent(content, IsNullableMarker)
             });
         }
     }
@@ -95,27 +127,27 @@ public class MigrationImpactAnalyzer
         var criticalIssues = report.IssuesDetected.Count(i => i.Severity == IssueSeverity.Critical);
         var warningIssues = report.IssuesDetected.Count(i => i.Severity == IssueSeverity.Warning);
 
-        score += criticalIssues * 25;
-        score += warningIssues * 10;
+        score += criticalIssues * CriticalIssueScoreWeight;
+        score += warningIssues * WarningIssueScoreWeight;
 
         // Adjust by migration timestamp (newer migrations have lower baseline risk)
         if (DateTime.TryParseExact(
                 migration.Timestamp,
-                "yyyyMMddHHmmss",
+                MigrationTimestampFormat,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
                 out var migrationTimestamp) &&
-            migrationTimestamp > DateTime.UtcNow.AddDays(-7))
+            migrationTimestamp > DateTime.UtcNow.AddDays(-RecentMigrationWindowDays))
         {
-            score -= 5;
+            score -= RecentMigrationScoreReduction;
         }
 
-        report.RiskScore = Math.Max(0, Math.Min(100, score));
+        report.RiskScore = Math.Max(MinRiskScore, Math.Min(MaxRiskScore, score));
         report.RiskLevel = report.RiskScore switch
         {
-            >= 75 => RiskLevel.Critical,
-            >= 50 => RiskLevel.High,
-            >= 25 => RiskLevel.Medium,
+            >= CriticalRiskThreshold => RiskLevel.Critical,
+            >= HighRiskThreshold => RiskLevel.High,
+            >= MediumRiskThreshold => RiskLevel.Medium,
             _ => RiskLevel.Low
         };
     }
@@ -129,9 +161,9 @@ public class MigrationImpactAnalyzer
         for (int i = 0; i < lines.Length; i++)
         {
             if (lines[i].Contains(searchText, StringComparison.OrdinalIgnoreCase))
-                return i + 1;
+                return i + FirstLineNumber;
         }
-        return 0;
+        return LineNotFound;
     }
 
     /// <summary>
