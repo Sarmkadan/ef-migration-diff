@@ -101,4 +101,11 @@ public class MergeResult
             ? $"All {ResolvedCount} conflict(s) auto-resolved successfully."
             : $"{ResolvedCount}/{TotalConflicts} conflict(s) auto-resolved; {UnresolvedCount} require manual intervention.";
     }
+
+    /// <summary>
+    /// Returns a concise, one-line description of the merge run including its identifier and counts.
+    /// </summary>
+    public override string ToString() =>
+        $"MergeResult {Id} — {ResolvedCount}/{TotalConflicts} resolved, {UnresolvedCount} unresolved" +
+        (HasBlockingConflicts ? " [BLOCKING]" : string.Empty);
 }
