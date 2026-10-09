@@ -31,6 +31,10 @@ public class Migration
 
     public Migration(string id, string name, string dbContextName)
     {
+        ArgumentNullException.ThrowIfNull(id);
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(dbContextName);
+
         Id = id;
         Name = name;
         DbContextName = dbContextName;
