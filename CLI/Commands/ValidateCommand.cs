@@ -30,6 +30,9 @@ public class ValidateCommand : ICommand
     /// </summary>
     public async Task<CommandResult> ExecuteAsync(CommandContext context)
     {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(context.ServiceProvider);
+
         var appSettings = context.ServiceProvider.GetService<AppSettings>()
             ?? throw new InvalidOperationException(AppSettingsNotFoundMessage);
 
