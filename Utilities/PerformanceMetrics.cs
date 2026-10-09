@@ -15,6 +15,7 @@ public class PerformanceMetrics
     /// </summary>
     public PerformanceTimer StartOperation(string operationName)
     {
+        ArgumentNullException.ThrowIfNull(operationName);
         return new PerformanceTimer(operationName, this);
     }
 
@@ -23,6 +24,7 @@ public class PerformanceMetrics
     /// </summary>
     internal void RecordMeasurement(string operationName, TimeSpan duration, long? memoryDelta = null)
     {
+        ArgumentNullException.ThrowIfNull(operationName);
         _lock.EnterWriteLock();
         try
         {
@@ -56,6 +58,7 @@ public class PerformanceMetrics
     /// </summary>
     public OperationMetrics? GetMetrics(string operationName)
     {
+        ArgumentNullException.ThrowIfNull(operationName);
         _lock.EnterReadLock();
         try
         {
@@ -168,6 +171,8 @@ public class PerformanceTimer : IDisposable
 
     public PerformanceTimer(string operationName, PerformanceMetrics metrics)
     {
+        ArgumentNullException.ThrowIfNull(operationName);
+        ArgumentNullException.ThrowIfNull(metrics);
         _operationName = operationName;
         _metrics = metrics;
         _startTime = DateTime.UtcNow;
