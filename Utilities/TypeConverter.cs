@@ -108,6 +108,7 @@ public static class TypeConverter
     /// </summary>
     public static string EnumToString<T>(T value) where T : Enum
     {
+        ArgumentNullException.ThrowIfNull(value);
         return value.ToString();
     }
 
@@ -142,6 +143,7 @@ public static class TypeConverter
     /// </summary>
     public static T? DictionaryToObject<T>(Dictionary<string, object?> dict) where T : class, new()
     {
+        ArgumentNullException.ThrowIfNull(dict);
         var obj = new T();
 
         foreach (var kvp in dict)
@@ -169,7 +171,9 @@ public static class TypeConverter
     /// </summary>
     public static object? ConvertTo(object? value, Type targetType)
     {
-        if (value is null || targetType is null)
+        ArgumentNullException.ThrowIfNull(targetType);
+
+        if (value is null)
             return null;
 
         if (targetType.IsAssignableFrom(value.GetType()))
