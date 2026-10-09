@@ -12,7 +12,17 @@ namespace EfMigrationDiff.CLI.Commands;
 /// </summary>
 public class ValidateCommand : ICommand
 {
-    public string GetDescription() => "Validate migration files for structural correctness";
+    private const string Description = "Validate migration files for structural correctness";
+    private const string DefaultContextName = "DefaultContext";
+    private const string MigrationFilePattern = "*.cs";
+    private const string DesignerFileSuffix = ".Designer.cs";
+    private const string AppSettingsNotFoundMessage = "AppSettings not found in service provider";
+    private const string MigrationParserNotFoundMessage = "MigrationParserService not found";
+    private const string NoMigrationFilesMessage = "No migration files found.";
+    private const string NoMigrationsToValidateMessage = "No migrations to validate";
+    private const string AllValidatedMessageFormat = "All {0} migration(s) validated successfully";
+
+    public string GetDescription() => Description;
 
     /// <summary>
     /// Executes validation of migration files in the configured migrations directory.
@@ -21,10 +31,10 @@ public class ValidateCommand : ICommand
     public async Task<CommandResult> ExecuteAsync(CommandContext context)
     {
         var appSettings = context.ServiceProvider.GetService<AppSettings>()
-            ?? throw new InvalidOperationException("AppSettings not found in service provider");
+            ?? throw new InvalidOperationException(AppSettingsNotFoundMessage);
 
         var parserService = context.ServiceProvider.GetService<MigrationParserService>()
-            ?? throw new InvalidOperationException("MigrationParserService not found");
+            ?? throw new InvalidOperationException(MigrationParserNotFoundMessage);
 
         appSettings.RepositoryPath = Environment.CurrentDirectory;
         var migrationsPath = appSettings.GetMigrationsDirectory();
@@ -37,14 +47,14 @@ public class ValidateCommand : ICommand
         context.WriteColoredOutput($"Validating migrations in: {migrationsPath}", ConsoleColor.Cyan);
 
         // Gather migration files
-        var migrationFiles = Directory.GetFiles(migrationsPath, "*.cs")
-            .Where(f => !f.EndsWith(".Designer.cs", StringComparison.OrdinalIgnoreCase))
+        var migrationFiles = Directory.GetFiles(migrationsPath, MigrationFilePattern)
+            .Where(f => !f.EndsWith(DesignerFileSuffix, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         if (migrationFiles.Count == 0)
         {
-            context.WriteOutput("No migration files found.");
-            return CommandResult.Ok("No migrations to validate");
+            context.WriteOutput(NoMigrationFilesMessage);
+            return CommandResult.Ok(NoMigrationsToValidateMessage);
         }
 
         context.WriteOutput($"Found {migrationFiles.Count} migration file(s)\n");
@@ -56,7 +66,7 @@ public class ValidateCommand : ICommand
         // Validate each migration file
         foreach (var filePath in migrationFiles)
         {
-            var migrationFile = new MigrationFile(filePath, "DefaultContext");
+            var migrationFile = new MigrationFile(filePath, DefaultContextName);
             var errors = parserService.ValidateMigrationFile(migrationFile);
 
             if (errors.Count == 0)
@@ -87,6 +97,6 @@ public class ValidateCommand : ICommand
                 1);
         }
 
-        return CommandResult.Ok($"All {validCount} migration(s) validated successfully");
+        return CommandResult.Ok(string.Format(AllValidatedMessageFormat, validCount));
     }
 }
