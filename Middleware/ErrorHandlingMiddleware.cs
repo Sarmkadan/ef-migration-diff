@@ -24,6 +24,8 @@ public class ErrorHandlingMiddleware : ICommandMiddleware
 
     public async Task<MiddlewareResult> InvokeAsync(CommandContext context)
     {
+        ArgumentNullException.ThrowIfNull(context);
+
         // This middleware doesn't short-circuit; it's meant to be used with exception handling in CommandExecutor
         return MiddlewareResult.Continue();
     }
@@ -33,6 +35,9 @@ public class ErrorHandlingMiddleware : ICommandMiddleware
     /// </summary>
     public CommandResult HandleException(Exception exception, CommandContext context)
     {
+        ArgumentNullException.ThrowIfNull(exception);
+        ArgumentNullException.ThrowIfNull(context);
+
         var result = exception switch
         {
             ArgumentException or ArgumentNullException => CreateResult(400, InvalidArgumentMessage, exception),
