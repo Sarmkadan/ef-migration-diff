@@ -26,6 +26,8 @@
     <Compile Remove="examples/**/*.cs" />
     <Compile Remove="tests/**/*.cs" />
     <Compile Remove="ef-migration-diff.Benchmarks/**/*.cs" />
+    <!-- Nested bin/obj output of other projects (e.g. DebugTest/obj) must not be compiled into this one -->
+    <Compile Remove="**/bin/**/*.cs;**/obj/**/*.cs" />
   </ItemGroup>
 
   <ItemGroup>
