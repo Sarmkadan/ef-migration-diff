@@ -9,14 +9,15 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <PackageId>Zaiets.ef.migration.diff</PackageId>
-    <Version>1.0.0</Version>
+    <Version>0.1.0</Version>
     <Authors>Vladyslav Zaiets</Authors>
-    <Description>Compare Entity Framework migrations between branches - detect conflicts, preview schema changes</Description>
-    <PackageTags>entity-framework ef-core migrations dotnet diff</PackageTags>
+    <Description>Diff EF Core migration schemas between git branches and generate SQL for the changes.</Description>
+    <PackageTags>ef-core;migrations;schema-diff;sql;dotnet-tool</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/sarmkadan/ef-migration-diff</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sarmkadan/ef-migration-diff</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
