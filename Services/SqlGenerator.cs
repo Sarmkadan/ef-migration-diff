@@ -13,10 +13,14 @@ namespace EfMigrationDiff.Services;
 public class SqlGenerator : IDisposable
 {
     private readonly ILogger<SqlGenerator> _logger;
-    private readonly EfMigrationDiffOptions _options;
+    private readonly SqlGeneratorOptions _sqlOptions;
     private readonly StringWriter _buffer;
     private bool _disposed;
 
+    /// <summary>
+    /// Creates a generator. Invalid <see cref="SqlGeneratorOptions"/> fail here, before any output is produced.
+    /// </summary>
+    /// <exception cref="EfMigrationDiff.Exceptions.ConfigurationValidationException">Thrown with all violations when the SQL options are invalid.</exception>
     public SqlGenerator(
         ILogger<SqlGenerator> logger,
         IOptions<EfMigrationDiffOptions> options)
@@ -24,7 +28,8 @@ public class SqlGenerator : IDisposable
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(options);
         _logger = logger;
-        _options = options.Value;
+        _sqlOptions = options.Value.SqlGenerator;
+        _sqlOptions.ValidateAndThrow();
         _buffer = new StringWriter();
     }
 
