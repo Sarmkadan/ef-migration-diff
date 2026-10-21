@@ -79,6 +79,11 @@ public class EfMigrationDiffOptions
     public SchemaDiffOptions SchemaDiff { get; set; } = SchemaDiffOptions.Default;
 
     /// <summary>
+    /// Gets or sets the SQL generation options. Validated at startup.
+    /// </summary>
+    public SqlGeneratorOptions SqlGenerator { get; set; } = SqlGeneratorOptions.Default;
+
+    /// <summary>
     /// Gets or sets the list of migration name globs to ignore.
     /// Migrations matching any of these patterns will be excluded from diff calculations
     /// and reported as skipped.

@@ -7,8 +7,24 @@ using EfMigrationDiff.Services;
 using EfMigrationDiff.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 
-await using var application = new MigrationDiffApplication();
-await application.RunAsync(args);
+MigrationDiffApplication application;
+try
+{
+    application = new MigrationDiffApplication();
+}
+catch (ConfigurationValidationException ex)
+{
+    // Startup validation runs before argument parsing, so nothing else has been done yet.
+    Console.Error.WriteLine($"Configuration error: {ex.Message}");
+    return 2;
+}
+
+await using (application)
+{
+    await application.RunAsync(args);
+}
+
+return 0;
 
 /// <summary>
 /// Main application class for EF Migration Diff.
@@ -30,6 +46,9 @@ internal class MigrationDiffApplication : IAsyncDisposable
         var optionsWithPrecedence = ConfigFileLoader.LoadWithPrecedence(
             cliOptions ?? new EfMigrationDiffOptions(),
             Environment.CurrentDirectory);
+
+        // Fail fast: misconfiguration is reported (exit code 2) before any command is parsed or executed.
+        optionsWithPrecedence.SqlGenerator.ValidateAndThrow();
 
         _serviceProvider = DependencyInjection.CreateServiceProviderWithConfig(
             Environment.CurrentDirectory,
@@ -110,6 +129,13 @@ internal class MigrationDiffApplication : IAsyncDisposable
             Console.WriteLine($"Unknown command: {command.ToLowerInvariant()}");
             Console.WriteLine($"Valid commands: {string.Join(", ", _commandHandlers.Keys)}");
             ShowUsage();
+        }
+        catch (ConfigurationValidationException ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Configuration error: {ex.Message}");
+            Console.ResetColor();
+            Environment.Exit(2);
         }
         catch (EfMigrationDiffException ex)
         {

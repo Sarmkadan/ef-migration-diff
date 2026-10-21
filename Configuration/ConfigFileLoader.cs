@@ -234,6 +234,11 @@ public static class ConfigFileLoader
 
             SchemaDiff = overrideOptions.SchemaDiff ?? baseOptions.SchemaDiff,
 
+            // Override wins only when it was set to something other than the default (CLI has no SQL flags).
+            SqlGenerator = overrideOptions.SqlGenerator != SqlGeneratorOptions.Default
+                ? overrideOptions.SqlGenerator
+                : baseOptions.SqlGenerator,
+
             IgnoredMigrations = overrideOptions.IgnoredMigrations?.Length > 0
                 ? overrideOptions.IgnoredMigrations
                 : baseOptions.IgnoredMigrations

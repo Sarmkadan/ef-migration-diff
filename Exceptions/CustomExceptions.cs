@@ -171,6 +171,27 @@ public class ConfigurationException : EfMigrationDiffException
 }
 
 /// <summary>
+/// Thrown when one or more configuration values violate their rules.
+/// All violations are collected and reported together in a single message.
+/// </summary>
+public class ConfigurationValidationException : EfMigrationDiffException
+{
+    public IReadOnlyList<string> Violations { get; }
+
+    public ConfigurationValidationException(IReadOnlyList<string> violations) : base(FormatMessage(violations))
+    {
+        Violations = violations;
+    }
+
+    private static string FormatMessage(IReadOnlyList<string> violations)
+    {
+        ArgumentNullException.ThrowIfNull(violations);
+        var lines = violations.Select(v => $"  - {v}");
+        return $"Invalid configuration ({violations.Count} error(s)):{Environment.NewLine}{string.Join(Environment.NewLine, lines)}";
+    }
+}
+
+/// <summary>
 /// Thrown when validation fails.
 /// </summary>
 public class ValidationException : EfMigrationDiffException
