@@ -177,6 +177,170 @@ Console.WriteLine("Three-way diff written to diff-report.html");
 | `MarkdownFormatter.GenerateMarkdownReport(MigrationDiff)` | Generates a human-readable Markdown report |
 | `VisualDiffFormatter.RenderSideBySide(SchemaDiffResult)` | Generates an HTML side-by-side visual diff |
 | `SchemaDiffOptions.ForMerge(string, string, string)` | Configures three-way diff labels (base, source, target) |
+| `SqlGenerator` | Generates SQL scripts from schema changes (see "Generating SQL" section below) |
+
+## Generating SQL
+
+The `SqlGenerator` service converts a list of `SchemaChange` objects into executable SQL scripts. It supports generating forward migration scripts, rollback scripts, and validation.
+
+### Basic Usage
+
+```csharp
+#nullable enable
+using System;
+using System.Collections.Generic;
+using EfMigrationDiff.Models;
+using EfMigrationDiff.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using EfMigrationDiff.Configuration;
+
+var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
+services.Configure<EfMigrationDiffOptions>(opts => { });
+services.AddSingleton<SqlGenerator>();
+
+var provider = services.BuildServiceProvider();
+var generator = provider.GetRequiredService<SqlGenerator>();
+
+// Create sample schema changes (typically from MigrationDiff.SourceSchemaChanges or TargetSchemaChanges)
+var changes = new List<SchemaChange>
+{
+    new SchemaChange
+    {
+        Id = Guid.NewGuid().ToString(),
+        MigrationId = "20240101000000_CreateUsersTable",
+        ChangeType = SqlChangeType.CreateTable,
+        TableName = "Users",
+        Sql = "[Id] INT IDENTITY(1,1) NOT NULL,\n    [Email] NVARCHAR(256) NOT NULL,\n    [Name] NVARCHAR(100) NOT NULL,\n    [CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),\n    CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED ([Id] ASC)",
+        LineNumber = 10
+    },
+    new SchemaChange
+    {
+        Id = Guid.NewGuid().ToString(),
+        MigrationId = "20240102000000_AddEmailIndex",
+        ChangeType = SqlChangeType.CreateIndex,
+        TableName = "Users",
+        Sql = "[IX_Users_Email] ON [Users] ([Email])",
+        LineNumber = 15
+    },
+    new SchemaChange
+    {
+        Id = Guid.NewGuid().ToString(),
+        MigrationId = "20240103000000_AddPhoneColumn",
+        ChangeType = SqlChangeType.AddColumn,
+        TableName = "Users",
+        ColumnName = "PhoneNumber",
+        NewValue = "NVARCHAR(20)",
+        DefaultValue = "NULL",
+        LineNumber = 20
+    },
+    new SchemaChange
+    {
+        Id = Guid.NewGuid().ToString(),
+        MigrationId = "20240104000000_RenameEmailColumn",
+        ChangeType = SqlChangeType.Rename,
+        TableName = "Users",
+        OldValue = "Email",
+        NewValue = "EmailAddress",
+        LineNumber = 25
+    },
+    new SchemaChange
+    {
+        Id = Guid.NewGuid().ToString(),
+        MigrationId = "20240105000000_DropPhoneColumn",
+        ChangeType = SqlChangeType.DropColumn,
+        TableName = "Users",
+        ColumnName = "PhoneNumber",
+        LineNumber = 30
+    }
+};
+
+// Generate forward migration script (wrapped in transaction)
+var script = generator.GenerateScript(changes, includeTransaction: true);
+Console.WriteLine(script);
+
+// Generate rollback script (reverses changes in reverse order)
+var rollback = generator.GenerateRollback(changes);
+Console.WriteLine(rollback);
+
+// Validate changes before generating
+var errors = generator.ValidateChanges(changes);
+if (errors.Count == 0)
+{
+    Console.WriteLine("All changes are valid!");
+}
+else
+{
+    foreach (var error in errors)
+    {
+        Console.WriteLine($"ERROR: {error}");
+    }
+}
+
+generator.Dispose();
+```
+
+### Sample Output
+
+**Forward Script (`GenerateScript`):**
+```sql
+BEGIN TRANSACTION;
+
+-- CreateTable: Users
+CREATE TABLE [Users] (
+    [Id] INT IDENTITY(1,1) NOT NULL,
+    [Email] NVARCHAR(256) NOT NULL,
+    [Name] NVARCHAR(100) NOT NULL,
+    [CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED ([Id] ASC)
+);
+
+-- CreateIndex: Users
+CREATE INDEX [IX_Users_Email] ON [Users] ([Email]);
+
+-- AddColumn: Users
+ALTER TABLE [Users] ADD [PhoneNumber] NVARCHAR(20) DEFAULT NULL;
+
+-- Rename: Users
+EXEC sp_rename 'Email', 'EmailAddress';
+
+-- DropColumn: Users
+ALTER TABLE [Users] DROP COLUMN [PhoneNumber];
+
+COMMIT;
+```
+
+**Rollback Script (`GenerateRollback`):**
+```sql
+BEGIN TRANSACTION;
+
+-- AddColumn: Users
+ALTER TABLE [Users] ADD [PhoneNumber] NVARCHAR(MAX);
+
+-- Rename: Users
+EXEC sp_rename 'EmailAddress', 'Email';
+
+-- DropColumn: Users
+ALTER TABLE [Users] DROP COLUMN [PhoneNumber];
+
+-- DropIndex: Users
+DROP INDEX [IX_Users_Email] ON [Users] ([Email]);
+
+-- DropTable: Users
+DROP TABLE [Users];
+
+COMMIT;
+```
+
+### Common Scenarios
+
+| Scenario | One-liner Recipe |
+|----------|------------------|
+| **Compare two migration folders** | `var diff = diffService.CompareBranches(sourceBranch, targetBranch); var sql = generator.GenerateScript(diff.SourceSchemaChanges);` |
+| **Diff a snapshot against a live model** | `var changes = parser.LoadMigrationsFromDirectoryAsync(snapshotPath, "MyDbContext").Result.SelectMany(m => m.SchemaChanges); var sql = generator.GenerateScript(changes);` |
+| **Dry-run output for CI** | `var errors = generator.ValidateChanges(diff.SourceSchemaChanges); if (errors.Count > 0) { Console.Error.WriteLine(string.Join("\n", errors)); Environment.Exit(1); }` |
 
 ## Next Steps
 
