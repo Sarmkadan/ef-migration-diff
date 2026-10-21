@@ -33,7 +33,19 @@ internal class MigrationDiffApplication : IAsyncDisposable
 {
     private readonly Microsoft.Extensions.DependencyInjection.ServiceProvider _serviceProvider;
     private readonly AppSettings _appSettings;
+    private readonly EfMigrationDiffOptions _options;
     private readonly Dictionary<string, Func<string[], Task>> _commandHandlers;
+
+    // Commands whose inputs are branch names, and commands that also read the migrations directory from disk.
+    private static readonly HashSet<string> BranchCommands = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "compare", "diff", "visual-diff", "visual", "auto-merge", "suggest"
+    };
+
+    private static readonly HashSet<string> MigrationFileCommands = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "validate", "check"
+    };
 
     public MigrationDiffApplication()
         : this(null)
@@ -49,6 +61,7 @@ internal class MigrationDiffApplication : IAsyncDisposable
 
         // Fail fast: misconfiguration is reported (exit code 2) before any command is parsed or executed.
         optionsWithPrecedence.SqlGenerator.ValidateAndThrow();
+        _options = optionsWithPrecedence;
 
         _serviceProvider = DependencyInjection.CreateServiceProviderWithConfig(
             Environment.CurrentDirectory,
@@ -122,6 +135,9 @@ internal class MigrationDiffApplication : IAsyncDisposable
             var command = args[0];
             if (_commandHandlers.TryGetValue(command, out var handler))
             {
+                // Validate the diff inputs once, before the command does any work.
+                // Violations surface as ConfigurationValidationException, which exits with code 2.
+                BuildDiffOptions(command, args[1..])?.ValidateAndThrow();
                 await handler(args[1..]);
                 return;
             }
@@ -155,6 +171,31 @@ internal class MigrationDiffApplication : IAsyncDisposable
             Console.ResetColor();
             Environment.Exit(1);
         }
+    }
+
+    /// <summary>
+    /// Resolves the diff inputs a command will use, applying command-line branch overrides on top of configuration.
+    /// Returns <c>null</c> for commands that have no diff inputs.
+    /// </summary>
+    private DiffOptions? BuildDiffOptions(string command, string[] args)
+    {
+        var isBranchCommand = BranchCommands.Contains(command);
+        var isMigrationFileCommand = MigrationFileCommands.Contains(command);
+
+        if (!isBranchCommand && !isMigrationFileCommand)
+        {
+            return null;
+        }
+
+        return new DiffOptions
+        {
+            RepositoryPath = Environment.CurrentDirectory,
+            MigrationsPath = _options.MigrationsPath,
+            RequiresMigrationsDirectory = isMigrationFileCommand,
+            SourceBranch = isBranchCommand ? (args.Length > 0 ? args[0] : _options.SourceBranch) : null,
+            TargetBranch = isBranchCommand ? (args.Length > 1 ? args[1] : _options.TargetBranch) : null,
+            IgnoredMigrations = _options.IgnoredMigrations
+        };
     }
 
     /// <summary>
