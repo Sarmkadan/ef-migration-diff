@@ -1,22 +1,188 @@
 
 
-## CommandParserTests
+# Getting Started
 
-The CommandParserTests class contains tests for the CommandParser class. These tests cover various scenarios, including:
+This section explains how to quickly start comparing Entity Framework Core migrations between branches using the `ef-migration-diff` tool.
 
-* Parsing valid commands with all flags
-* Parsing commands with missing option values
-* Parsing commands with unknown flags
-* Parsing help invocations
+## Installation
 
-Example usage:
-```csharp
-public CommandParserTests
-public void Parse_ValidCommandWithAllFlags_ShouldPopulateOptionsAndArguments
-public void Parse_MissingOptionValue_ShouldTreatAsFlag
-public void Parse_UnknownFlag_ShouldBeAddedAsFlag
-public void Parse_HelpInvocation_ShouldBeRecognizedAsFlag
+The tool is distributed as a .NET 10 console application. You can add it as a NuGet package or install the dotnet tool:
+
+```bash
+# Option 1: Add as project reference (recommended for customization)
+dotnet add package Zaiets.ef.migration.diff
+
+# Option 2: Install as global dotnet tool
+dotnet tool install --global Zaiets.ef.migration.diff
 ```
+
+## Quick Start Example
+
+The following example demonstrates the most common workflow: parse two sets of EF migrations from disk, compare them between two branches, and print a human-readable diff report.
+
+```csharp
+#nullable enable
+using System;
+using System.IO;
+using System.Threading.Tasks;
+using EfMigrationDiff.Models;
+using EfMigrationDiff.Services;
+using EfMigrationDiff.Repositories;
+using Microsoft.Extensions.DependencyInjection;
+
+// 1. Setup dependency injection
+var services = new ServiceCollection();
+services.AddScoped<GitRepository>();
+services.AddScoped<MigrationRepository>();
+services.AddScoped<MigrationDiffService>();
+services.AddScoped<SchemaChangeDetectorService>();
+services.AddScoped<ConflictDetectionService>();
+
+var provider = services.BuildServiceProvider();
+var diffService = provider.GetRequiredService<MigrationDiffService>();
+var parser = provider.GetRequiredService<MigrationParserService>();
+var formatter = new EfMigrationDiff.Formatters.MarkdownFormatter();
+
+// 2. Parse migrations from both branches
+// In a real scenario, you'd load these from git branches via LibGit2Sharp
+var sourceBranchPath = Path.Combine(Directory.GetCurrentDirectory(), "migrations/source");
+var targetBranchPath = Path.Combine(Directory.GetCurrentDirectory(), "migrations/target");
+
+var sourceMigrations = parser.LoadMigrationsFromDirectoryAsync(sourceBranchPath, "MyDbContext").GetAwaiter().GetResult();
+var targetMigrations = parser.LoadMigrationsFromDirectoryAsync(targetBranchPath, "MyDbContext").GetAwaiter().GetResult();
+
+// 3. Build BranchInfo objects for each branch
+// (Typically you'd get these from git, but for this example we construct them manually)
+var sourceBranch = new EfMigrationDiff.Models.BranchInfo("feature/my-feature", "abc123def");
+sourceBranch.AddMigration("20240101000000_CreateUsersTable");
+sourceBranch.AddMigration("20240102000000_AddEmailColumn");
+
+// Set migration IDs so the repository can look them up
+var sourceRepo = provider.GetRequiredService<MigrationRepository>();
+foreach (var migration in sourceMigrations)
+{
+    sourceRepo.Add(migration);
+}
+
+var targetBranch = new EfMigrationDiff.Models.BranchInfo("main", "def456ghi");
+targetBranch.AddMigration("20240101000000_CreateUsersTable");
+
+// Set migration IDs for target migrations
+var targetRepo = new MigrationRepository();
+foreach (var migration in targetMigrations)
+{
+    targetRepo.Add(migration);
+}
+
+// Replace the repo in the diff service with our target repo
+// (In a real app, you'd configure this via DI or the GitRepository)
+// For this demo, we'll use the diff service's Compare method directly
+
+// 4. Compare the branches
+var diff = diffService.CompareBranches(sourceBranch, targetBranch);
+
+// 5. Generate and print the report
+var report = diffService.GenerateReport(diff);
+Console.WriteLine(report);
+```
+
+### Expected Console Output
+
+Running the example above (with migrations that have actual schema changes) produces output similar to:
+
+```
+=== Migration Diff Report ===
+Result: Different
+
+Source Only Migrations: 1
+  - 20240102000000_AddEmailColumn
+
+Target Only Migrations: 0
+
+Common Migrations: 1
+
+Schema Changes: 2
+Destructive Changes: 0
+
+=== Schema Changes ===
+### AddColumn
+| Table | Column | Migration | SQL Preview | Destructive |
+|-------|--------|-----------|-------------|-------------|
+| [Users] | [Email] | `20240102...` | `AddColumn(...)` | ❌ No
+
+### Migrations Only in Source Branch
+| Migration ID | Description |
+|-------------|-------------|
+| `20240102...` | AddEmailColumn
+
+=== Migration Diff Report ===
+Result: Different
+
+Source Only Migrations: 1
+  - 20240102000000_AddEmailColumn
+
+Target Only Migrations: 0
+
+Common Migrations: 1
+
+Schema Changes: 2
+Destructive Changes: 0
+```
+
+## Advanced: Three-Way Diff with Common Ancestor
+
+For comparing two branches against a common base, use the `CompareDbContextMigrations` method with `SchemaDiffOptions.ForMerge`:
+
+```csharp
+var options = EfMigrationDiff.Configuration.SchemaDiffOptions.ForMerge(
+    baseBranch: "development",
+    source: "feature/my-feature",
+    target: "main"
+);
+
+var threeWayDiff = diffService.CompareDbContextMigrations(
+    sourceBranch: sourceBranch,
+    targetBranch: targetBranch,
+    dbContextName: "MyDbContext"
+);
+
+// Render the three-way diff as HTML
+var htmlRenderer = new EfMigrationDiff.Formatters.VisualDiffFormatter();
+var htmlReport = htmlRenderer.RenderSideBySide(
+    new EfMigrationDiff.Models.SchemaDiffResult
+    {
+        Id = Guid.NewGuid(),
+        SourceLabel = "feature/my-feature",
+        TargetLabel = "main",
+        BaseLabel = "development",
+        SourceOnlyChanges = threeWayDiff.SourceOnlySchemaChanges,
+        TargetOnlyChanges = threeWayDiff.TargetOnlySchemaChanges,
+        ModifiedChanges = threeWayDiff.ModifiedSchemaChanges
+    }
+);
+
+File.WriteAllText("diff-report.html", htmlReport);
+Console.WriteLine("Three-way diff written to diff-report.html");
+```
+
+## Key Types and APIs
+
+| Type | Purpose |
+|------|---------|
+| `Migration` | Represents a single EF migration with `Id`, `Name`, `DbContextName`, and `SchemaChanges` |
+| `SchemaChange` | Represents a schema operation (`CreateTable`, `AddColumn`, `DropColumn`, etc.) with `TableName`, `ColumnName`, `ChangeType`, and `Sql` |
+| `MigrationDiff` | Result of comparing two branches: contains `OnlyInSource`, `OnlyInTarget`, `InBoth`, `SourceSchemaChanges`, `TargetSchemaChanges`, `Conflicts` |
+| `MigrationDiffService.CompareBranches(BranchInfo, BranchInfo)` | Compares two branches and returns a `MigrationDiff` |
+| `MigrationParserService.LoadMigrationsFromDirectoryAsync(string, string)` | Parses all `.cs` migration files from a directory for a given `DbContext` |
+| `MarkdownFormatter.GenerateMarkdownReport(MigrationDiff)` | Generates a human-readable Markdown report |
+| `VisualDiffFormatter.RenderSideBySide(SchemaDiffResult)` | Generates an HTML side-by-side visual diff |
+| `SchemaDiffOptions.ForMerge(string, string, string)` | Configures three-way diff labels (base, source, target) |
+
+## Next Steps
+
+- Run `dotnet tool install --global Zaiets.ef.migration.diff && ef-migration-diff --help` to see the CLI command-line tool
+- Explore the `examples/` directory for more usage patterns
+- Use `dotnet format` and `dotnet build --no-restore /p:TreatWarningsAsErrors=true` to verify code quality
 
 ## MarkdownFormatter
 
