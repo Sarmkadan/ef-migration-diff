@@ -342,6 +342,34 @@ COMMIT;
 | **Diff a snapshot against a live model** | `var changes = parser.LoadMigrationsFromDirectoryAsync(snapshotPath, "MyDbContext").Result.SelectMany(m => m.SchemaChanges); var sql = generator.GenerateScript(changes);` |
 | **Dry-run output for CI** | `var errors = generator.ValidateChanges(diff.SourceSchemaChanges); if (errors.Count > 0) { Console.Error.WriteLine(string.Join("\n", errors)); Environment.Exit(1); }` |
 
+## CI Gating with Exit Codes
+
+`ef-migration-diff compare <source> <target>` (alias `diff`) exits with a code that describes the result, so a pipeline can fail on breaking changes without parsing output:
+
+| Exit code | Meaning |
+|-----------|---------|
+| `0` | No schema changes and no conflicts between the branches |
+| `1` | Non-breaking changes only (for example, new tables or nullable columns) |
+| `2` | At least one breaking schema change (for example, a dropped table, column, index or foreign key, or a non-nullable column added without a default) |
+| `3` | At least one blocking conflict between the branches' changes |
+| `64` | Usage error: invalid arguments or options, unknown branch, or invalid configuration |
+| `70` | Unexpected internal error, including a failure while reading or analysing migrations |
+
+When several conditions hold, the most severe code wins: conflicts (`3`), then breaking changes (`2`), then non-breaking changes (`1`). Only schema changes introduced by migrations that exist on one branch but not the other are classified. Shared history is ignored.
+
+Treat `0` and `1` as success and fail on anything above `1`. That covers breaking changes, conflicts and the error codes, so a broken invocation cannot pass the gate:
+
+```bash
+ef-migration-diff compare develop main --summary
+status=$?
+if [ "$status" -gt 1 ]; then
+  echo "Migration gate failed: exit code $status" >&2
+  exit 1
+fi
+```
+
+> **Upgrading from earlier versions:** `compare` used to exit with `1` for blocking conflicts and `2` for configuration errors. Under this contract `1` means non-breaking changes, conflicts exit with `3`, and configuration errors exit with `64`. Update any pipeline that matched the old values.
+
 ## Next Steps
 
 - Run `dotnet tool install --global Zaiets.ef.migration.diff && ef-migration-diff --help` to see the CLI command-line tool

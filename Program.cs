@@ -1,4 +1,5 @@
 #nullable enable
+using EfMigrationDiff.CLI;
 using EfMigrationDiff.CLI.Commands;
 using EfMigrationDiff.Configuration;
 using EfMigrationDiff.Exceptions;
@@ -16,15 +17,13 @@ catch (ConfigurationValidationException ex)
 {
     // Startup validation runs before argument parsing, so nothing else has been done yet.
     Console.Error.WriteLine($"Configuration error: {ex.Message}");
-    return 2;
+    return Constants.ExitCodes.UsageError;
 }
 
 await using (application)
 {
-    await application.RunAsync(args);
+    return await application.RunAsync(args);
 }
-
-return 0;
 
 /// <summary>
 /// Main application class for EF Migration Diff.
@@ -35,6 +34,12 @@ internal class MigrationDiffApplication : IAsyncDisposable
     private readonly AppSettings _appSettings;
     private readonly EfMigrationDiffOptions _options;
     private readonly Dictionary<string, Func<string[], Task>> _commandHandlers;
+
+    // Compare runs through CommandExecutor so its result maps onto the process exit code (see Constants.ExitCodes).
+    private static readonly HashSet<string> CompareCommandNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "compare", "diff"
+    };
 
     // Commands whose inputs are branch names, and commands that also read the migrations directory from disk.
     private static readonly HashSet<string> BranchCommands = new(StringComparer.OrdinalIgnoreCase)
@@ -69,8 +74,6 @@ internal class MigrationDiffApplication : IAsyncDisposable
         _appSettings = _serviceProvider.GetService<AppSettings>() ?? throw new InvalidOperationException("Failed to initialize AppSettings");
         _commandHandlers = new Dictionary<string, Func<string[], Task>>(StringComparer.OrdinalIgnoreCase)
         {
-            ["compare"] = CompareCommand,
-            ["diff"] = CompareCommand,
             ["check"] = ValidateCommand,
             ["validate"] = ValidateCommand,
             ["report"] = ReportCommand,
@@ -117,9 +120,9 @@ internal class MigrationDiffApplication : IAsyncDisposable
     }
 
     /// <summary>
-    /// Main application entry point with argument handling.
+    /// Main application entry point with argument handling. Returns the process exit code.
     /// </summary>
-    public async Task RunAsync(string[] args)
+    public async Task<int> RunAsync(string[] args)
     {
         try
         {
@@ -129,29 +132,37 @@ internal class MigrationDiffApplication : IAsyncDisposable
             if (args.Length == 0)
             {
                 ShowUsage();
-                return;
+                return Constants.ExitCodes.NoDiff;
             }
 
             var command = args[0];
+            if (CompareCommandNames.Contains(command))
+            {
+                return await RunCompareAsync(args[1..]);
+            }
+
             if (_commandHandlers.TryGetValue(command, out var handler))
             {
                 // Validate the diff inputs once, before the command does any work.
-                // Violations surface as ConfigurationValidationException, which exits with code 2.
+                // Violations surface as ConfigurationValidationException, which exits with the usage code.
                 BuildDiffOptions(command, args[1..])?.ValidateAndThrow();
                 await handler(args[1..]);
-                return;
+                return Constants.ExitCodes.NoDiff;
             }
 
             Console.WriteLine($"Unknown command: {command.ToLowerInvariant()}");
-            Console.WriteLine($"Valid commands: {string.Join(", ", _commandHandlers.Keys)}");
+            var validCommands = _commandHandlers.Keys.Concat(CompareCommandNames);
+            Console.WriteLine($"Valid commands: {string.Join(", ", validCommands)}");
             ShowUsage();
+            return Constants.ExitCodes.NoDiff;
         }
         catch (ConfigurationValidationException ex)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Configuration error: {ex.Message}");
             Console.ResetColor();
-            Environment.Exit(2);
+            Environment.Exit(Constants.ExitCodes.UsageError);
+            return Constants.ExitCodes.UsageError;
         }
         catch (EfMigrationDiffException ex)
         {
@@ -159,6 +170,7 @@ internal class MigrationDiffApplication : IAsyncDisposable
             Console.WriteLine($"Error: {ex.Message}");
             Console.ResetColor();
             Environment.Exit(1);
+            return 1;
         }
         catch (Exception ex)
         {
@@ -170,6 +182,7 @@ internal class MigrationDiffApplication : IAsyncDisposable
             }
             Console.ResetColor();
             Environment.Exit(1);
+            return 1;
         }
     }
 
@@ -199,63 +212,15 @@ internal class MigrationDiffApplication : IAsyncDisposable
     }
 
     /// <summary>
-    /// Handles the compare/diff command to compare migrations between branches.
+    /// Runs the compare/diff command through <see cref="CommandExecutor"/> and returns its exit code.
     /// </summary>
-    private async Task CompareCommand(string[] args)
+    /// <param name="args">Command arguments after the command name.</param>
+    /// <returns>The compare exit code: 0 no changes, 1 non-breaking, 2 breaking, 3 conflicts, 64+ errors.</returns>
+    private async Task<int> RunCompareAsync(string[] args)
     {
-        Console.WriteLine("\nComparing migrations between branches...");
-
-        _appSettings.RepositoryPath = Environment.CurrentDirectory;
-
-        var gitRepo = new GitRepository(_appSettings.RepositoryPath);
-        if (!gitRepo.Initialize())
-        {
-            throw new GitRepositoryException("Failed to initialize git repository", _appSettings.RepositoryPath);
-        }
-
-        var sourceBranch = args.Length > 0 ? args[0] : _appSettings.SourceBranch;
-        var targetBranch = args.Length > 1 ? args[1] : _appSettings.TargetBranch;
-
-        Console.WriteLine($"Source Branch: {sourceBranch}");
-        Console.WriteLine($"Target Branch: {targetBranch}");
-
-        var source = gitRepo.GetBranch(sourceBranch);
-        var target = gitRepo.GetBranch(targetBranch);
-
-        if (source is null)
-            throw new BranchNotFoundException(sourceBranch);
-
-        if (target is null)
-            throw new BranchNotFoundException(targetBranch);
-
-        var diffService = _serviceProvider.GetService<MigrationDiffService>() ?? throw new InvalidOperationException("Failed to get MigrationDiffService");
-        var reportService = _serviceProvider.GetService<ReportGenerationService>() ?? throw new InvalidOperationException("Failed to get ReportGenerationService");
-
-        var diff = diffService.CompareBranches(source, target);
-
-        Console.WriteLine($"\nComparison Result: {diff.Result}");
-        Console.WriteLine($"Conflicts: {diff.Conflicts.Count}");
-        Console.WriteLine($"Schema Changes: {diff.GetTotalSchemaChanges()}");
-
-        _appSettings.EnsureOutputDirectory();
-        var reportPath = Path.Combine(_appSettings.GetOutputDirectory(), _appSettings.GetReportFilename());
-
-        var reportContent = reportService.GenerateTextReport(diff);
-        File.WriteAllText(reportPath, reportContent);
-
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"\n✓ Report generated: {reportPath}");
-        Console.ResetColor();
-
-        if (diff.HasBlockingConflicts())
-        {
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("⚠️  Blocking conflicts detected - deployment blocked");
-            Console.ResetColor();
-            Environment.Exit(1);
-        }
-
-        gitRepo.Dispose();
+        var executor = new CommandExecutor().RegisterCommand("compare", new CompareCommand());
+        var result = await executor.ExecuteAsync("compare", args, _serviceProvider);
+        return result.ExitCode;
     }
 
     /// <summary>

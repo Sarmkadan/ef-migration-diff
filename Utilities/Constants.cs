@@ -101,11 +101,29 @@ public static class Constants
         public const int MaxDegreeOfParallelism = 16;
     }
 
+    /// <summary>
+    /// Process exit codes returned by CLI commands. The <c>compare</c> command uses the full contract so CI
+    /// pipelines can gate on the result: 0 no changes, 1 non-breaking changes, 2 breaking changes,
+    /// 3 conflicts, 64 and above for usage, parse and internal errors.
+    /// </summary>
     public static class ExitCodes
     {
+        /// <summary>No schema changes and no conflicts between the branches.</summary>
         public const int NoDiff = 0;
+
+        /// <summary>Changes were found, none of them breaking.</summary>
         public const int DiffFound = 1;
-        public const int ConflictsFound = 2;
-        public const int Error = 3;
+
+        /// <summary>At least one schema change is classified as breaking.</summary>
+        public const int BreakingChangesFound = 2;
+
+        /// <summary>At least one blocking conflict was detected between the branches.</summary>
+        public const int ConflictsFound = 3;
+
+        /// <summary>Invalid arguments, options, branch names or configuration.</summary>
+        public const int UsageError = 64;
+
+        /// <summary>Unexpected internal failure, including migration analysis that throws.</summary>
+        public const int Error = 70;
     }
 }

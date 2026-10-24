@@ -242,6 +242,39 @@ public class GitRepository
     }
 
     /// <summary>
+    /// Lists the file paths directly inside a directory of a commit's tree. Subdirectories are not descended into.
+    /// </summary>
+    /// <param name="commitSha">The commit whose tree is read. Cannot be null or empty.</param>
+    /// <param name="directoryPath">Repository-relative directory, using forward slashes. Cannot be null or empty.</param>
+    /// <returns>Repository-relative paths of the blobs in the directory. Empty if the commit or directory is absent.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="commitSha"/> or <paramref name="directoryPath"/> is null or empty.
+    /// </exception>
+    public List<string> ListFiles(string commitSha, string directoryPath)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(commitSha);
+        ArgumentException.ThrowIfNullOrEmpty(directoryPath);
+        if (_repository is null)
+            return [];
+
+        try
+        {
+            var commit = _repository.Lookup<Commit>(commitSha);
+            if (commit?.Tree[directoryPath]?.Target is not Tree directory)
+                return [];
+
+            return directory
+                .Where(entry => entry.TargetType == TreeEntryTargetType.Blob)
+                .Select(entry => entry.Path)
+                .ToList();
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    /// <summary>
     /// Checks if the repository is clean (no uncommitted changes).
     /// </summary>
     public bool IsClean()

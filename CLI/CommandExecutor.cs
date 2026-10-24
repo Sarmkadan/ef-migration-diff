@@ -71,7 +71,7 @@ public class CommandExecutor
             {
                 context.WriteError(validationError);
                 context.WriteOutput(_parser.GenerateUsage(commandName));
-                return CommandResult.Error(validationError, Constants.ExitCodes.Error);
+                return CommandResult.Error(validationError, Constants.ExitCodes.UsageError);
             }
 
             // Execute middleware pipeline
@@ -95,7 +95,7 @@ public class CommandExecutor
                 var errorMsg = $"Unknown command: {commandName}. Use --help for available commands.";
                 context.WriteError(errorMsg);
                 context.WriteOutput(_parser.GenerateUsage(commandName));
-                return CommandResult.Error(errorMsg, Constants.ExitCodes.Error);
+                return CommandResult.Error(errorMsg, Constants.ExitCodes.UsageError);
             }
 
             var result = await command.ExecuteAsync(context);
@@ -113,7 +113,7 @@ public class CommandExecutor
             {
                 Success = false,
                 Message = errorMsg,
-                ExitCode = Constants.ExitCodes.Error
+                ExitCode = Constants.ExitCodes.UsageError
             };
         }
         catch (ArgumentException ex)
@@ -128,7 +128,7 @@ public class CommandExecutor
             {
                 Success = false,
                 Message = errorMsg,
-                ExitCode = Constants.ExitCodes.Error
+                ExitCode = Constants.ExitCodes.UsageError
             };
         }
         catch (JsonException ex)
