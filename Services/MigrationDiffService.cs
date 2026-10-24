@@ -275,6 +275,43 @@ public class MigrationDiffService
     }
 
     /// <summary>
+    /// Counts the schema changes in a diff by kind: tables, columns and indexes. Source and target changes
+    /// are both included, matching <see cref="MigrationDiff.GetTotalSchemaChanges"/>.
+    /// </summary>
+    /// <param name="diff">The diff result to summarize. Cannot be null.</param>
+    /// <returns>The per-kind change counts.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="diff"/> is null.</exception>
+    public DiffStatistics GetDiffStatistics(MigrationDiff diff)
+    {
+        ArgumentNullException.ThrowIfNull(diff);
+
+        var changes = diff.SourceSchemaChanges.Concat(diff.TargetSchemaChanges).ToList();
+
+        int CountDistinctTables(SqlChangeType type) => changes
+            .Where(change => change.ChangeType == type)
+            .Select(change => change.TableName)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+
+        int CountDistinctColumns(SqlChangeType type) => changes
+            .Where(change => change.ChangeType == type)
+            .Select(change => (change.TableName, change.ColumnName))
+            .Distinct()
+            .Count();
+
+        int CountChanges(params SqlChangeType[] types) => changes.Count(change => types.Contains(change.ChangeType));
+
+        return new DiffStatistics(
+            TablesAdded: CountDistinctTables(SqlChangeType.CreateTable),
+            TablesRemoved: CountDistinctTables(SqlChangeType.DropTable),
+            TablesModified: CountDistinctTables(SqlChangeType.AlterTable),
+            ColumnsAdded: CountDistinctColumns(SqlChangeType.AddColumn),
+            ColumnsRemoved: CountDistinctColumns(SqlChangeType.DropColumn),
+            ColumnsModified: CountDistinctColumns(SqlChangeType.ModifyColumn),
+            IndexesChanged: CountChanges(SqlChangeType.CreateIndex, SqlChangeType.DropIndex));
+    }
+
+    /// <summary>
     /// Generates a detailed comparison report suitable for console or text display.
     /// Includes source‑only and target‑only migration lists, common migration counts,
     /// conflict details with blocking status, and schema change statistics.
