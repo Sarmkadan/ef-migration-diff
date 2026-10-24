@@ -70,6 +70,9 @@ public class CompareCommand : ICommand
         public const string ConflictsDetected = " Conflicts detected: {0}";
         public const string SchemaChanges = " Schema changes: {0}";
         public const string Result = " Result: {0}";
+        public const string TablesStatistics = " Tables: added {0}, removed {1}, modified {2}";
+        public const string ColumnsStatistics = " Columns: added {0}, removed {1}, modified {2}";
+        public const string IndexesStatistics = " Indexes: changed {0}";
         public const string SummaryLine = " Summary: Added: {0}, Removed: {1}, Conflicts: {2}";
         public const string ReportSaved = "✓ Report saved to: {0}";
         public const string BlockingConflictsWarning = "⚠️ Blocking conflicts detected - deployment would be blocked";
@@ -391,6 +394,19 @@ public class CompareCommand : ICommand
         context.WriteOutput(string.Format(Messages.ConflictsDetected, diff.Conflicts.Count));
         context.WriteOutput(string.Format(Messages.SchemaChanges, diff.GetTotalSchemaChanges()));
         context.WriteOutput(string.Format(Messages.Result, diff.Result));
+
+        var statistics = diffService.GetDiffStatistics(diff);
+        context.WriteOutput(string.Format(
+            Messages.TablesStatistics,
+            statistics.TablesAdded,
+            statistics.TablesRemoved,
+            statistics.TablesModified));
+        context.WriteOutput(string.Format(
+            Messages.ColumnsStatistics,
+            statistics.ColumnsAdded,
+            statistics.ColumnsRemoved,
+            statistics.ColumnsModified));
+        context.WriteOutput(string.Format(Messages.IndexesStatistics, statistics.IndexesChanged));
 
         if (isSummary)
         {

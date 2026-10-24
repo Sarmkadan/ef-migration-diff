@@ -213,4 +213,87 @@ public class MigrationDiffServiceTests
         result.InBoth.Should().BeEmpty();
         result.Conflicts.Should().BeEmpty();
     }
+
+    /// <summary>
+    /// Tests that a diff without schema changes yields all-zero statistics.
+    /// </summary>
+    [Fact]
+    public void GetDiffStatistics_WithNoSchemaChanges_ReturnsZeroCounts()
+    {
+        // Arrange
+        var service = CreateService();
+        var diff = new MigrationDiff("feature", "main");
+
+        // Act
+        var stats = service.GetDiffStatistics(diff);
+
+        // Assert
+        stats.Should().Be(new DiffStatistics(0, 0, 0, 0, 0, 0, 0));
+    }
+
+    /// <summary>
+    /// Tests that table, column and index changes from both branches are counted by kind,
+    /// with tables and columns counted distinctly by name.
+    /// </summary>
+    [Fact]
+    public void GetDiffStatistics_WithMixedChanges_CountsByKind()
+    {
+        // Arrange
+        var service = CreateService();
+        var diff = new MigrationDiff("feature", "main");
+        diff.SourceSchemaChanges.Add(CreateChange(SqlChangeType.CreateTable, "Orders"));
+        diff.SourceSchemaChanges.Add(CreateChange(SqlChangeType.DropTable, "Legacy"));
+        diff.SourceSchemaChanges.Add(CreateChange(SqlChangeType.AlterTable, "Users"));
+        diff.SourceSchemaChanges.Add(CreateChange(SqlChangeType.AddColumn, "Users", "Email"));
+        diff.SourceSchemaChanges.Add(CreateChange(SqlChangeType.AddColumn, "Users", "Email"));
+        diff.SourceSchemaChanges.Add(CreateChange(SqlChangeType.CreateIndex, "Orders"));
+        diff.TargetSchemaChanges.Add(CreateChange(SqlChangeType.DropColumn, "Users", "Phone"));
+        diff.TargetSchemaChanges.Add(CreateChange(SqlChangeType.ModifyColumn, "Users", "Name"));
+        diff.TargetSchemaChanges.Add(CreateChange(SqlChangeType.DropIndex, "Users"));
+
+        // Act
+        var stats = service.GetDiffStatistics(diff);
+
+        // Assert
+        stats.Should().Be(new DiffStatistics(
+            TablesAdded: 1,
+            TablesRemoved: 1,
+            TablesModified: 1,
+            ColumnsAdded: 1,
+            ColumnsRemoved: 1,
+            ColumnsModified: 1,
+            IndexesChanged: 2));
+    }
+
+    /// <summary>
+    /// Tests that passing a null diff throws an <see cref="ArgumentNullException"/>.
+    /// </summary>
+    [Fact]
+    public void GetDiffStatistics_WithNullDiff_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var service = CreateService();
+
+        // Act & Assert
+        var act = () => service.GetDiffStatistics(null!);
+        act.Should().ThrowExactly<ArgumentNullException>();
+    }
+
+    private static MigrationDiffService CreateService()
+    {
+        return new MigrationDiffService(
+            new Mock<MigrationRepository>().Object,
+            new Mock<ConflictDetectionService>(NullLogger<ConflictDetectionService>.Instance).Object,
+            new Mock<SchemaChangeDetectorService>().Object,
+            NullLogger<MigrationDiffService>.Instance);
+    }
+
+    private static SchemaChange CreateChange(SqlChangeType type, string tableName, string columnName = "")
+    {
+        return new SchemaChange("20260101000000_Test", type, "SQL")
+        {
+            TableName = tableName,
+            ColumnName = columnName
+        };
+    }
 }
