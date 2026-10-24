@@ -87,8 +87,18 @@ public class MigrationDiffService
             diff.TargetSchemaChanges.AddRange(changes);
         }
 
-        // Detect conflicts
-        var conflicts = _conflictDetectionService.DetectConflicts(diff.SourceSchemaChanges, diff.TargetSchemaChanges);
+        // Detect conflicts between the changes that only one side introduces. Shared history is identical on both
+        // branches, so comparing it would report every table created by a common migration as a conflict with itself.
+        var sourceOnlyIds = diff.OnlyInSource.Select(migration => migration.Id).ToHashSet();
+        var targetOnlyIds = diff.OnlyInTarget.Select(migration => migration.Id).ToHashSet();
+        var sourceDivergent = diff.SourceSchemaChanges
+            .Where(change => sourceOnlyIds.Contains(change.MigrationId))
+            .ToList();
+        var targetDivergent = diff.TargetSchemaChanges
+            .Where(change => targetOnlyIds.Contains(change.MigrationId))
+            .ToList();
+
+        var conflicts = _conflictDetectionService.DetectConflicts(sourceDivergent, targetDivergent);
         foreach (var conflict in conflicts)
         {
             diff.AddConflict(conflict);

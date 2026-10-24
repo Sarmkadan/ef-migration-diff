@@ -1,10 +1,12 @@
 #nullable enable
 using EfMigrationDiff.Configuration;
+using EfMigrationDiff.Models;
 using EfMigrationDiff.Repositories;
 using EfMigrationDiff.Services;
 using EfMigrationDiff.Exceptions;
 using EfMigrationDiff.Utilities;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.IO;
 
 namespace EfMigrationDiff.CLI.Commands;
@@ -35,11 +37,9 @@ public class CompareCommand : ICommand
         public const string BackslashPrefix = "\\";
     }
 
-    private static class ExitCodes
-    {
-        // Blocking conflicts keep the historical exit code 1 (distinct from Constants.ExitCodes.ConflictsFound).
-        public const int BlockingConflicts = 1;
-    }
+    private const string DefaultDbContextName = "DefaultContext";
+    private const string MigrationFileExtension = ".cs";
+    private const string DesignerFileSuffix = ".Designer.cs";
 
     private static class Messages
     {
@@ -58,6 +58,8 @@ public class CompareCommand : ICommand
         public const string DiffServiceNotFound = "MigrationDiffService not found";
         public const string ReportServiceNotFound = "ReportGenerationService not found";
         public const string GraphServiceNotFound = "MigrationDependencyGraphService not found";
+        public const string MigrationRepositoryNotFound = "MigrationRepository not found";
+        public const string ParserServiceNotFound = "MigrationParserService not found";
 
         public const string Comparing = "Comparing {0} → {1}";
         public const string RepositoryInitFailed = "Failed to initialize git repository at {0}";
@@ -72,7 +74,10 @@ public class CompareCommand : ICommand
         public const string ReportSaved = "✓ Report saved to: {0}";
         public const string BlockingConflictsWarning = "⚠️ Blocking conflicts detected - deployment would be blocked";
         public const string BlockingConflictsError = "Blocking conflicts detected";
-        public const string ComparisonSucceeded = "Migration comparison completed successfully";
+        public const string BreakingChangesWarning = "⚠️ Breaking schema changes detected - review before merging";
+        public const string BreakingChangesError = "Breaking schema changes detected";
+        public const string NonBreakingChanges = "Non-breaking schema changes detected";
+        public const string NoChanges = "No schema changes between the branches";
     }
 
     /// <summary>
@@ -162,6 +167,127 @@ public class CompareCommand : ICommand
     public string GetDescription() => "Compare migrations between two branches and detect conflicts";
 
     /// <summary>
+    /// Maps a branch comparison onto the compare exit code contract. Checks run from most to least severe:
+    /// blocking conflicts, breaking schema changes, non-breaking changes, then no changes.
+    /// Only the schema changes introduced by source-only and target-only migrations are considered.
+    /// </summary>
+    /// <param name="diff">The comparison result. Cannot be null.</param>
+    /// <returns>
+    /// <see cref="Constants.ExitCodes.ConflictsFound"/>, <see cref="Constants.ExitCodes.BreakingChangesFound"/>,
+    /// <see cref="Constants.ExitCodes.DiffFound"/> or <see cref="Constants.ExitCodes.NoDiff"/>.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="diff"/> is null.</exception>
+    public static int DetermineExitCode(MigrationDiff diff)
+    {
+        ArgumentNullException.ThrowIfNull(diff);
+
+        if (diff.HasBlockingConflicts())
+            return Constants.ExitCodes.ConflictsFound;
+
+        var changes = GetDiffScopedSchemaChanges(diff);
+        var classifications = new BreakingChangeDetector(NullLogger<BreakingChangeDetector>.Instance)
+            .ClassifyChanges(changes);
+
+        if (classifications.Any(classification => classification.Severity == BreakingChangeSeverity.Breaking))
+            return Constants.ExitCodes.BreakingChangesFound;
+
+        var hasChanges = changes.Count > 0 || diff.GetMigrationsNeedingAttention() > 0 || diff.HasConflicts();
+        return hasChanges ? Constants.ExitCodes.DiffFound : Constants.ExitCodes.NoDiff;
+    }
+
+    /// <summary>
+    /// Collects the schema changes that belong to migrations present on only one of the two branches.
+    /// </summary>
+    /// <param name="diff">The comparison result. Cannot be null.</param>
+    /// <returns>The source-only and target-only schema changes.</returns>
+    private static List<SchemaChange> GetDiffScopedSchemaChanges(MigrationDiff diff)
+    {
+        var sourceOnlyIds = diff.OnlyInSource.Select(migration => migration.Id).ToHashSet();
+        var targetOnlyIds = diff.OnlyInTarget.Select(migration => migration.Id).ToHashSet();
+
+        return diff.SourceSchemaChanges.Where(change => sourceOnlyIds.Contains(change.MigrationId))
+            .Concat(diff.TargetSchemaChanges.Where(change => targetOnlyIds.Contains(change.MigrationId)))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Reads the migration files committed on a branch's tip, parses them and registers them so the
+    /// diff service can see them. Migrations already registered under the same id are reused.
+    /// </summary>
+    /// <param name="gitRepo">An initialized git repository. Cannot be null.</param>
+    /// <param name="branch">The branch whose migrations are loaded. Cannot be null.</param>
+    /// <param name="migrationsPath">Repository-relative migrations directory. Cannot be null or empty.</param>
+    /// <param name="parser">Parser used for migration source text. Cannot be null.</param>
+    /// <param name="repository">Store the parsed migrations are registered in. Cannot be null.</param>
+    /// <exception cref="ArgumentNullException">Thrown when any reference argument is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="migrationsPath"/> is null or empty.</exception>
+    private static void LoadBranchMigrations(
+        GitRepository gitRepo,
+        BranchInfo branch,
+        string migrationsPath,
+        MigrationParserService parser,
+        MigrationRepository repository)
+    {
+        ArgumentNullException.ThrowIfNull(gitRepo);
+        ArgumentNullException.ThrowIfNull(branch);
+        ArgumentException.ThrowIfNullOrEmpty(migrationsPath);
+        ArgumentNullException.ThrowIfNull(parser);
+        ArgumentNullException.ThrowIfNull(repository);
+
+        var directory = migrationsPath.Replace('\\', '/').TrimEnd('/');
+
+        foreach (var path in gitRepo.ListFiles(branch.CommitHash, directory))
+        {
+            var fileName = Path.GetFileName(path);
+            if (!fileName.EndsWith(MigrationFileExtension, StringComparison.OrdinalIgnoreCase) ||
+                fileName.EndsWith(DesignerFileSuffix, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var content = gitRepo.GetFileContent(branch.CommitHash, path);
+            if (content is null)
+                continue;
+
+            var migration = parser.ParseMigrationFile(new MigrationFile
+            {
+                FilePath = path,
+                FileName = fileName,
+                DirectoryPath = directory,
+                FileSize = content.Length,
+                Content = content,
+                DbContextName = DefaultDbContextName
+            });
+
+            if (migration is null)
+                continue;
+
+            if (!repository.Exists(migration.Id))
+                repository.Add(migration);
+
+            branch.AddMigration(migration.Id);
+        }
+    }
+
+    /// <summary>
+    /// Builds the command result for a compare exit code. Codes 0 and 1 are successful outcomes; the rest are failures.
+    /// </summary>
+    /// <param name="exitCode">The exit code to report.</param>
+    /// <returns>The command result carrying the exit code.</returns>
+    private static CommandResult CreateExitResult(int exitCode) => exitCode switch
+    {
+        Constants.ExitCodes.NoDiff => CommandResult.Ok(Messages.NoChanges),
+        Constants.ExitCodes.DiffFound => new CommandResult
+        {
+            Success = true,
+            Message = Messages.NonBreakingChanges,
+            ExitCode = exitCode
+        },
+        Constants.ExitCodes.BreakingChangesFound => CommandResult.Error(Messages.BreakingChangesError, exitCode),
+        _ => CommandResult.Error(Messages.BlockingConflictsError, exitCode)
+    };
+
+    /// <summary>
     /// Executes migration comparison between source and target branches.
     /// Validates arguments, initializes repositories, performs diff analysis, and generates reports.
     /// </summary>
@@ -203,12 +329,24 @@ public class CompareCommand : ICommand
         var target = gitRepo.GetBranch(targetBranch);
 
         if (source is null)
-            return CommandResult.Error(string.Format(Messages.SourceBranchNotFound, sourceBranch));
+            return CommandResult.Error(
+                string.Format(Messages.SourceBranchNotFound, sourceBranch),
+                Constants.ExitCodes.UsageError);
 
         if (target is null)
-            return CommandResult.Error(string.Format(Messages.TargetBranchNotFound, targetBranch));
+            return CommandResult.Error(
+                string.Format(Messages.TargetBranchNotFound, targetBranch),
+                Constants.ExitCodes.UsageError);
 
         // Perform comparison
+        var migrationRepository = context.ServiceProvider.GetService<MigrationRepository>()
+        ?? throw new InvalidOperationException(Messages.MigrationRepositoryNotFound);
+
+        var parserService = context.ServiceProvider.GetService<MigrationParserService>()
+        ?? throw new InvalidOperationException(Messages.ParserServiceNotFound);
+
+        LoadBranchMigrations(gitRepo, source, appSettings.MigrationsPath, parserService, migrationRepository);
+        LoadBranchMigrations(gitRepo, target, appSettings.MigrationsPath, parserService, migrationRepository);
         var diff = diffService.CompareBranches(source, target);
 
         // Optional DOT graph export
@@ -301,13 +439,17 @@ public class CompareCommand : ICommand
 
         gitRepo.Dispose();
 
-        // Exit with error if blocking conflicts exist
-        if (diff.HasBlockingConflicts())
+        var exitCode = DetermineExitCode(diff);
+        switch (exitCode)
         {
-            context.WriteColoredOutput(Messages.BlockingConflictsWarning, ConsoleColor.Yellow);
-            return CommandResult.Error(Messages.BlockingConflictsError, ExitCodes.BlockingConflicts);
+            case Constants.ExitCodes.ConflictsFound:
+                context.WriteColoredOutput(Messages.BlockingConflictsWarning, ConsoleColor.Yellow);
+                break;
+            case Constants.ExitCodes.BreakingChangesFound:
+                context.WriteColoredOutput(Messages.BreakingChangesWarning, ConsoleColor.Yellow);
+                break;
         }
 
-        return CommandResult.Ok(Messages.ComparisonSucceeded);
+        return CreateExitResult(exitCode);
     }
 }
