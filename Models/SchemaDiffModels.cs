@@ -142,6 +142,13 @@ public sealed class MergeConflictRegion
     [JsonIgnore]
     public bool IsTriviallyResolvable =>
         SourceLines.Select(l => l.Content).SequenceEqual(TargetLines.Select(l => l.Content));
+
+    /// <summary>
+    /// Returns a concise one-line summary of the conflict, e.g.
+    /// <c>Conflict at hunk 3 (Unresolved): Renamed column Users.Email</c>.
+    /// </summary>
+    public override string ToString() =>
+        $"Conflict at hunk {HunkIndex} ({Resolution}): {Description}";
 }
 
 /// <summary>
@@ -227,6 +234,15 @@ public sealed class SchemaDiffResult
     public bool HasDestructiveChanges =>
         SourceOnlyChanges.Any(c => c.IsDestructive()) ||
         TargetOnlyChanges.Any(c => c.IsDestructive());
+
+    /// <summary>
+    /// Returns a concise one-line summary of the diff, e.g.
+    /// <c>Diff main → feature: +3/-1 lines, 2 hunks (source-only 1, target-only 2, modified 0)</c>.
+    /// </summary>
+    public override string ToString() =>
+        $"Diff {SourceLabel} → {TargetLabel}: +{TotalAdded}/-{TotalRemoved} lines, {Hunks.Count} hunk(s) " +
+        $"(source-only {SourceOnlyChanges.Count}, target-only {TargetOnlyChanges.Count}, " +
+        $"modified {ModifiedChanges.Count})";
 }
 
 /// <summary>
@@ -275,6 +291,14 @@ public sealed class ThreeWayDiffResult
     /// </summary>
     [JsonIgnore]
     public bool IsAutoMergeable => ConflictRegions.All(r => r.IsTriviallyResolvable);
+
+    /// <summary>
+    /// Returns a concise one-line summary of the three-way diff, e.g.
+    /// <c>Merge base → source + target: 2 conflict(s), 1 unresolved</c>.
+    /// </summary>
+    public override string ToString() =>
+        $"Merge {BaseLabel} → {SourceLabel} + {TargetLabel}: {ConflictCount} conflict(s), " +
+        $"{ConflictRegions.Count(r => !r.IsResolved)} unresolved";
 }
 
 /// <summary>
