@@ -24,6 +24,13 @@ public class CsvFormatter
     private readonly string _lineSeparator;
     private readonly bool _includeHeaders;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CsvFormatter"/> class.
+    /// </summary>
+    /// <param name="delimiter">The string used to separate values within a row. Defaults to a comma.</param>
+    /// <param name="includeHeaders">Whether <see cref="Format{T}"/> writes a header row with property names.</param>
+    /// <param name="lineSeparator">The string used to separate rows. Defaults to <see cref="Environment.NewLine"/>.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="delimiter"/> is <see langword="null"/>.</exception>
     public CsvFormatter(string delimiter = DefaultDelimiter, bool includeHeaders = true, string? lineSeparator = null)
     {
         ArgumentNullException.ThrowIfNull(delimiter);
