@@ -1,7 +1,7 @@
 #nullable enable
+using System;
 using System.Net;
 using System.Text;
-using System;
 using EfMigrationDiff.Interfaces;
 using EfMigrationDiff.Models;
 
@@ -80,10 +80,11 @@ public sealed class VisualDiffFormatter : IVisualDiffRenderer
 
                 foreach (var line in hunk.Lines)
                 {
-                    if (line.Kind == DiffLineKind.Placeholder) continue;
+                    if (line.Kind == DiffLineKind.Placeholder)
+                        continue;
 
-                    var cls   = LineClass(line.Kind);
-                    var srcLn = line.Kind != DiffLineKind.Added   ? line.LineNumber.ToString() : string.Empty;
+                    var cls = LineClass(line.Kind);
+                    var srcLn = line.Kind != DiffLineKind.Added ? line.LineNumber.ToString() : string.Empty;
                     var tgtLn = line.Kind == DiffLineKind.Added
                         ? line.LineNumber.ToString()
                         : line.Kind == DiffLineKind.Unchanged
@@ -129,7 +130,7 @@ public sealed class VisualDiffFormatter : IVisualDiffRenderer
         else
         {
             var alertType = diff.IsAutoMergeable ? "warning" : "danger";
-            var autoNote  = diff.IsAutoMergeable
+            var autoNote = diff.IsAutoMergeable
                 ? " All conflicts are trivially resolvable (both sides are identical)."
                 : " Manual review is required for one or more regions.";
             body.Append(RenderAlert(
@@ -178,9 +179,9 @@ public sealed class VisualDiffFormatter : IVisualDiffRenderer
 
         foreach (var line in hunk.Lines)
         {
-            var showOnLeft  = line.Kind is DiffLineKind.Removed or DiffLineKind.Unchanged;
-            var showOnRight = line.Kind is DiffLineKind.Added   or DiffLineKind.Unchanged;
-            var show        = leftSide ? showOnLeft : showOnRight;
+            var showOnLeft = line.Kind is DiffLineKind.Removed or DiffLineKind.Unchanged;
+            var showOnRight = line.Kind is DiffLineKind.Added or DiffLineKind.Unchanged;
+            var show = leftSide ? showOnLeft : showOnRight;
 
             if (!show || line.Kind == DiffLineKind.Placeholder)
             {
@@ -247,14 +248,15 @@ public sealed class VisualDiffFormatter : IVisualDiffRenderer
         sb.Append("<table class=\"diff-table compact\"><tbody>");
 
         foreach (var hunk in diff.Hunks)
-        foreach (var line in hunk.Lines)
-        {
-            if (line.Kind == DiffLineKind.Placeholder) continue;
-            sb.Append($"<tr class=\"{LineClass(line.Kind)}\">");
-            sb.Append($"<td class=\"marker\">{line.UnifiedMarker}</td>");
-            sb.Append($"<td><code>{Enc(line.Content)}</code></td>");
-            sb.Append("</tr>");
-        }
+            foreach (var line in hunk.Lines)
+            {
+                if (line.Kind == DiffLineKind.Placeholder)
+                    continue;
+                sb.Append($"<tr class=\"{LineClass(line.Kind)}\">");
+                sb.Append($"<td class=\"marker\">{line.UnifiedMarker}</td>");
+                sb.Append($"<td><code>{Enc(line.Content)}</code></td>");
+                sb.Append("</tr>");
+            }
 
         sb.Append("</tbody></table>");
         return sb.ToString();
@@ -264,7 +266,7 @@ public sealed class VisualDiffFormatter : IVisualDiffRenderer
     {
         if (diff.SourceOnlyChanges.Count == 0 &&
             diff.TargetOnlyChanges.Count == 0 &&
-            diff.ModifiedChanges.Count    == 0)
+            diff.ModifiedChanges.Count == 0)
             return string.Empty;
 
         var sb = new StringBuilder();
@@ -288,9 +290,12 @@ public sealed class VisualDiffFormatter : IVisualDiffRenderer
             sb.Append("</tr>");
         }
 
-        foreach (var c in diff.SourceOnlyChanges)  AppendRow(c, "Source only");
-        foreach (var c in diff.TargetOnlyChanges)  AppendRow(c, "Target only");
-        foreach (var c in diff.ModifiedChanges)    AppendRow(c, "Modified");
+        foreach (var c in diff.SourceOnlyChanges)
+            AppendRow(c, "Source only");
+        foreach (var c in diff.TargetOnlyChanges)
+            AppendRow(c, "Target only");
+        foreach (var c in diff.ModifiedChanges)
+            AppendRow(c, "Modified");
 
         sb.Append("</tbody></table>");
         return sb.ToString();
@@ -301,11 +306,11 @@ public sealed class VisualDiffFormatter : IVisualDiffRenderer
 
     private static string LineClass(DiffLineKind kind) => kind switch
     {
-        DiffLineKind.Added     => "line-added",
-        DiffLineKind.Removed   => "line-removed",
-        DiffLineKind.Modified  => "line-modified",
+        DiffLineKind.Added => "line-added",
+        DiffLineKind.Removed => "line-removed",
+        DiffLineKind.Modified => "line-modified",
         DiffLineKind.Unchanged => "line-unchanged",
-        _                      => "line-placeholder"
+        _ => "line-placeholder"
     };
 
     private static string Enc(string? text) =>
