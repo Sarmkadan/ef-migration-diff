@@ -71,9 +71,9 @@ public sealed record DiffLine(
     [JsonIgnore]
     public char UnifiedMarker => Kind switch
     {
-        DiffLineKind.Added   => '+',
+        DiffLineKind.Added => '+',
         DiffLineKind.Removed => '-',
-        _                    => ' '
+        _ => ' '
     };
 }
 
