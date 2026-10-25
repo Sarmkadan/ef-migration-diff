@@ -342,6 +342,48 @@ COMMIT;
 | **Diff a snapshot against a live model** | `var changes = parser.LoadMigrationsFromDirectoryAsync(snapshotPath, "MyDbContext").Result.SelectMany(m => m.SchemaChanges); var sql = generator.GenerateScript(changes);` |
 | **Dry-run output for CI** | `var errors = generator.ValidateChanges(diff.SourceSchemaChanges); if (errors.Count > 0) { Console.Error.WriteLine(string.Join("\n", errors)); Environment.Exit(1); }` |
 
+## Compare Command
+
+`ef-migration-diff compare [source] [target]` (alias `diff`) reads the migrations committed on two branches, detects schema changes and conflicts between them, and writes a report. It is implemented in `CLI/Commands/CompareCommand.cs`.
+
+What it does:
+
+1. Opens the git repository in the current directory and resolves both branches. Unknown branches fail with exit code `64`.
+2. Parses the `.cs` migration files under `MigrationsPath` on each branch's tip. `*.Designer.cs` files are skipped.
+3. Compares the two sets, reports the number of conflicts, schema changes and table, column and index statistics, and writes a report to `OutputPath` (the default is `./reports`).
+
+Arguments and options:
+
+| Argument / option | Default | Description |
+|-------------------|---------|-------------|
+| `[source]` | `SourceBranch` from configuration (`develop`) | Branch to compare from. |
+| `[target]` | `TargetBranch` from configuration (`main`) | Branch to compare against. |
+| `--format <fmt>`, `-f <fmt>` | `text` | Report format: `text`, `json` or `html`. Any other value produces the text report. Ignored with `--summary`. |
+| `--dot <path>` | none | Also writes the migration dependency graph as a Graphviz DOT file. The path must be relative and stay inside the repository directory. |
+| `--summary` | off | Prints the counts only and does not write a report file. |
+
+Notes:
+
+- The report file name is `migration-comparison-<UTC timestamp>.<ext>`, where the extension follows the format (`.txt`, `.json` or `.html`).
+- With `--format json`, the report is written to stdout so it can be piped. Status lines go to stderr.
+- The exit code follows the contract in [CI Gating with Exit Codes](#ci-gating-with-exit-codes).
+
+Sample invocations:
+
+```bash
+# Compare develop against main and write a text report to ./reports
+ef-migration-diff compare develop main
+
+# Print the JSON report to stdout and capture it
+ef-migration-diff compare develop main --format json > migration-diff.json
+
+# Print counts only, with no report file
+ef-migration-diff compare feature/orders main --summary
+
+# Write an HTML report and a DOT dependency graph
+ef-migration-diff compare develop main --format html --dot graphs/migrations.dot
+```
+
 ## CI Gating with Exit Codes
 
 `ef-migration-diff compare <source> <target>` (alias `diff`) exits with a code that describes the result, so a pipeline can fail on breaking changes without parsing output:
