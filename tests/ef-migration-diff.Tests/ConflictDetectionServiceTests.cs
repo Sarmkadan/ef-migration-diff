@@ -15,6 +15,7 @@ public class ConflictDetectionServiceTests
 {
     private readonly ConflictDetectionService _service;
     private readonly Mock<ILogger<ConflictDetectionService>> _loggerMock;
+    private readonly ILogger<ConflictDetectionService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ConflictDetectionServiceTests"/> class.
@@ -22,7 +23,10 @@ public class ConflictDetectionServiceTests
     public ConflictDetectionServiceTests()
     {
         _loggerMock = new Mock<ILogger<ConflictDetectionService>>();
+        _logger = _loggerMock.Object;
         _service = new ConflictDetectionService(_loggerMock.Object);
+
+        _logger.LogInformation("Initialized {TestClass} with a mocked logger", nameof(ConflictDetectionServiceTests));
     }
 
     /// <summary>
@@ -31,12 +35,16 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_WithNoChanges_ReturnsEmptyList()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_WithNoChanges_ReturnsEmptyList));
+
         var sourceChanges = new List<SchemaChange>();
         var targetChanges = new List<SchemaChange>();
 
         var conflicts = _service.DetectConflicts(sourceChanges, targetChanges);
 
         conflicts.Should().BeEmpty();
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_WithNoChanges_ReturnsEmptyList), conflicts.Count);
     }
 
     /// <summary>
@@ -45,6 +53,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_WithConflictingTableOperations_ReturnsTableConflict()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_WithConflictingTableOperations_ReturnsTableConflict));
+
         var sourceChanges = new List<SchemaChange> {
             new SchemaChange("m1", SqlChangeType.CreateTable, "CREATE TABLE Users") { TableName = "Users" }
         };
@@ -57,6 +67,8 @@ public class ConflictDetectionServiceTests
         conflicts.Should().ContainSingle();
         conflicts.First().ConflictType.Should().Be(ConflictType.TableConflict);
         conflicts.First().Severity.Should().Be(ConflictSeverity.Error);
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_WithConflictingTableOperations_ReturnsTableConflict), conflicts.Count);
     }
 
     /// <summary>
@@ -65,6 +77,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_WithConflictingColumnOperations_ReturnsColumnConflict()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_WithConflictingColumnOperations_ReturnsColumnConflict));
+
         var sourceChanges = new List<SchemaChange> {
             new SchemaChange("m1", SqlChangeType.AddColumn, "ALTER TABLE Users ADD Name") { TableName = "Users", ColumnName = "Name" }
         };
@@ -76,6 +90,8 @@ public class ConflictDetectionServiceTests
 
         conflicts.Should().ContainSingle();
         conflicts.First().ConflictType.Should().Be(ConflictType.ColumnConflict);
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_WithConflictingColumnOperations_ReturnsColumnConflict), conflicts.Count);
     }
 
     /// <summary>
@@ -84,6 +100,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_WithNonConflictingChanges_ReturnsEmptyList()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_WithNonConflictingChanges_ReturnsEmptyList));
+
         var sourceChanges = new List<SchemaChange> {
             new SchemaChange("m1", SqlChangeType.CreateTable, "CREATE TABLE Users") { TableName = "Users" }
         };
@@ -94,6 +112,8 @@ public class ConflictDetectionServiceTests
         var conflicts = _service.DetectConflicts(sourceChanges, targetChanges);
 
         conflicts.Should().BeEmpty();
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_WithNonConflictingChanges_ReturnsEmptyList), conflicts.Count);
     }
 
     /// <summary>
@@ -102,6 +122,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_WithConflictingTableOperations_ReturnsErrorSeverity()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_WithConflictingTableOperations_ReturnsErrorSeverity));
+
         var sourceChanges = new List<SchemaChange> {
             new SchemaChange("m1", SqlChangeType.CreateTable, "CREATE TABLE Users") { TableName = "Users" }
         };
@@ -112,6 +134,8 @@ public class ConflictDetectionServiceTests
         var conflicts = _service.DetectConflicts(sourceChanges, targetChanges);
 
         conflicts.First().Severity.Should().Be(ConflictSeverity.Error);
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_WithConflictingTableOperations_ReturnsErrorSeverity), conflicts.Count);
     }
 
     /// <summary>
@@ -120,6 +144,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_WithConflictingIndexOperations_ReturnsWarningSeverity()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_WithConflictingIndexOperations_ReturnsWarningSeverity));
+
         var sourceChanges = new List<SchemaChange> {
             new SchemaChange("m1", SqlChangeType.CreateIndex, "CREATE INDEX Idx_Users_Name ON Users(Name)") { TableName = "Users" }
         };
@@ -134,6 +160,8 @@ public class ConflictDetectionServiceTests
         conflicts.Should().ContainSingle();
         conflicts.First().ConflictType.Should().Be(ConflictType.IndexConflict);
         conflicts.First().Severity.Should().Be(ConflictSeverity.Warning);
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_WithConflictingIndexOperations_ReturnsWarningSeverity), conflicts.Count);
     }
 
     /// <summary>
@@ -142,6 +170,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_TwoMigrationsModifyingSameColumnWithDifferentDefaultValues_ReturnsColumnConflict()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_TwoMigrationsModifyingSameColumnWithDifferentDefaultValues_ReturnsColumnConflict));
+
         // Arrange
         var sourceChanges = new List<SchemaChange>
         {
@@ -170,6 +200,8 @@ public class ConflictDetectionServiceTests
         conflicts.Should().ContainSingle();
         conflicts.First().ConflictType.Should().Be(ConflictType.ColumnConflict);
         conflicts.First().Severity.Should().Be(ConflictSeverity.Error);
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_TwoMigrationsModifyingSameColumnWithDifferentDefaultValues_ReturnsColumnConflict), conflicts.Count);
     }
 
     /// <summary>
@@ -178,6 +210,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_TwoMigrationsAlteringSameTable_ReturnsTableConflict()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_TwoMigrationsAlteringSameTable_ReturnsTableConflict));
+
         // Arrange
         var sourceChanges = new List<SchemaChange>
         {
@@ -202,6 +236,8 @@ public class ConflictDetectionServiceTests
         conflicts.Should().ContainSingle();
         conflicts.First().ConflictType.Should().Be(ConflictType.TableConflict);
         conflicts.First().Severity.Should().Be(ConflictSeverity.Error);
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_TwoMigrationsAlteringSameTable_ReturnsTableConflict), conflicts.Count);
     }
 
     /// <summary>
@@ -210,6 +246,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_DropAndDropTableSameTable_ReturnsNoConflicts()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_DropAndDropTableSameTable_ReturnsNoConflicts));
+
         // Arrange
         var sourceChanges = new List<SchemaChange>
         {
@@ -232,6 +270,8 @@ public class ConflictDetectionServiceTests
 
         // Assert
         conflicts.Should().BeEmpty();
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_DropAndDropTableSameTable_ReturnsNoConflicts), conflicts.Count);
     }
 
     /// <summary>
@@ -240,6 +280,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_TwoMigrationsCreatingDifferentTables_ReturnsNoConflicts()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_TwoMigrationsCreatingDifferentTables_ReturnsNoConflicts));
+
         // Arrange
         var sourceChanges = new List<SchemaChange>
         {
@@ -262,6 +304,8 @@ public class ConflictDetectionServiceTests
 
         // Assert
         conflicts.Should().BeEmpty();
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_TwoMigrationsCreatingDifferentTables_ReturnsNoConflicts), conflicts.Count);
     }
 
     /// <summary>
@@ -270,6 +314,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_TwoMigrationsAddingDifferentColumnsToSameTable_ReturnsNoConflicts()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_TwoMigrationsAddingDifferentColumnsToSameTable_ReturnsNoConflicts));
+
         // Arrange
         var sourceChanges = new List<SchemaChange>
         {
@@ -294,6 +340,8 @@ public class ConflictDetectionServiceTests
 
         // Assert
         conflicts.Should().BeEmpty();
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_TwoMigrationsAddingDifferentColumnsToSameTable_ReturnsNoConflicts), conflicts.Count);
     }
 
     /// <summary>
@@ -302,6 +350,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_IdenticalTableOperations_ReturnsNoConflicts()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_IdenticalTableOperations_ReturnsNoConflicts));
+
         // Arrange - identical operations should not conflict (different migration IDs)
         var sourceChanges = new List<SchemaChange>
         {
@@ -326,6 +376,8 @@ public class ConflictDetectionServiceTests
 
         // Assert - identical operations on different columns don't conflict
         conflicts.Should().BeEmpty();
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_IdenticalTableOperations_ReturnsNoConflicts), conflicts.Count);
     }
 
     /// <summary>
@@ -335,6 +387,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_RenameVsModifyColumn_DetectsCriticalConflict()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_RenameVsModifyColumn_DetectsCriticalConflict));
+
         // Arrange - Branch A renames a column, Branch B modifies the same column
         var sourceChanges = new List<SchemaChange>
         {
@@ -364,6 +418,8 @@ public class ConflictDetectionServiceTests
         conflicts.First().Severity.Should().Be(ConflictSeverity.Critical);
         conflicts.First().Description.Should().Contain("renamed in one branch");
         conflicts.First().AffectedElements.Should().ContainSingle().Which.Should().Be("Users.UserEmail");
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_RenameVsModifyColumn_DetectsCriticalConflict), conflicts.Count);
     }
 
     /// <summary>
@@ -372,6 +428,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_ModifyVsRenameColumn_DetectsCriticalConflict()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_ModifyVsRenameColumn_DetectsCriticalConflict));
+
         // Arrange - Branch A modifies a column, Branch B renames the same column
         var sourceChanges = new List<SchemaChange>
         {
@@ -399,6 +457,8 @@ public class ConflictDetectionServiceTests
         conflicts.Should().ContainSingle();
         conflicts.First().ConflictType.Should().Be(ConflictType.ColumnConflict);
         conflicts.First().Severity.Should().Be(ConflictSeverity.Critical);
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_ModifyVsRenameColumn_DetectsCriticalConflict), conflicts.Count);
     }
 
     /// <summary>
@@ -407,6 +467,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_RenameTableWithOtherOperations_DetectsConflict()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_RenameTableWithOtherOperations_DetectsConflict));
+
         // Arrange - Branch A renames a table, Branch B alters the same table
         var sourceChanges = new List<SchemaChange>
         {
@@ -433,6 +495,8 @@ public class ConflictDetectionServiceTests
         conflicts.Should().ContainSingle();
         conflicts.First().ConflictType.Should().Be(ConflictType.TableConflict);
         conflicts.First().Severity.Should().Be(ConflictSeverity.Error);
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_RenameTableWithOtherOperations_DetectsConflict), conflicts.Count);
     }
 
     /// <summary>
@@ -441,6 +505,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_IdenticalOperationsDifferentOrder_NoFalseConflicts()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_IdenticalOperationsDifferentOrder_NoFalseConflicts));
+
         // Arrange - Both branches add the same column, just in different order
         var sourceChanges = new List<SchemaChange>
         {
@@ -465,6 +531,8 @@ public class ConflictDetectionServiceTests
 
         // Assert - identical operations should not conflict
         conflicts.Should().BeEmpty();
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_IdenticalOperationsDifferentOrder_NoFalseConflicts), conflicts.Count);
     }
 
     /// <summary>
@@ -474,6 +542,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_IndexWithSameNameDifferentDefinitions_DetectsConflict()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_IndexWithSameNameDifferentDefinitions_DetectsConflict));
+
         // Arrange - Both branches create an index with the same name but different definitions
         var sourceChanges = new List<SchemaChange>
         {
@@ -501,6 +571,8 @@ public class ConflictDetectionServiceTests
         conflicts.First().ConflictType.Should().Be(ConflictType.IndexConflict);
         conflicts.First().Severity.Should().Be(ConflictSeverity.Error);
         conflicts.First().Description.Should().Contain("different definitions");
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_IndexWithSameNameDifferentDefinitions_DetectsConflict), conflicts.Count);
     }
 
     /// <summary>
@@ -510,6 +582,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_DropOperationsSameObject_IdempotentNoConflict()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_DropOperationsSameObject_IdempotentNoConflict));
+
         // Arrange - Both branches drop the same table
         var sourceChanges = new List<SchemaChange>
         {
@@ -532,6 +606,8 @@ public class ConflictDetectionServiceTests
 
         // Assert - drop operations are idempotent, should not conflict
         conflicts.Should().BeEmpty();
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_DropOperationsSameObject_IdempotentNoConflict), conflicts.Count);
     }
 
     /// <summary>
@@ -540,6 +616,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_RenameOperationWithDifferentOperation_DetectsConflict()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_RenameOperationWithDifferentOperation_DetectsConflict));
+
         // Arrange - Branch A renames a column, Branch B drops a different column
         var sourceChanges = new List<SchemaChange>
         {
@@ -566,6 +644,8 @@ public class ConflictDetectionServiceTests
         // Assert - rename conflicts with any operation on the same table
         conflicts.Should().ContainSingle();
         conflicts.First().ConflictType.Should().Be(ConflictType.TableConflict);
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_RenameOperationWithDifferentOperation_DetectsConflict), conflicts.Count);
     }
 
     /// <summary>
@@ -574,12 +654,16 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_NullSourceChanges_ThrowsArgumentNullException()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_NullSourceChanges_ThrowsArgumentNullException));
+
         // Arrange
         var targetChanges = new List<SchemaChange>();
 
         // Act & Assert
         var act = () => _service.DetectConflicts(null!, targetChanges);
         act.Should().ThrowExactly<ArgumentNullException>();
+
+        _logger.LogInformation("Finished {TestName}", nameof(DetectConflicts_NullSourceChanges_ThrowsArgumentNullException));
     }
 
     /// <summary>
@@ -588,12 +672,16 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_NullTargetChanges_ThrowsArgumentNullException()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_NullTargetChanges_ThrowsArgumentNullException));
+
         // Arrange
         var sourceChanges = new List<SchemaChange>();
 
         // Act & Assert
         var act = () => _service.DetectConflicts(sourceChanges, null!);
         act.Should().ThrowExactly<ArgumentNullException>();
+
+        _logger.LogInformation("Finished {TestName}", nameof(DetectConflicts_NullTargetChanges_ThrowsArgumentNullException));
     }
 
     /// <summary>
@@ -602,6 +690,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_MultipleConflictTypes_AllDetected()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_MultipleConflictTypes_AllDetected));
+
         // Arrange
         var sourceChanges = new List<SchemaChange>
         {
@@ -642,6 +732,8 @@ public class ConflictDetectionServiceTests
         var columnConflict = conflicts.First(c => c.ConflictType == ConflictType.ColumnConflict);
         columnConflict.Severity.Should().Be(ConflictSeverity.Error);
         columnConflict.AffectedElements.Should().ContainSingle().Which.Should().Be("Orders.Total");
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_MultipleConflictTypes_AllDetected), conflicts.Count);
     }
 
     /// <summary>
@@ -650,6 +742,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_WithConflicts_LogsWarning()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_WithConflicts_LogsWarning));
+
         // Arrange
         var sourceChanges = new List<SchemaChange>
         {
@@ -679,6 +773,8 @@ public class ConflictDetectionServiceTests
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
             Times.Once);
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_WithConflicts_LogsWarning), conflicts.Count);
     }
 
     /// <summary>
@@ -687,6 +783,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_WithoutConflicts_LogsDebug()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_WithoutConflicts_LogsDebug));
+
         // Arrange
         var sourceChanges = new List<SchemaChange>
         {
@@ -716,6 +814,8 @@ public class ConflictDetectionServiceTests
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
             Times.Once);
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_WithoutConflicts_LogsDebug), conflicts.Count);
     }
 
     /// <summary>
@@ -725,6 +825,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_IdenticalOperationsDifferentOrder_ShouldNotConflict()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_IdenticalOperationsDifferentOrder_ShouldNotConflict));
+
         // Arrange - Both branches have identical operations but in different order
         var sourceChanges = new List<SchemaChange>
         {
@@ -759,6 +861,8 @@ public class ConflictDetectionServiceTests
 
         // Assert - identical operations in different order should NOT conflict
         conflicts.Should().BeEmpty();
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_IdenticalOperationsDifferentOrder_ShouldNotConflict), conflicts.Count);
     }
 
     /// <summary>
@@ -768,6 +872,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_RenameColumnVsModifyColumn_DetectsCriticalConflict()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_RenameColumnVsModifyColumn_DetectsCriticalConflict));
+
         // Arrange - Branch A renames Email to UserEmail, Branch B modifies the original Email column
         var sourceChanges = new List<SchemaChange>
         {
@@ -797,6 +903,8 @@ public class ConflictDetectionServiceTests
         conflicts.First().Severity.Should().Be(ConflictSeverity.Critical);
         conflicts.First().Description.Should().Contain("renamed in one branch");
         conflicts.First().AffectedElements.Should().ContainSingle().Which.Should().Be("Users.Email");
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_RenameColumnVsModifyColumn_DetectsCriticalConflict), conflicts.Count);
     }
 
     /// <summary>
@@ -806,6 +914,8 @@ public class ConflictDetectionServiceTests
     [Fact]
     public void DetectConflicts_IndexSameNameDifferentDefinitions_DetectsConflict()
     {
+        _logger.LogInformation("Starting {TestName}", nameof(DetectConflicts_IndexSameNameDifferentDefinitions_DetectsConflict));
+
         // Arrange - Both branches create an index with the same name but different columns
         var sourceChanges = new List<SchemaChange>
         {
@@ -833,5 +943,7 @@ public class ConflictDetectionServiceTests
         conflicts.First().ConflictType.Should().Be(ConflictType.IndexConflict);
         conflicts.First().Severity.Should().Be(ConflictSeverity.Error);
         conflicts.First().Description.Should().Contain("different definitions");
+
+        _logger.LogInformation("Finished {TestName} with {ConflictCount} conflicts", nameof(DetectConflicts_IndexSameNameDifferentDefinitions_DetectsConflict), conflicts.Count);
     }
 }
