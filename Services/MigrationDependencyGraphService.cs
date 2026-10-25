@@ -27,7 +27,7 @@ public sealed class MigrationDependencyGraphService
     public MigrationDependencyGraph Build(IEnumerable<Migration> migrations)
     {
         ArgumentNullException.ThrowIfNull(migrations);
-        var list  = migrations.OrderBy(m => m.Sequence).ThenBy(m => m.Id).ToList();
+        var list = migrations.OrderBy(m => m.Sequence).ThenBy(m => m.Id).ToList();
         var graph = new MigrationDependencyGraph();
 
         // 1. Add all nodes first
@@ -36,11 +36,11 @@ public sealed class MigrationDependencyGraphService
             var m = list[i];
             graph.AddNode(new MigrationGraphNode
             {
-                MigrationId   = m.Id,
-                Name          = m.Name,
+                MigrationId = m.Id,
+                Name = m.Name,
                 DbContextName = m.DbContextName,
-                Sequence      = m.Sequence > 0 ? m.Sequence : i + 1,
-                Status        = m.Status
+                Sequence = m.Sequence > 0 ? m.Sequence : i + 1,
+                Status = m.Status
             });
         }
 
@@ -137,7 +137,7 @@ public sealed class MigrationDependencyGraphService
         ArgumentNullException.ThrowIfNull(graph);
         ArgumentException.ThrowIfNullOrEmpty(migrationId);
         var descendants = graph.GetDescendants(migrationId);
-        var result      = new List<string> { migrationId };
+        var result = new List<string> { migrationId };
         result.AddRange(descendants);
         return result
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -173,11 +173,11 @@ public sealed class MigrationDependencyGraphService
             {
                 // Avoid adding a duplicate of the sequential edge
                 var from = ids[i - 1];
-                var to   = ids[i];
+                var to = ids[i];
 
                 bool alreadyLinked = graph.Edges.Any(e =>
                     e.FromId.Equals(from, StringComparison.OrdinalIgnoreCase) &&
-                    e.ToId.Equals(to,   StringComparison.OrdinalIgnoreCase));
+                    e.ToId.Equals(to, StringComparison.OrdinalIgnoreCase));
 
                 if (!alreadyLinked)
                     graph.AddEdge(new MigrationGraphEdge(from, to, DependencyKind.TableShared));
