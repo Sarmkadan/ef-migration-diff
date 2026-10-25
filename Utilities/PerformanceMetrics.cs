@@ -7,6 +7,8 @@ namespace EfMigrationDiff.Utilities;
 /// </summary>
 public class PerformanceMetrics
 {
+    private const int BytesPerKilobyte = 1024;
+
     private readonly Dictionary<string, OperationMetrics> _metrics = new();
     private readonly ReaderWriterLockSlim _lock = new();
 
@@ -113,7 +115,7 @@ public class PerformanceMetrics
                 sb.AppendLine($"  Max Time       : {metric.MaxDuration.TotalMilliseconds:F2}ms");
 
                 if (metric.MemoryDelta > 0)
-                    sb.AppendLine($"  Memory Delta   : {metric.MemoryDelta / 1024}KB");
+                    sb.AppendLine($"  Memory Delta   : {metric.MemoryDelta / BytesPerKilobyte}KB");
 
                 sb.AppendLine();
             }
@@ -148,6 +150,8 @@ public class PerformanceMetrics
 /// </summary>
 public class OperationMetrics
 {
+    private const int BytesPerKilobyte = 1024;
+
     public string OperationName { get; set; } = string.Empty;
     public int Count { get; set; }
     public TimeSpan TotalDuration { get; set; }
@@ -168,7 +172,7 @@ public class OperationMetrics
                       $"avg={AverageDuration.TotalMilliseconds:F2}ms, min={minMs:F2}ms, max={MaxDuration.TotalMilliseconds:F2}ms";
 
         if (MemoryDelta > 0)
-            summary += $", memory={MemoryDelta / 1024}KB";
+            summary += $", memory={MemoryDelta / BytesPerKilobyte}KB";
 
         return summary;
     }
