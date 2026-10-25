@@ -18,6 +18,14 @@ public class CacheService : IDisposable
     private readonly ReaderWriterLockSlim _lock = new();
     private Timer? _cleanupTimer;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CacheService"/> class.
+    /// </summary>
+    /// <param name="cleanupInterval">
+    /// Optional interval at which expired entries are removed in the background.
+    /// When <c>null</c> or not greater than zero, no background cleanup runs and expired entries
+    /// are only removed on access or via <see cref="RemoveExpiredEntries"/>.
+    /// </param>
     public CacheService(TimeSpan? cleanupInterval = null)
     {
         // Start cleanup timer if specified
@@ -292,6 +300,11 @@ public class CacheService : IDisposable
         }
     }
 
+    /// <summary>
+    /// Returns a string summarizing the cache, including the first stored entry's details
+    /// and the total and valid entry counts.
+    /// </summary>
+    /// <returns>A human-readable description of the cache state.</returns>
     public override string ToString()
     {
         var stats = GetStatistics();
@@ -312,6 +325,10 @@ public class CacheService : IDisposable
         return $"{nameof(CacheService)} {{ Value = {value}, ExpiresAt = {expiresAt}, CreatedAt = {createdAt}, LastAccessedAt = {lastAccessedAt}, TotalEntries = {stats.TotalEntries}, ValidEntries = {stats.ValidEntries} }}";
     }
 
+    /// <summary>
+    /// Releases the background cleanup timer and the internal lock.
+    /// Cached entries are not cleared; the instance should not be used after disposal.
+    /// </summary>
     public void Dispose()
     {
         _cleanupTimer?.Dispose();
@@ -337,8 +354,23 @@ public class CacheService : IDisposable
 /// </summary>
 public class CacheStatistics
 {
+    /// <summary>
+    /// Gets or sets the total number of entries in the cache, including expired ones not yet removed.
+    /// </summary>
     public int TotalEntries { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of entries that have not expired.
+    /// </summary>
     public int ValidEntries { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of entries that have expired but have not yet been removed.
+    /// </summary>
     public int ExpiredEntries { get; set; }
+
+    /// <summary>
+    /// Gets or sets the creation time (UTC) of the oldest entry, or <c>null</c> when the cache is empty.
+    /// </summary>
     public DateTime? OldestEntry { get; set; }
 }
