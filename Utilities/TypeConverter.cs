@@ -7,6 +7,9 @@ namespace EfMigrationDiff.Utilities;
 /// </summary>
 public static class TypeConverter
 {
+    private const string TrueLiteral = "true";
+    private const string OneLiteral = "1";
+
     /// <summary>
     /// Converts a value to the specified type, returning default if conversion fails.
     /// </summary>
@@ -44,7 +47,8 @@ public static class TypeConverter
             if (typeof(T) == typeof(bool))
             {
                 if (value is string strVal)
-                    return (T)(object)(strVal.Equals("true", StringComparison.OrdinalIgnoreCase) || strVal == "1");
+                    return (T)(object)(strVal.Equals(TrueLiteral, StringComparison.OrdinalIgnoreCase)
+                        || strVal == OneLiteral);
                 return (T)(object)Convert.ToBoolean(value, System.Globalization.CultureInfo.InvariantCulture);
             }
 
