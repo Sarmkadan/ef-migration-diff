@@ -23,6 +23,37 @@ namespace EfMigrationDiff.CLI.Commands;
 /// </remarks>
 public sealed class VisualDiffCommand
 {
+    // Option names
+    private const string SourceOption           = "source";
+    private const string TargetOption           = "target";
+    private const string BaseOption             = "base";
+    private const string FormatOption           = "format";
+    private const string OutputOption           = "output";
+    private const string MetadataOption         = "metadata";
+    private const string IgnoreWhitespaceOption = "ignore-whitespace";
+
+    // Option values and defaults
+    private const string DefaultFormat    = "sidebyside";
+    private const string UnifiedFormat    = "unified";
+    private const string DefaultBaseLabel = "base";
+
+    // Output file naming
+    private const string MergeEditorKind = "merge-editor";
+    private const string VisualDiffKind  = "visual-diff";
+    private const string TimestampFormat = "yyyyMMdd-HHmmss";
+
+    // Console messages
+    private const string VisualDiffWrittenPrefix   = "Visual diff written to: ";
+    private const string MergeEditorWrittenPrefix  = "Merge editor written to: ";
+    private const string SourceOnlyLabel           = "  Source-only: ";
+    private const string TargetOnlyLabel           = "Target-only: ";
+    private const string ModifiedLabel             = "Modified: ";
+    private const string DestructiveWarning        = "  WARNING: destructive schema changes detected — review before merging.";
+    private const string SchemaIdenticalMessage    = "  Branches are schema-identical.";
+    private const string NoConflictsMessage        = "  No conflicts — merge can be applied cleanly.";
+    private const string AutoResolvableSuffix      = " conflict(s) detected, all trivially auto-resolvable.";
+    private const string ManualResolutionSuffix    = " conflict(s) require manual resolution — see: ";
+
     private readonly SchemaDiffPipelineService _pipeline;
     private readonly IMergeEditor              _mergeEditor;
     private readonly AppSettings               _settings;
@@ -64,12 +95,12 @@ public sealed class VisualDiffCommand
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var sourceName = context.GetOption("source") ?? _settings.SourceBranch;
-        var targetName = context.GetOption("target") ?? _settings.TargetBranch;
-        var baseName   = context.GetOption("base");
-        var format     = context.GetOption("format") ?? "sidebyside";
+        var sourceName = context.GetOption(SourceOption) ?? _settings.SourceBranch;
+        var targetName = context.GetOption(TargetOption) ?? _settings.TargetBranch;
+        var baseName   = context.GetOption(BaseOption);
+        var format     = context.GetOption(FormatOption) ?? DefaultFormat;
 
-        var outputFile = context.GetOption("output")
+        var outputFile = context.GetOption(OutputOption)
                          ?? Path.Combine(
                              _settings.GetOutputDirectory(),
                              BuildOutputFilename(sourceName, targetName, baseName));
@@ -78,10 +109,10 @@ public sealed class VisualDiffCommand
         {
             SourceLabel       = sourceName,
             TargetLabel       = targetName,
-            BaseLabel         = baseName ?? "base",
+            BaseLabel         = baseName ?? DefaultBaseLabel,
             IncludeSqlContent = true,
-            IncludeMetadata   = context.HasOption("metadata"),
-            IgnoreWhitespace  = context.HasOption("ignore-whitespace")
+            IncludeMetadata   = context.HasOption(MetadataOption),
+            IgnoreWhitespace  = context.HasOption(IgnoreWhitespaceOption)
         };
 
         var source = MakeBranchInfo(sourceName);
@@ -106,30 +137,28 @@ public sealed class VisualDiffCommand
     {
         var result = _pipeline.RunTwoWayDiff(source, target, options);
 
-        var html = format.Equals("unified", StringComparison.OrdinalIgnoreCase)
+        var html = format.Equals(UnifiedFormat, StringComparison.OrdinalIgnoreCase)
             ? result.UnifiedHtml
             : result.SideBySideHtml;
 
         WriteHtmlFile(outputFile, html);
-        context.WriteOutput($"Visual diff written to: {outputFile}");
+        context.WriteOutput($"{VisualDiffWrittenPrefix}{outputFile}");
 
         if (result.Diff is { } diff)
         {
             context.WriteOutput(
-                $"  Source-only: {diff.SourceOnlyChanges.Count}  " +
-                $"Target-only: {diff.TargetOnlyChanges.Count}  " +
-                $"Modified: {diff.ModifiedChanges.Count}");
+                $"{SourceOnlyLabel}{diff.SourceOnlyChanges.Count}  " +
+                $"{TargetOnlyLabel}{diff.TargetOnlyChanges.Count}  " +
+                $"{ModifiedLabel}{diff.ModifiedChanges.Count}");
 
             if (result.HasDestructiveChanges)
             {
-                context.WriteColoredOutput(
-                    "  WARNING: destructive schema changes detected — review before merging.",
-                    ConsoleColor.Yellow);
+                context.WriteColoredOutput(DestructiveWarning, ConsoleColor.Yellow);
                 return 1;
             }
 
             if (diff.IsIdentical)
-                context.WriteColoredOutput("  Branches are schema-identical.", ConsoleColor.Green);
+                context.WriteColoredOutput(SchemaIdenticalMessage, ConsoleColor.Green);
         }
 
         return 0;
@@ -150,28 +179,26 @@ public sealed class VisualDiffCommand
         var result = _pipeline.RunThreeWayDiff(baseBranch, source, target, options);
 
         WriteHtmlFile(outputFile, result.MergeEditorHtml);
-        context.WriteOutput($"Merge editor written to: {outputFile}");
+        context.WriteOutput($"{MergeEditorWrittenPrefix}{outputFile}");
 
         if (result.ThreeWayDiff is { } diff)
         {
             if (diff.ConflictCount == 0)
             {
-                context.WriteColoredOutput(
-                    "  No conflicts — merge can be applied cleanly.",
-                    ConsoleColor.Green);
+                context.WriteColoredOutput(NoConflictsMessage, ConsoleColor.Green);
                 return 0;
             }
 
             if (diff.IsAutoMergeable)
             {
                 context.WriteColoredOutput(
-                    $"  {diff.ConflictCount} conflict(s) detected, all trivially auto-resolvable.",
+                    $"  {diff.ConflictCount}{AutoResolvableSuffix}",
                     ConsoleColor.Cyan);
                 return 0;
             }
 
             context.WriteColoredOutput(
-                $"  {diff.ConflictCount} conflict(s) require manual resolution — see: {outputFile}",
+                $"  {diff.ConflictCount}{ManualResolutionSuffix}{outputFile}",
                 ConsoleColor.Yellow);
             return 1;
         }
@@ -188,8 +215,8 @@ public sealed class VisualDiffCommand
 
     private static string BuildOutputFilename(string source, string target, string? baseBranch)
     {
-        var kind  = baseBranch is not null ? "merge-editor" : "visual-diff";
-        var stamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
+        var kind  = baseBranch is not null ? MergeEditorKind : VisualDiffKind;
+        var stamp = DateTime.UtcNow.ToString(TimestampFormat);
         return $"{kind}-{SanitiseName(source)}-vs-{SanitiseName(target)}-{stamp}.html";
     }
 
