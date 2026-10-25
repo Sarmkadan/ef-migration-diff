@@ -44,7 +44,9 @@ public enum DependencyKind
     /// <summary>The dependency is implied by execution order (timestamp sequence).</summary>
     Sequential = 0,
 
-    /// <summary>The downstream migration explicitly references the upstream one via an <c>[MigrationId]</c> attribute.</summary>
+    /// <summary>
+    /// The downstream migration explicitly references the upstream one via an <c>[MigrationId]</c> attribute.
+    /// </summary>
     Explicit = 1,
 
     /// <summary>Both migrations target the same table, so ordering is critical.</summary>
