@@ -248,7 +248,7 @@ public static class ConfigFileLoader
     }
 
     /// <summary>
-        // Loads configuration with proper precedence: config file (if exists) < CLI flags./
+    /// Loads configuration with proper precedence: config file (if exists) &lt; CLI flags.
     /// </summary>
     /// <param name="cliOptions">The CLI options that should override file-based configuration.</param>
     /// <param name="repositoryPath">The repository path to search for config files from.</param>
