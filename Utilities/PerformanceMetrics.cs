@@ -152,14 +152,44 @@ public class OperationMetrics
 {
     private const int BytesPerKilobyte = 1024;
 
+    /// <summary>
+    /// Name of the operation these metrics belong to.
+    /// </summary>
     public string OperationName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Number of recorded executions of the operation.
+    /// </summary>
     public int Count { get; set; }
+
+    /// <summary>
+    /// Sum of the durations of all recorded executions.
+    /// </summary>
     public TimeSpan TotalDuration { get; set; }
+
+    /// <summary>
+    /// Shortest recorded duration. Stays <see cref="TimeSpan.MaxValue"/> until the first measurement is recorded.
+    /// </summary>
     public TimeSpan MinDuration { get; set; } = TimeSpan.MaxValue;
+
+    /// <summary>
+    /// Longest recorded duration. Stays <see cref="TimeSpan.Zero"/> until the first measurement is recorded.
+    /// </summary>
     public TimeSpan MaxDuration { get; set; } = TimeSpan.Zero;
+
+    /// <summary>
+    /// Accumulated change in managed memory, in bytes, summed across all recorded executions.
+    /// </summary>
     public long MemoryDelta { get; set; }
+
+    /// <summary>
+    /// Duration of each recorded execution, in the order they were recorded.
+    /// </summary>
     public List<TimeSpan> Measurements { get; set; } = new();
 
+    /// <summary>
+    /// Mean duration per execution, or <see cref="TimeSpan.Zero"/> when no executions are recorded.
+    /// </summary>
     public TimeSpan AverageDuration => Count > 0 ? TimeSpan.FromMilliseconds(TotalDuration.TotalMilliseconds / Count) : TimeSpan.Zero;
 
     /// <summary>
@@ -188,6 +218,11 @@ public class PerformanceTimer : IDisposable
     private readonly DateTime _startTime;
     private readonly long _initialMemory;
 
+    /// <summary>
+    /// Starts timing an operation. Start time and initial memory are captured immediately.
+    /// </summary>
+    /// <param name="operationName">Name the measurement is recorded under.</param>
+    /// <param name="metrics">Collector that receives the measurement when the timer is disposed.</param>
     public PerformanceTimer(string operationName, PerformanceMetrics metrics)
     {
         ArgumentNullException.ThrowIfNull(operationName);
@@ -198,6 +233,9 @@ public class PerformanceTimer : IDisposable
         _initialMemory = GC.GetTotalMemory(false);
     }
 
+    /// <summary>
+    /// Stops timing and records the elapsed duration and memory change in the associated <see cref="PerformanceMetrics"/>.
+    /// </summary>
     public void Dispose()
     {
         var duration = DateTime.UtcNow - _startTime;
