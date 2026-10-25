@@ -13,6 +13,9 @@ public static class TypeConverter
     /// <summary>
     /// Converts a value to the specified type, returning default if conversion fails.
     /// </summary>
+    /// <typeparam name="T">The target type to convert to.</typeparam>
+    /// <param name="value">The value to convert. May be <c>null</c>.</param>
+    /// <returns>The converted value, or <c>default</c> if <paramref name="value"/> is <c>null</c> or conversion fails.</returns>
     public static T? ConvertTo<T>(object? value)
     {
         if (value is null)
@@ -75,6 +78,10 @@ public static class TypeConverter
     /// <summary>
     /// Tries to convert a value, returning true if successful.
     /// </summary>
+    /// <typeparam name="T">The target type to convert to.</typeparam>
+    /// <param name="value">The value to convert. May be <c>null</c>.</param>
+    /// <param name="result">When this method returns, contains the converted value, or <c>default</c> if conversion failed.</param>
+    /// <returns><c>true</c> if the call completed without throwing; otherwise, <c>false</c>.</returns>
     public static bool TryConvertTo<T>(object? value, out T? result)
     {
         result = default;
@@ -92,6 +99,9 @@ public static class TypeConverter
     /// <summary>
     /// Converts a string to an enum value safely.
     /// </summary>
+    /// <typeparam name="T">The enum type to parse into.</typeparam>
+    /// <param name="value">The name of the enum member to parse. Matching is case-insensitive.</param>
+    /// <returns>The parsed enum value, or <c>null</c> if <paramref name="value"/> is null or empty or does not match a member of <typeparamref name="T"/>.</returns>
     public static T? StringToEnum<T>(string? value) where T : struct, Enum
     {
         if (string.IsNullOrEmpty(value))
@@ -110,6 +120,10 @@ public static class TypeConverter
     /// <summary>
     /// Converts an enum to its string representation.
     /// </summary>
+    /// <typeparam name="T">The enum type of <paramref name="value"/>.</typeparam>
+    /// <param name="value">The enum value to convert.</param>
+    /// <returns>The name of the enum member, or the numeric value as a string if no member matches.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <c>null</c>.</exception>
     public static string EnumToString<T>(T value) where T : Enum
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -119,6 +133,8 @@ public static class TypeConverter
     /// <summary>
     /// Converts a value to dictionary of string/object pairs.
     /// </summary>
+    /// <param name="obj">The object whose public instance properties are copied. May be <c>null</c>.</param>
+    /// <returns>A dictionary keyed by property name. Empty if <paramref name="obj"/> is <c>null</c>; properties that cannot be read are omitted.</returns>
     public static Dictionary<string, object?> ObjectToDictionary(object? obj)
     {
         var dict = new Dictionary<string, object?>();
@@ -145,6 +161,10 @@ public static class TypeConverter
     /// <summary>
     /// Converts a dictionary to an object of the specified type.
     /// </summary>
+    /// <typeparam name="T">The reference type to create. Must have a public parameterless constructor.</typeparam>
+    /// <param name="dict">The key/value pairs to assign to writable public properties. Keys are matched case-insensitively.</param>
+    /// <returns>A new <typeparamref name="T"/> with matching properties set. Keys that match no writable property are ignored.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dict"/> is <c>null</c>.</exception>
     public static T? DictionaryToObject<T>(Dictionary<string, object?> dict) where T : class, new()
     {
         ArgumentNullException.ThrowIfNull(dict);
@@ -173,6 +193,10 @@ public static class TypeConverter
     /// <summary>
     /// Generic conversion method for dynamic type handling.
     /// </summary>
+    /// <param name="value">The value to convert. May be <c>null</c>.</param>
+    /// <param name="targetType">The type to convert to.</param>
+    /// <returns>The converted value, or <c>null</c> if <paramref name="value"/> is <c>null</c> or conversion fails.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="targetType"/> is <c>null</c>.</exception>
     public static object? ConvertTo(object? value, Type targetType)
     {
         ArgumentNullException.ThrowIfNull(targetType);
@@ -202,6 +226,9 @@ public static class TypeConverter
     /// <summary>
     /// Checks if a value can be converted to the target type.
     /// </summary>
+    /// <typeparam name="T">The target type to check.</typeparam>
+    /// <param name="value">The value to check. May be <c>null</c>.</param>
+    /// <returns><c>true</c> if the conversion completed without throwing; otherwise, <c>false</c>.</returns>
     public static bool CanConvertTo<T>(object? value)
     {
         try
