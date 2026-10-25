@@ -157,6 +157,21 @@ public class OperationMetrics
     public List<TimeSpan> Measurements { get; set; } = new();
 
     public TimeSpan AverageDuration => Count > 0 ? TimeSpan.FromMilliseconds(TotalDuration.TotalMilliseconds / Count) : TimeSpan.Zero;
+
+    /// <summary>
+    /// Returns a one-line summary of the key metric values.
+    /// </summary>
+    public override string ToString()
+    {
+        var minMs = Count > 0 ? MinDuration.TotalMilliseconds : 0;
+        var summary = $"{OperationName}: count={Count}, total={TotalDuration.TotalMilliseconds:F2}ms, " +
+                      $"avg={AverageDuration.TotalMilliseconds:F2}ms, min={minMs:F2}ms, max={MaxDuration.TotalMilliseconds:F2}ms";
+
+        if (MemoryDelta > 0)
+            summary += $", memory={MemoryDelta / 1024}KB";
+
+        return summary;
+    }
 }
 
 /// <summary>
