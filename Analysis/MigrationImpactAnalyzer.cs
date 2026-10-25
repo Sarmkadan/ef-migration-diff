@@ -42,6 +42,10 @@ public class MigrationImpactAnalyzer
     private const int FirstLineNumber = 1;
     private const int LineNotFound = 0;
 
+    /// <summary>
+    /// Returns a string representation of this analyzer.
+    /// </summary>
+    /// <returns>A fixed string identifying the analyzer type.</returns>
     public override string ToString() => "MigrationImpactAnalyzer { }";
 
     private readonly Dictionary<string, double> _riskScores = new();
@@ -195,6 +199,10 @@ public class MigrationImpactAnalyzer
 /// </summary>
 public class MigrationImpactReport
 {
+    /// <summary>
+    /// Returns a string representation of this report, including its key fields.
+    /// </summary>
+    /// <returns>A string with the migration name, analysis time, issue count, risk score and risk level.</returns>
     public override string ToString() => $"MigrationImpactReport {{ MigrationName = {MigrationName}, AnalyzedAt = {AnalyzedAt}, IssuesDetected = {IssuesDetected.Count}, RiskScore = {RiskScore}, RiskLevel = {RiskLevel}, HasCriticalIssues = {HasCriticalIssues} }}";
 
     /// <summary>
