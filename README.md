@@ -412,6 +412,49 @@ fi
 
 > **Upgrading from earlier versions:** `compare` used to exit with `1` for blocking conflicts and `2` for configuration errors. Under this contract `1` means non-breaking changes, conflicts exit with `3`, and configuration errors exit with `64`. Update any pipeline that matched the old values.
 
+## Validate Command
+
+`ef-migration-diff validate` (alias `check`) checks the structure of the migration files in the current repository. It does not read git history and does not compare branches, so it works on a single checkout.
+
+What it does:
+
+1. Resolves the migrations folder as `MigrationsPath` (default `Migrations`) under the current directory. If the folder does not exist, the command stops with a configuration error and exit code `64`.
+2. Takes each `*.cs` file directly in that folder and skips `*.Designer.cs` files. Subfolders are not searched.
+3. Runs these structural checks on each file:
+   - the file is not empty
+   - the file contains a `public partial class` declaration, and exactly one class declaration of that form
+   - the file contains `Up(` and `Down(` methods
+   - the file name follows `YYYYMMDDHHmmss_MigrationName.cs`
+4. Prints `✓ <file>` for each file that passes, or `✗ <file>` followed by one indented `-` line per problem for each file that fails.
+5. Prints a summary line, `Validation Summary: <valid> valid, <invalid> invalid`.
+
+The checks are text heuristics over the source, not a compiler pass. A file that compiles can still fail them, and a file that fails them is not necessarily broken for EF Core.
+
+Arguments and options:
+
+The command takes no arguments or options. Anything after `validate` is ignored. The folder it checks comes from configuration: set `MigrationsPath` in `efmigrationdiff.json` to use a different folder.
+
+Exit codes:
+
+| Exit code | Meaning |
+|-----------|---------|
+| `0` | Every migration file passed, or the folder contains no migration files |
+| `1` | At least one migration file failed a check, or an unexpected error occurred |
+| `64` | The migrations folder does not exist or the configuration is invalid |
+
+Sample invocations:
+
+```bash
+# Run from the repository root, where Migrations/ lives
+ef-migration-diff validate
+
+# Same command under its alias
+ef-migration-diff check
+
+# Use the exit code as a pipeline gate
+ef-migration-diff validate || exit 1
+```
+
 ## Next Steps
 
 - Run `dotnet tool install --global Zaiets.ef.migration.diff && ef-migration-diff --help` to see the CLI command-line tool
