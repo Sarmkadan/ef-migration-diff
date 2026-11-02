@@ -78,3 +78,10 @@ bin/
 obj/
 BenchmarkDotNet.Artifacts/
 .aider*
+build/
+aider_buildcmd.py
+buildcmd.py
+build_output.txt
+clean_build.txt
+files_to_process.txt
+verbose.proj
